@@ -1,0 +1,23 @@
+### OS ###
+.DS_Store
+Thumbs.db
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### Eclipse / STS ###
+.classpath
+.project
+.settings/
+
+### VS Code ###
+.vscode/
+
+### Maven ###
+target/
+
+### Node ###
+node_modules/
