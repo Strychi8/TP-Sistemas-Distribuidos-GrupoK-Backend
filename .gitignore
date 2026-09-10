@@ -21,3 +21,6 @@ target/
 
 ### Node ###
 node_modules/
+
+# Dotenv
+.env
