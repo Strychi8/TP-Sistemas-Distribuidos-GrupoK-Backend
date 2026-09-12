@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  mysql-db:
+    image: mysql:8.0
+    container_name: rentar_mysql
+    environment:
+      MYSQL_DATABASE: rentar_db
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_USER: rentar_user
+      MYSQL_PASSWORD: rentar_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - rentar-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpassword"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./web_services
+      dockerfile: Dockerfile
+    container_name: rentar_backend
+    ports:
+      - "8081:8081"
+    environment:
+      - DATABASE_HOST=mysql-db
+      - DATABASE_PORT=3306
+      - DATABASE_NAME=rentar_db
+      - DATABASE_USERNAME=rentar_user
+      - DATABASE_PASSWORD=rentar_password
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SERVER_PORT=8081
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    networks:
+      - rentar-net
+
+volumes:
+  mysql_data:
+
+networks:
+  rentar-net:
+    driver: bridge
