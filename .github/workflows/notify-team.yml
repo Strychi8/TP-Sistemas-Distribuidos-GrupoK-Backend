@@ -1,0 +1,42 @@
+name: Notificar al equipo por Gmail
+
+on:
+  push:
+    branches:
+      - main # Se ejecutará cuando haya un push a la rama main
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enviar correo a los integrantes
+        uses: dawidd6/action-send-mail@v3
+        with:
+          # Configuración del servidor SMTP de Gmail
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          
+          # Credenciales configuradas en los Secrets
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          
+          # Asunto y remitente
+          subject: "Nuevo cambio en ${{ github.repository }} [${{ github.ref_name }}]"
+          from: "Notificaciones GitHub <${{ secrets.MAIL_USERNAME }}>"
+          
+          # Correos de los integrantes (separados por coma)
+          to: pinolenzo6@gmail.com, valentinarociobelen11@gmail.com, diegodavid712@gmail.com, NoeLezcano99@gmail.com
+          
+          # Cuerpo del mensaje
+          body: |
+            ¡Hola equipo!
+            
+            Se ha realizado un nuevo push en el repositorio.
+            
+            • Repositorio: ${{ github.repository }}
+            • Rama: ${{ github.ref_name }}
+            • Autor: ${{ github.actor }}
+            • Commit: ${{ github.sha }}
+            
+            Puedes revisar los cambios aquí: https://github.com/${{ github.repository }}/commit/${{ github.sha }}
