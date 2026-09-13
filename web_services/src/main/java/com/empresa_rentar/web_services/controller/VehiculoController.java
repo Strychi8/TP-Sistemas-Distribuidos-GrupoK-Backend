@@ -61,6 +61,16 @@ public class VehiculoController {
         return ResponseEntity.ok(vehiculoService.buscarPorId(id));
     }
 
+    @GetMapping("/patente/{patente}")
+    @Operation(summary = "Buscar vehículo por patente", description = "Busca un vehículo único por su patente. La patente es un identificador único.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Vehículo encontrado"),
+            @ApiResponse(responseCode = "404", description = "No se encontró un vehículo con esa patente")
+    })
+    public ResponseEntity<VehiculoResponseDTO> buscarPorPatente(@PathVariable String patente) {
+        return ResponseEntity.ok(vehiculoService.buscarPorPatente(patente));
+    }
+
     @GetMapping
     @Operation(summary = "Listar todos los vehículos", description = "Devuelve todos los vehículos, activos e inactivos.")
     public ResponseEntity<List<VehiculoResponseDTO>> listarTodos() {

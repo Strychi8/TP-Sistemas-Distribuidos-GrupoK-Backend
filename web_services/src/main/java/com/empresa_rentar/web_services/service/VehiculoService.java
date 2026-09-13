@@ -14,6 +14,8 @@ public interface VehiculoService {
 
     VehiculoResponseDTO buscarPorId(Long id);
 
+    VehiculoResponseDTO buscarPorPatente(String patente);
+
     List<VehiculoResponseDTO> listarTodos();
 
     List<VehiculoResponseDTO> listarActivos();

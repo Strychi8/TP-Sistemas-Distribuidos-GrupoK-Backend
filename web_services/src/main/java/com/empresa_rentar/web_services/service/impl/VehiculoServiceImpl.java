@@ -9,6 +9,7 @@ import com.empresa_rentar.web_services.mapper.VehiculoMapper;
 import com.empresa_rentar.web_services.model.Vehiculo;
 import com.empresa_rentar.web_services.repository.IVehiculoRepository;
 import com.empresa_rentar.web_services.service.VehiculoService;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,14 +30,21 @@ public class VehiculoServiceImpl implements VehiculoService {
     @Override
     @Transactional
     public VehiculoResponseDTO crearVehiculo(VehiculoRequestDTO dto) {
-        // Validar que la patente sea única
-        if (vehiculoRepository.existsByPatente(dto.getPatente())) {
+        // Se elimina la validación previa existsByPatente() para evitar condiciones de carrera:
+        // si dos peticiones concurrentes verifican al mismo tiempo que la patente no existe,
+        // ambas pasarían la validación e intentarían insertar, generando un error genérico.
+        // En su lugar, se intenta el insert directamente y se captura la excepción de
+        // restricción unique de la base de datos para mapearla a una respuesta HTTP 409.
+        Vehiculo vehiculo = vehiculoMapper.toEntity(dto);
+
+        try {
+            Vehiculo guardado = vehiculoRepository.save(vehiculo);
+            return vehiculoMapper.toDTO(guardado);
+        } catch (DataIntegrityViolationException ex) {
+            // La restricción UNIQUE en la columna 'patente' de la tabla 'vehiculos' lanza
+            // DataIntegrityViolationException cuando se intenta insertar un duplicado.
             throw new ConflictException("Ya existe un vehículo con la patente: " + dto.getPatente());
         }
-
-        Vehiculo vehiculo = vehiculoMapper.toEntity(dto);
-        Vehiculo guardado = vehiculoRepository.save(vehiculo);
-        return vehiculoMapper.toDTO(guardado);
     }
 
     @Override
@@ -55,6 +63,14 @@ public class VehiculoServiceImpl implements VehiculoService {
     public VehiculoResponseDTO buscarPorId(Long id) {
         Vehiculo vehiculo = vehiculoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Vehículo no encontrado con ID: " + id));
+        return vehiculoMapper.toDTO(vehiculo);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public VehiculoResponseDTO buscarPorPatente(String patente) {
+        Vehiculo vehiculo = vehiculoRepository.findByPatente(patente)
+                .orElseThrow(() -> new ResourceNotFoundException("Vehículo no encontrado con patente: " + patente));
         return vehiculoMapper.toDTO(vehiculo);
     }
 
