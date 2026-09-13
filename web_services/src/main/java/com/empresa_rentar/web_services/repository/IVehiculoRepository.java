@@ -28,7 +28,7 @@ public interface IVehiculoRepository extends JpaRepository<Vehiculo, Long> {
      */
     @Query("SELECT COUNT(r) > 0 FROM Reserva r " +
            "WHERE r.vehiculo.idVehiculo = :vehiculoId " +
-           "AND r.estado = 'CONFIRMADA' " +
+           "AND r.estado = com.empresa_rentar.web_services.enums.EstadoReserva.CONFIRMADA " +
            "AND r.fechaInicio < :fin " +
            "AND r.fechaFin > :inicio")
     boolean existsReservaSolapada(@Param("vehiculoId") Long vehiculoId,
