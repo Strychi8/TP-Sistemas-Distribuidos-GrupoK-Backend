@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+  # Motor de Base de Datos
   mysql-db:
     image: mysql:8.0
     container_name: rentar_mysql
@@ -10,17 +11,19 @@ services:
       MYSQL_USER: rentar_user
       MYSQL_PASSWORD: rentar_password
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
       - rentar-net
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpassword"]
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 10
+      start_period: 60s
 
+  # Aplicación Spring Boot (Backend)
   backend:
     build:
       context: ./web_services
@@ -43,8 +46,10 @@ services:
       - rentar-net
 
 volumes:
+  # Volumen para persistir los datos de MySQL aunque se borre el contenedor
   mysql_data:
 
 networks:
+  # Red que comparten todos los servicios
   rentar-net:
     driver: bridge
