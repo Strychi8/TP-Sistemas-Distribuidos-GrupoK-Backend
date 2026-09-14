@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  # Motor de Base de Datos
+  mysql-db:
+    image: mysql:8.0
+    container_name: rentar_mysql
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "${MYSQL_PORT}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - rentar-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  # Aplicación Spring Boot (Backend)
+  backend:
+    build:
+      context: ./web_services
+      dockerfile: Dockerfile
+    container_name: rentar_backend
+    ports:
+      - "${SERVER_PORT}:${SERVER_PORT}"
+    environment:
+      - DATABASE_HOST=${DATABASE_HOST}
+      - DATABASE_PORT=${DATABASE_PORT}
+      - DATABASE_NAME=${MYSQL_DATABASE}
+      - DATABASE_USERNAME=${MYSQL_USER}
+      - DATABASE_PASSWORD=${MYSQL_PASSWORD}
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=${SPRING_JPA_HIBERNATE_DDL_AUTO}
+      - SERVER_PORT=${SERVER_PORT}
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    networks:
+      - rentar-net
+
+volumes:
+  # Volumen para persistir los datos de MySQL aunque se borre el contenedor
+  mysql_data:
+
+networks:
+  # Red que comparten todos los servicios
+  rentar-net:
+    driver: bridge
