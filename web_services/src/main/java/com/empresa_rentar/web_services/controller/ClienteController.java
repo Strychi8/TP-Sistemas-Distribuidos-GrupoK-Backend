@@ -7,10 +7,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
 @RequiredArgsConstructor
@@ -21,10 +18,17 @@ public class ClienteController {
     private final IClienteService clienteService;
 
     @PostMapping
-    public ResponseEntity<ClienteResponseDTO> crearCliente(@Valid @RequestBody ClienteRequestDTO request, UriComponentsBuilder uriBuilder) {
+    public ResponseEntity<ClienteResponseDTO> crearCliente (@Valid @RequestBody ClienteRequestDTO request, UriComponentsBuilder uriBuilder) {
         ClienteResponseDTO clienteResponse = clienteService.crearCliente(request);
         var uri = uriBuilder.path("/api/clientes/{id}").buildAndExpand(clienteResponse.getIdCliente()).toUri();
         return ResponseEntity.created(uri).body(clienteResponse);
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ClienteResponseDTO> actualizarCliente (@PathVariable Long id, @Valid @RequestBody ClienteRequestDTO request){
+        return ResponseEntity.ok().body(clienteService.actualizarCliente(id, request));
+    }
+
+
 
 }

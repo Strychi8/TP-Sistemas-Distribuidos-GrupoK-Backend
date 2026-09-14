@@ -3,8 +3,10 @@ package com.empresa_rentar.web_services.service.impl;
 import com.empresa_rentar.web_services.dto.request.ClienteRequestDTO;
 import com.empresa_rentar.web_services.dto.response.ClienteResponseDTO;
 import com.empresa_rentar.web_services.enums.NombreRol;
+import com.empresa_rentar.web_services.exception.custom.ClienteNotFoundException;
 import com.empresa_rentar.web_services.exception.custom.DniAlreadyExistsException;
 import com.empresa_rentar.web_services.mapper.ClienteMapper;
+import com.empresa_rentar.web_services.model.Cliente;
 import com.empresa_rentar.web_services.model.Usuario;
 import com.empresa_rentar.web_services.repository.IClienteRepository;
 import com.empresa_rentar.web_services.service.IClienteService;
@@ -33,5 +35,28 @@ public class ClienteServiceImpl implements IClienteService {
         usuarioRolService.asignarRol(usuario, NombreRol.CLIENTE.toString());
 
         return ClienteMapper.toClienteResponseDTO(clienteRepository.save(ClienteMapper.toCliente(request, usuario)));
+    }
+
+    @Transactional
+    @Override
+    public ClienteResponseDTO actualizarCliente(Long id, ClienteRequestDTO request) {
+        Cliente cliente = clienteRepository.findById(id).orElseThrow(ClienteNotFoundException::new);
+
+        if (clienteRepository.existsByDniAndIdClienteNot(request.getDni(), id)) {
+            throw new DniAlreadyExistsException();
+        }
+
+        Usuario usuario = cliente.getUsuario();
+
+        cliente.setDni(request.getDni());
+        cliente.setNombre(request.getNombre());
+        cliente.setApellido(request.getApellido());
+        cliente.setEmail(request.getEmail());
+        cliente.setTelefono(request.getTelefono());
+        cliente.setFechaNacimiento(request.getFechaNacimiento());
+
+        usuario.setEmail(request.getEmail());
+
+        return ClienteMapper.toClienteResponseDTO(clienteRepository.save(cliente));
     }
 }

@@ -26,7 +26,7 @@ public class ClienteMapper {
                 .dni(cliente.getDni())
                 .nombre(cliente.getNombre())
                 .apellido(cliente.getApellido())
-                .telefono(cliente.getDni())
+                .telefono(cliente.getTelefono())
                 .fechaNacimiento(cliente.getFechaNacimiento())
                 .build();
     }
