@@ -3,6 +3,7 @@ package com.empresa_rentar.web_services.service.impl;
 import com.empresa_rentar.web_services.dto.request.VehiculoRequestDTO;
 import com.empresa_rentar.web_services.dto.request.VehiculoUpdateRequestDTO;
 import com.empresa_rentar.web_services.dto.response.VehiculoResponseDTO;
+import com.empresa_rentar.web_services.exception.custom.BadRequestException;
 import com.empresa_rentar.web_services.exception.custom.ConflictException;
 import com.empresa_rentar.web_services.exception.custom.ResourceNotFoundException;
 import com.empresa_rentar.web_services.mapper.VehiculoMapper;
@@ -30,19 +31,17 @@ public class VehiculoServiceImpl implements VehiculoService {
     @Override
     @Transactional
     public VehiculoResponseDTO crearVehiculo(VehiculoRequestDTO dto) {
-        // Se elimina la validación previa existsByPatente() para evitar condiciones de carrera:
-        // si dos peticiones concurrentes verifican al mismo tiempo que la patente no existe,
-        // ambas pasarían la validación e intentarían insertar, generando un error genérico.
-        // En su lugar, se intenta el insert directamente y se captura la excepción de
-        // restricción unique de la base de datos para mapearla a una respuesta HTTP 409.
+        validarPatente(dto.getPatente());
+
+        // Evitamos validar previamente con existsByPatente() para prevenir condiciones de carrera.
+        // Se inserta directamente confiando en la restricción UNIQUE de la base de datos.
         Vehiculo vehiculo = vehiculoMapper.toEntity(dto);
 
         try {
             Vehiculo guardado = vehiculoRepository.save(vehiculo);
             return vehiculoMapper.toDTO(guardado);
         } catch (DataIntegrityViolationException ex) {
-            // La restricción UNIQUE en la columna 'patente' de la tabla 'vehiculos' lanza
-            // DataIntegrityViolationException cuando se intenta insertar un duplicado.
+            // Capturamos el error de restricción UNIQUE (patente duplicada) para lanzar un 409 Conflict.
             throw new ConflictException("Ya existe un vehículo con la patente: " + dto.getPatente());
         }
     }
@@ -100,5 +99,12 @@ public class VehiculoServiceImpl implements VehiculoService {
 
         vehiculo.setActivo(false);
         vehiculoRepository.save(vehiculo);
+    }
+
+    private void validarPatente(String patente) {
+        // Validación para patente con formato Mercosur: dos letras, tres números y dos letras
+        if (patente == null || !patente.matches("^[A-Z]{2}[0-9]{3}[A-Z]{2}$")) {
+            throw new BadRequestException("La patente debe tener el formato Mercosur (ej. AB123CD)");
+        }
     }
 }
