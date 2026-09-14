@@ -3,7 +3,11 @@ package com.empresa_rentar.web_services.service;
 import com.empresa_rentar.web_services.dto.request.ClienteRequestDTO;
 import com.empresa_rentar.web_services.dto.response.ClienteResponseDTO;
 
+import java.util.List;
+
 public interface IClienteService {
     ClienteResponseDTO crearCliente(ClienteRequestDTO request);
     ClienteResponseDTO actualizarCliente(Long id, ClienteRequestDTO request);
+    void eliminarCliente(Long id);
+
 }

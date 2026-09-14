@@ -10,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.util.List;
+
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/clientes")
@@ -29,6 +31,10 @@ public class ClienteController {
         return ResponseEntity.ok().body(clienteService.actualizarCliente(id, request));
     }
 
-
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminarCliente (@PathVariable Long id){
+        clienteService.eliminarCliente(id);
+        return ResponseEntity.noContent().build();
+    }
 
 }

@@ -16,6 +16,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @RequiredArgsConstructor
 @Service("clienteService")
 public class ClienteServiceImpl implements IClienteService {
@@ -59,4 +61,19 @@ public class ClienteServiceImpl implements IClienteService {
 
         return ClienteMapper.toClienteResponseDTO(clienteRepository.save(cliente));
     }
+
+    @Transactional
+    @Override
+    public void eliminarCliente(Long id) {
+        Cliente cliente = clienteRepository.findById(id).orElseThrow(ClienteNotFoundException::new);
+
+        cliente.setActivo(false);
+
+        if (cliente.getUsuario() != null) {
+            cliente.getUsuario().setActivo(false);
+        }
+
+        clienteRepository.save(cliente);
+    }
+
 }
