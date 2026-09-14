@@ -9,5 +9,7 @@ public interface IClienteService {
     ClienteResponseDTO crearCliente(ClienteRequestDTO request);
     ClienteResponseDTO actualizarCliente(Long id, ClienteRequestDTO request);
     void eliminarCliente(Long id);
-
+    List<ClienteResponseDTO> listarClientes();
+    List<ClienteResponseDTO> listarClientesActivos();
+    ClienteResponseDTO obtenerClientePorId(Long id);
 }

@@ -37,4 +37,18 @@ public class ClienteController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping
+    public ResponseEntity<List<ClienteResponseDTO>> listarClientes(){
+        return ResponseEntity.ok().body(clienteService.listarClientes());
+    }
+
+    @GetMapping("/activos")
+    public ResponseEntity<List<ClienteResponseDTO>> listarClientesActivos(){
+        return ResponseEntity.ok().body(clienteService.listarClientesActivos());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ClienteResponseDTO> obtenerCliente(@PathVariable Long id) {
+        return ResponseEntity.ok().body(clienteService.obtenerClientePorId(id));
+    }
 }

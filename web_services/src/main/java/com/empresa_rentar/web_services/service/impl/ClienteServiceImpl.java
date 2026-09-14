@@ -76,4 +76,29 @@ public class ClienteServiceImpl implements IClienteService {
         clienteRepository.save(cliente);
     }
 
+    @Transactional
+    @Override
+    public List<ClienteResponseDTO> listarClientes() {
+        return clienteRepository.findAll()
+                .stream()
+                .map(ClienteMapper::toClienteResponseDTO)
+                .toList();
+    }
+
+    @Transactional
+    @Override
+    public List<ClienteResponseDTO> listarClientesActivos(){
+        return clienteRepository.findAllByActivoTrue()
+                .stream()
+                .map(ClienteMapper::toClienteResponseDTO)
+                .toList();
+    }
+
+    @Transactional
+    @Override
+    public ClienteResponseDTO obtenerClientePorId(Long id) {
+        Cliente cliente = clienteRepository.findById(id).orElseThrow(ClienteNotFoundException::new);
+
+        return ClienteMapper.toClienteResponseDTO(cliente);
+    }
 }
