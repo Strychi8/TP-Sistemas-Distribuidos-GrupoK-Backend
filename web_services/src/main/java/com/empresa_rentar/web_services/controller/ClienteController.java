@@ -1,6 +1,7 @@
 package com.empresa_rentar.web_services.controller;
 
 import com.empresa_rentar.web_services.dto.request.ClienteRequestDTO;
+import com.empresa_rentar.web_services.dto.request.ClienteUpdateDTO;
 import com.empresa_rentar.web_services.dto.response.ClienteResponseDTO;
 import com.empresa_rentar.web_services.service.IClienteService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -85,6 +86,10 @@ public class ClienteController {
                     responseCode = "409",
                     description = "El DNI ya se encuentra registrado",
                     content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "El email ya se encuentra registrado"
             )
     })
     public ResponseEntity<ClienteResponseDTO> actualizarCliente (
@@ -94,7 +99,7 @@ public class ClienteController {
                     required = true
             )
             @PathVariable Long id,
-            @Valid @RequestBody ClienteRequestDTO request){
+            @Valid @RequestBody ClienteUpdateDTO request){
         return ResponseEntity.ok().body(clienteService.actualizarCliente(id, request));
     }
 

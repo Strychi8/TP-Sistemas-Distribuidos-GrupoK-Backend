@@ -1,5 +1,6 @@
 package com.empresa_rentar.web_services.service.impl;
 
+import com.empresa_rentar.web_services.enums.NombreRol;
 import com.empresa_rentar.web_services.model.Rol;
 import com.empresa_rentar.web_services.model.Usuario;
 import com.empresa_rentar.web_services.model.UsuarioRol;
@@ -19,7 +20,7 @@ public class UsuarioRolServiceImpl implements IUsuarioRolService {
     private final IRolService rolService;
 
     @Override
-    public void asignarRol(Usuario usuario, String nombreRol) {
+    public void asignarRol(Usuario usuario, NombreRol nombreRol) {
         Rol rol = rolService.findByNombreRol(nombreRol);
         UsuarioRol usuarioRol = new UsuarioRol();
 

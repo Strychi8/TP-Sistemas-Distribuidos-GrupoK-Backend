@@ -1,10 +1,12 @@
 package com.empresa_rentar.web_services.service.impl;
 
 import com.empresa_rentar.web_services.dto.request.ClienteRequestDTO;
+import com.empresa_rentar.web_services.dto.request.ClienteUpdateDTO;
 import com.empresa_rentar.web_services.dto.response.ClienteResponseDTO;
 import com.empresa_rentar.web_services.enums.NombreRol;
 import com.empresa_rentar.web_services.exception.custom.ClienteNotFoundException;
 import com.empresa_rentar.web_services.exception.custom.DniAlreadyExistsException;
+import com.empresa_rentar.web_services.exception.custom.EmailAlreadyExistsException;
 import com.empresa_rentar.web_services.mapper.ClienteMapper;
 import com.empresa_rentar.web_services.model.Cliente;
 import com.empresa_rentar.web_services.model.Usuario;
@@ -13,6 +15,7 @@ import com.empresa_rentar.web_services.service.IClienteService;
 import com.empresa_rentar.web_services.service.IUsuarioRolService;
 import com.empresa_rentar.web_services.service.IUsuarioService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +27,7 @@ public class ClienteServiceImpl implements IClienteService {
     private final IClienteRepository clienteRepository;
     private final IUsuarioService usuarioService;
     private final IUsuarioRolService usuarioRolService;
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional
     @Override
@@ -34,18 +38,21 @@ public class ClienteServiceImpl implements IClienteService {
 
         Usuario usuario = usuarioService.crearUsuario(request.getEmail(), request.getPassword());
 
-        usuarioRolService.asignarRol(usuario, NombreRol.CLIENTE.toString());
+        usuarioRolService.asignarRol(usuario, NombreRol.CLIENTE);
 
         return ClienteMapper.toClienteResponseDTO(clienteRepository.save(ClienteMapper.toCliente(request, usuario)));
     }
 
     @Transactional
     @Override
-    public ClienteResponseDTO actualizarCliente(Long id, ClienteRequestDTO request) {
+    public ClienteResponseDTO actualizarCliente(Long id, ClienteUpdateDTO request) {
         Cliente cliente = clienteRepository.findById(id).orElseThrow(ClienteNotFoundException::new);
 
         if (clienteRepository.existsByDniAndIdClienteNot(request.getDni(), id)) {
             throw new DniAlreadyExistsException();
+        }
+        if (clienteRepository.existsByEmailAndIdClienteNot(request.getEmail(), id)) {
+            throw new EmailAlreadyExistsException();
         }
 
         Usuario usuario = cliente.getUsuario();
@@ -58,6 +65,9 @@ public class ClienteServiceImpl implements IClienteService {
         cliente.setFechaNacimiento(request.getFechaNacimiento());
 
         usuario.setEmail(request.getEmail());
+        if (request.getPassword() != null && !request.getPassword().isBlank()) {
+            usuario.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
 
         return ClienteMapper.toClienteResponseDTO(clienteRepository.save(cliente));
     }

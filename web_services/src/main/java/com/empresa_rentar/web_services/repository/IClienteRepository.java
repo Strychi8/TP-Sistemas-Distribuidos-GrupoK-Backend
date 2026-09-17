@@ -11,5 +11,6 @@ public interface IClienteRepository extends JpaRepository<Cliente, Long> {
     boolean existsByEmail(String email);
     boolean existsByDni(String dni);
     boolean existsByDniAndIdClienteNot(String dni, Long idCliente);
+    boolean existsByEmailAndIdClienteNot(String email, Long idCliente);
     List<Cliente> findAllByActivoTrue();
 }
