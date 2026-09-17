@@ -22,14 +22,15 @@ public class UsuarioRolServiceImpl implements IUsuarioRolService {
     @Override
     public void asignarRol(Usuario usuario, NombreRol nombreRol) {
         Rol rol = rolService.findByNombreRol(nombreRol);
-        UsuarioRol usuarioRol = new UsuarioRol();
 
         UsuarioRolId usuarioRolId = new UsuarioRolId();
         usuarioRolId.setUsuarioId(usuario.getIdUsuario());
         usuarioRolId.setRolId(rol.getIdRol());
 
+        UsuarioRol usuarioRol = new UsuarioRol();
         usuarioRol.setId(usuarioRolId);
-        usuarioRol.setFechaAsignacion(LocalDateTime.now());
+        usuarioRol.setUsuario(usuario);
+        usuarioRol.setRol(rol);
 
         usuarioRolRepository.save(usuarioRol);
     }
