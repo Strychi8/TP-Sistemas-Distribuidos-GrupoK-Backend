@@ -57,8 +57,8 @@ public class VehiculoController {
             @ApiResponse(responseCode = "200", description = "Vehículo encontrado"),
             @ApiResponse(responseCode = "404", description = "Vehículo no encontrado")
     })
-    public ResponseEntity<VehiculoResponseDTO> buscarPorId(@PathVariable Long id) {
-        return ResponseEntity.ok(vehiculoService.buscarPorId(id));
+    public ResponseEntity<VehiculoResponseDTO> obtenerVehiculoPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(vehiculoService.obtenerVehiculoPorId(id));
     }
 
     @GetMapping("/patente/{patente}")
@@ -67,20 +67,20 @@ public class VehiculoController {
             @ApiResponse(responseCode = "200", description = "Vehículo encontrado"),
             @ApiResponse(responseCode = "404", description = "No se encontró un vehículo con esa patente")
     })
-    public ResponseEntity<VehiculoResponseDTO> buscarPorPatente(@PathVariable String patente) {
-        return ResponseEntity.ok(vehiculoService.buscarPorPatente(patente));
+    public ResponseEntity<VehiculoResponseDTO> obtenerVehiculoPorPatente(@PathVariable String patente) {
+        return ResponseEntity.ok(vehiculoService.obtenerVehiculoPorPatente(patente));
     }
 
     @GetMapping
     @Operation(summary = "Listar todos los vehículos", description = "Devuelve todos los vehículos, activos e inactivos.")
-    public ResponseEntity<List<VehiculoResponseDTO>> listarTodos() {
-        return ResponseEntity.ok(vehiculoService.listarTodos());
+    public ResponseEntity<List<VehiculoResponseDTO>> listarVehiculos() {
+        return ResponseEntity.ok(vehiculoService.listarVehiculos());
     }
 
     @GetMapping("/activos")
     @Operation(summary = "Listar vehículos activos", description = "Devuelve solo los vehículos activos.")
-    public ResponseEntity<List<VehiculoResponseDTO>> listarActivos() {
-        return ResponseEntity.ok(vehiculoService.listarActivos());
+    public ResponseEntity<List<VehiculoResponseDTO>> listarVehiculosActivos() {
+        return ResponseEntity.ok(vehiculoService.listarVehiculosActivos());
     }
 
     @DeleteMapping("/{id}")
@@ -89,8 +89,8 @@ public class VehiculoController {
             @ApiResponse(responseCode = "204", description = "Vehículo dado de baja exitosamente"),
             @ApiResponse(responseCode = "404", description = "Vehículo no encontrado")
     })
-    public ResponseEntity<Void> darDeBaja(@PathVariable Long id) {
-        vehiculoService.darDeBaja(id);
+    public ResponseEntity<Void> eliminarVehiculo(@PathVariable Long id) {
+        vehiculoService.eliminarVehiculo(id);
         return ResponseEntity.noContent().build();
     }
 }

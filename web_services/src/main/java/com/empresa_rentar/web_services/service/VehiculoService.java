@@ -12,13 +12,13 @@ public interface VehiculoService {
 
     VehiculoResponseDTO actualizarVehiculo(Long id, VehiculoUpdateRequestDTO dto);
 
-    VehiculoResponseDTO buscarPorId(Long id);
+    VehiculoResponseDTO obtenerVehiculoPorId(Long id);
 
-    VehiculoResponseDTO buscarPorPatente(String patente);
+    VehiculoResponseDTO obtenerVehiculoPorPatente(String patente);
 
-    List<VehiculoResponseDTO> listarTodos();
+    List<VehiculoResponseDTO> listarVehiculos();
 
-    List<VehiculoResponseDTO> listarActivos();
+    List<VehiculoResponseDTO> listarVehiculosActivos();
 
-    void darDeBaja(Long id);
+    void eliminarVehiculo(Long id);
 }

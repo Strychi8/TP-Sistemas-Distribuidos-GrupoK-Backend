@@ -59,7 +59,7 @@ public class VehiculoServiceImpl implements VehiculoService {
 
     @Override
     @Transactional(readOnly = true)
-    public VehiculoResponseDTO buscarPorId(Long id) {
+    public VehiculoResponseDTO obtenerVehiculoPorId(Long id) {
         Vehiculo vehiculo = vehiculoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Vehículo no encontrado con ID: " + id));
         return vehiculoMapper.toDTO(vehiculo);
@@ -67,7 +67,7 @@ public class VehiculoServiceImpl implements VehiculoService {
 
     @Override
     @Transactional(readOnly = true)
-    public VehiculoResponseDTO buscarPorPatente(String patente) {
+    public VehiculoResponseDTO obtenerVehiculoPorPatente(String patente) {
         Vehiculo vehiculo = vehiculoRepository.findByPatente(patente)
                 .orElseThrow(() -> new ResourceNotFoundException("Vehículo no encontrado con patente: " + patente));
         return vehiculoMapper.toDTO(vehiculo);
@@ -75,7 +75,7 @@ public class VehiculoServiceImpl implements VehiculoService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<VehiculoResponseDTO> listarTodos() {
+    public List<VehiculoResponseDTO> listarVehiculos() {
         return vehiculoRepository.findAll()
                 .stream()
                 .map(vehiculoMapper::toDTO)
@@ -84,7 +84,7 @@ public class VehiculoServiceImpl implements VehiculoService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<VehiculoResponseDTO> listarActivos() {
+    public List<VehiculoResponseDTO> listarVehiculosActivos() {
         return vehiculoRepository.findByActivoTrue()
                 .stream()
                 .map(vehiculoMapper::toDTO)
@@ -93,7 +93,7 @@ public class VehiculoServiceImpl implements VehiculoService {
 
     @Override
     @Transactional
-    public void darDeBaja(Long id) {
+    public void eliminarVehiculo(Long id) {
         Vehiculo vehiculo = vehiculoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Vehículo no encontrado con ID: " + id));
 
