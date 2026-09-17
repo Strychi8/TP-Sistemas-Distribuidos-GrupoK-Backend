@@ -39,7 +39,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ClienteController.class)
-@ActiveProfiles("test")
 @DisplayName("ClienteController - tests unitarios de la capa web")
 class ClienteControllerTest {
 

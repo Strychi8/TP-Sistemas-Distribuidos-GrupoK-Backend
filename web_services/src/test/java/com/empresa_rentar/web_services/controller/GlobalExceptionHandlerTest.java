@@ -24,7 +24,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * (slice web). Cubren los mapeos de excepciones a codigos HTTP.
  */
 @WebMvcTest(ClienteController.class)
-@ActiveProfiles("test")
 @DisplayName("GlobalExceptionHandler - tests de mapeo de errores HTTP")
 class GlobalExceptionHandlerTest {
 
