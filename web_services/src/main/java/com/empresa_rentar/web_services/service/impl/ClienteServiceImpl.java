@@ -55,8 +55,6 @@ public class ClienteServiceImpl implements IClienteService {
             throw new EmailAlreadyExistsException();
         }
 
-        Usuario usuario = cliente.getUsuario();
-
         cliente.setDni(request.getDni());
         cliente.setNombre(request.getNombre());
         cliente.setApellido(request.getApellido());
@@ -64,10 +62,11 @@ public class ClienteServiceImpl implements IClienteService {
         cliente.setTelefono(request.getTelefono());
         cliente.setFechaNacimiento(request.getFechaNacimiento());
 
-        usuario.setEmail(request.getEmail());
-        if (request.getPassword() != null && !request.getPassword().isBlank()) {
-            usuario.setPassword(passwordEncoder.encode(request.getPassword()));
-        }
+        usuarioService.actualizarUsuario(
+                cliente.getUsuario(),
+                request.getEmail(),
+                request.getPassword()
+        );
 
         return ClienteMapper.toClienteResponseDTO(clienteRepository.save(cliente));
     }

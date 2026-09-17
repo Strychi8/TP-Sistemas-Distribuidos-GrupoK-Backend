@@ -27,5 +27,11 @@ public class UsuarioServiceImpl implements IUsuarioService {
         return usuarioRepository.save(usuario);
     }
 
-
+    @Override
+    public void actualizarUsuario(Usuario usuario, String email, String password) {
+        usuario.setEmail(email);
+        if (password != null && !password.isBlank()) {
+            usuario.setPassword(passwordEncoder.encode(password));
+        }
+    }
 }
