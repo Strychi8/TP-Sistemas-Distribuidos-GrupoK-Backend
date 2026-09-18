@@ -30,7 +30,7 @@ public class VehiculoGraphQLController {
                                                           @Argument String fin,
                                                           @Argument VehiculoDisponibilidadRequestDTO filtro) {
         LocalDateTime fechaInicio = LocalDateTime.parse(inicio, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-        LocalDateTime fechaFin = LocalDateTime.parse(fin);
+        LocalDateTime fechaFin = LocalDateTime.parse(fin, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
         return vehiculoService.consultarDisponibilidad(fechaInicio, fechaFin, filtro);
     }
 }

@@ -113,13 +113,13 @@ public class VehiculoServiceImpl implements VehiculoService {
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public List<VehiculoResponseDTO> consultarDisponibilidad(LocalDateTime inicio, LocalDateTime fin, VehiculoDisponibilidadRequestDTO filtro) {
         if (inicio == null || fin == null){
             throw new BadRequestException("La fecha de inicio y finalización son obligatorias");
         }
         if (!fin.isAfter(inicio)){
-            throw new BadRequestException("La fecha de finalizazión debe ser posterior a la de inicio");
+            throw new BadRequestException("La fecha de finalización debe ser posterior a la de inicio");
         }
 
         BigDecimal precioMin = filtro != null && filtro.getPrecioMin() != null ? BigDecimal.valueOf(filtro.getPrecioMin()) : null;
