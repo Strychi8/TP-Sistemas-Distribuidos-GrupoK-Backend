@@ -60,6 +60,8 @@ type Query {
     vehiculosDisponibles(
         """Fecha de inicio de la disponibilidad."""
         inicio: String!
+        """Fecha de fin."""
+        fin: String!
         """Filtros opcionales para restringir la búsqueda."""
         filtro: FiltroDisponibilidad
     ): [Vehiculo!]!
