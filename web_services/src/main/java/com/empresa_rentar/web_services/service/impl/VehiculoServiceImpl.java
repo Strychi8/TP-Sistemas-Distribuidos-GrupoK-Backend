@@ -1,8 +1,10 @@
 package com.empresa_rentar.web_services.service.impl;
 
+import com.empresa_rentar.web_services.dto.request.VehiculoDisponibilidadRequestDTO;
 import com.empresa_rentar.web_services.dto.request.VehiculoRequestDTO;
 import com.empresa_rentar.web_services.dto.request.VehiculoUpdateRequestDTO;
 import com.empresa_rentar.web_services.dto.response.VehiculoResponseDTO;
+import com.empresa_rentar.web_services.enums.TipoVehiculo;
 import com.empresa_rentar.web_services.exception.custom.BadRequestException;
 import com.empresa_rentar.web_services.exception.custom.ConflictException;
 import com.empresa_rentar.web_services.exception.custom.ResourceNotFoundException;
@@ -14,6 +16,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -107,4 +111,26 @@ public class VehiculoServiceImpl implements VehiculoService {
             throw new BadRequestException("La patente debe tener el formato Mercosur (ej. AB123CD)");
         }
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<VehiculoResponseDTO> consultarDisponibilidad(LocalDateTime inicio, LocalDateTime fin, VehiculoDisponibilidadRequestDTO filtro) {
+        if (inicio == null || fin == null){
+            throw new BadRequestException("La fecha de inicio y finalización son obligatorias");
+        }
+        if (!fin.isAfter(inicio)){
+            throw new BadRequestException("La fecha de finalización debe ser posterior a la de inicio");
+        }
+
+        BigDecimal precioMin = filtro != null && filtro.getPrecioMin() != null ? BigDecimal.valueOf(filtro.getPrecioMin()) : null;
+        BigDecimal precioMax = filtro != null && filtro.getPrecioMax() != null ? BigDecimal.valueOf(filtro.getPrecioMax()) : null;
+        TipoVehiculo tipoVehiculo = filtro != null ? filtro.getTipoVehiculo() : null;
+        String marca = filtro != null ? filtro.getMarca() : null;
+        String modelo = filtro != null ? filtro.getModelo() : null;
+        return vehiculoRepository.findDisponiblesEnRango(inicio, fin, tipoVehiculo, marca, modelo, precioMin, precioMax)
+                .stream()
+                .map(vehiculoMapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
 }
