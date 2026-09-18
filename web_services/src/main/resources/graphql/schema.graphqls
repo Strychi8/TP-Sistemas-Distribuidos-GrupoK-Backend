@@ -1,0 +1,30 @@
+enum TipoVehiculo {
+  SEDAN
+  SUV
+  PICKUP
+  COUPE
+  HATCHBACK
+}
+
+enum EstadoVehiculo {
+  DISPONIBLE
+  RESERVADO
+  EN_ALQUILER
+}
+
+type Vehiculo {
+  idVehiculo: ID!
+  patente: String!
+  marca: String!
+  modelo: String!
+  anio: Int!
+  color: String
+  tipoVehiculo: TipoVehiculo!
+  precioDiario: Float!
+  estado: EstadoVehiculo!
+  activo: Boolean!
+}
+
+type Query {
+  vehiculos: [Vehiculo!]!
+}
