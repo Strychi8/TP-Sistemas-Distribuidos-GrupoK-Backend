@@ -24,6 +24,7 @@ public record ReservaRequestDTO(
 
         @Schema(description = "Fecha y hora de finalización del alquiler", example = "2026-10-05T10:00:00", requiredMode = Schema.RequiredMode.REQUIRED)
         @NotNull(message = "La fecha de fin es obligatoria")
+        @Future(message = "La fecha de fin debe ser futura")
         LocalDateTime fechaFin
 ) {
 }

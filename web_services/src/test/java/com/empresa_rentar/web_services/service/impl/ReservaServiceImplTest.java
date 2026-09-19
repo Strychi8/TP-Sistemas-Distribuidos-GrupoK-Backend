@@ -343,6 +343,7 @@ class ReservaServiceImplTest {
         when(vehiculoRepository.findById(idVehiculo)).thenReturn(Optional.of(vehiculoActivo));
         when(reservaRepository.existeSolapamiento(idVehiculo, fechaInicio, fechaFin, EstadoReserva.CONFIRMADA)).thenReturn(false);
         when(reservaRepository.save(any(Reserva.class))).thenReturn(reservaGuardada);
+        when(vehiculoRepository.save(any(Vehiculo.class))).thenReturn(vehiculoActivo);
         when(reservaMapper.mapToResponseDTO(any(Reserva.class))).thenReturn(responseEsperado);
 
         //assert
@@ -356,6 +357,8 @@ class ReservaServiceImplTest {
 
         //Verificamos que se ejecuto persistencia y el mapeo
         verify(reservaRepository, times(1)).save(any(Reserva.class));
+        // Verificamos que el vehículo se actualizó a estado RESERVADO
+        verify(vehiculoRepository, times(1)).save(any(Vehiculo.class));
     }
 
     @Test
@@ -408,7 +411,7 @@ class ReservaServiceImplTest {
                 () -> reservaServiceImpl.cancelarReserva(idReserva));
 
         // Validamos el mensaje de la regla de negocio
-        assertEquals("No se puede cancelar una reserva cuyo período de alquiler o transcurrido", exception.getMessage());
+        assertEquals("No se puede cancelar una reserva cuyo período de alquiler ya transcurrió", exception.getMessage());
 
         // Verificamos la busqueda en el repositorio
         verify(reservaRepository, times(1)).findById(idReserva);
@@ -498,6 +501,8 @@ class ReservaServiceImplTest {
 
         when(reservaRepository.save(any(Reserva.class))).thenReturn(reservaActualizada);
 
+        when(vehiculoRepository.save(any(Vehiculo.class))).thenReturn(vehiculoActivo);
+
         when(reservaMapper.mapToResponseDTO(any(Reserva.class))).thenReturn(responseEsperado);
 
         // Act
@@ -510,7 +515,42 @@ class ReservaServiceImplTest {
         // Verificamos las llamadas al repositoria y al mapper
         verify(reservaRepository, times(1)).findById(1L);
         verify(reservaRepository, times(1)).save(any(Reserva.class));
+        // Verificamos que el vehículo se revirtió a estado DISPONIBLE
+        verify(vehiculoRepository, times(1)).save(any(Vehiculo.class));
         verify(reservaMapper, times(1)).mapToResponseDTO(any(Reserva.class));
+    }
+
+    @Test
+    @DisplayName("CP14: Debe lanzar BusinessException cuando la reserva ya está finalizada")
+    void cancelarReserva_ReservaFinalizada_LanzaBusinessException() {
+        // Arrange
+        Long idReserva = 1L;
+
+        // Fecha futura para superar la validación temporal (CP9) y evaluar el estado
+        LocalDateTime fechaInicioFutura = LocalDateTime.now().plusDays(5);
+        LocalDateTime fechaFinFutura = fechaInicioFutura.plusDays(6);
+
+        Reserva reservaFinalizada = Reserva.builder()
+                .idReserva(idReserva)
+                .fechaInicio(fechaInicioFutura)
+                .fechaFin(fechaFinFutura)
+                .estado(EstadoReserva.FINALIZADA)
+                .build();
+
+        // STUBBING: Retornamos la reserva que ya está finalizada
+        when(reservaRepository.findById(idReserva)).thenReturn(Optional.of(reservaFinalizada));
+
+        // Act & Assert
+        BusinessException exception = assertThrows(BusinessException.class,
+                () -> reservaServiceImpl.cancelarReserva(idReserva));
+
+        // Validamos el mensaje de la regla de negocio
+        assertEquals("No se puede cancelar una reserva que ya fue finalizada", exception.getMessage());
+
+        // Verificamos que se haya llamado a reservaRepository.findById una vez
+        verify(reservaRepository, times(1)).findById(idReserva);
+        // Verificamos que NO se haya intentado guardar la reserva cancelada
+        verify(reservaRepository, never()).save(any(Reserva.class));
     }
 
     @Test

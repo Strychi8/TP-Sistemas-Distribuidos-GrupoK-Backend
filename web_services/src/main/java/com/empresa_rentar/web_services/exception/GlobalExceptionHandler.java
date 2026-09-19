@@ -2,6 +2,7 @@ package com.empresa_rentar.web_services.exception;
 
 import com.empresa_rentar.web_services.dto.response.ErrorResponseDTO;
 import com.empresa_rentar.web_services.exception.custom.BadRequestException;
+import com.empresa_rentar.web_services.exception.custom.BusinessException;
 import com.empresa_rentar.web_services.exception.custom.ConflictException;
 import com.empresa_rentar.web_services.exception.custom.ResourceNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -74,6 +75,27 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
+    /**
+     * Maneja excepciones de negocio: validaciones de reglas de negocio
+     * (fechas solapadas, cliente/vehículo inactivo, reserva ya cancelada, etc.)
+     * Retorna HTTP 400 con el mensaje específico de la regla violada.
+     */
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ErrorResponseDTO> handleBusinessException(BusinessException ex, HttpServletRequest request) {
+        ErrorResponseDTO error = ErrorResponseDTO.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Bad Request")
+                .message(ex.getMessage())
+                .path(request.getRequestURI())
+                .build();
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * Maneja excepciones no controladas como fallback general.
+     * Retorna HTTP 500 con mensaje genérico para no expendar detalles internos.
+     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponseDTO> handleGlobalException(Exception ex, HttpServletRequest request) {
         ErrorResponseDTO error = ErrorResponseDTO.builder()

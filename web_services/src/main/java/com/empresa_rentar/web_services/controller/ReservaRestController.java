@@ -24,6 +24,13 @@ public class ReservaRestController {
     private final IReservaService reservaService;
 
 
+    /**
+     * Registra una nueva reserva de alquiler de vehículo.
+     * Valida que el cliente y vehículo estén activos, que no exista solapamiento
+     * de fechas con otra reserva confirmada, y calcula el importe total
+     * en función de la cantidad de días y el precio diario del vehículo.
+     * Retorna HTTP 201 con la reserva creada y estado CONFIRMADA.
+     */
     @PostMapping
     @Operation(summary = "Alta de Reserva",
             description = "Registra una nueva reserva confirmada para un vehículo y cliente activo," +
@@ -45,6 +52,12 @@ public class ReservaRestController {
         return ResponseEntity.status(HttpStatus.CREATED).body(creada);
     }
 
+    /**
+     * Cancela una reserva existente mediante baja lógica (cambio de estado a CANCELADA).
+     * Solo es posible cancelar si el período de alquiler aún no ha iniciado
+     * y la reserva no se encuentra previamente cancelada o finalizada.
+     * Retorna HTTP 200 con la reserva actualizada.
+     */
     @PutMapping("/{id}/cancelar")
     @Operation(summary = "Cancelar Reserva",
             description = "Realiza la baja lógica de una reserva activa modificando su estado a CANCELADA," +
@@ -66,19 +79,19 @@ public class ReservaRestController {
         return ResponseEntity.ok(cancelada);
     }
 
+    /**
+     * Consulta los detalles completos de una reserva por su ID.
+     * Endpoint de solo lectura (GET) para obtener la información de una reserva
+     * incluyendo datos del cliente, vehículo, fechas, importes y estado actual.
+     */
     @GetMapping("/{id}")
-    @PutMapping("/{id}/cancelar")
-    @Operation(summary = "Cancelar Reserva",
-            description = "Realiza la baja lógica de una reserva activa modificando su estado a CANCELADA," +
-                    " siempre que el período de alquiler aún no haya iniciado.")
+    @Operation(summary = "Consultar Reserva por ID",
+            description = "Retorna los detalles completos de una reserva a partir de su identificador único.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200",
-                    description = "Reserva cancelada exitosamente",
+                    description = "Reserva encontrada exitosamente",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ReservaResponseDTO.class))),
-            @ApiResponse(responseCode = "400",
-                    description = "El período de alquiler ya se encuentra en curso o la reserva ya fue cancelada",
-                    content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404",
                     description = "Reserva no encontrada",
                     content = @Content(mediaType = "application/json"))
