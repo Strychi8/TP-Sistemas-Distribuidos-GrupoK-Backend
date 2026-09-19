@@ -1,0 +1,20 @@
+package com.empresa_rentar.web_services.dto.response;
+
+import com.empresa_rentar.web_services.enums.EstadoReserva;
+import lombok.Builder;
+import lombok.Data;
+
+import java.math.BigDecimal;
+
+@Data
+@Builder
+public class ReservaResponseDTO {
+    private Long idReserva;
+    private ReservaClienteDTO cliente;
+    private VehiculoResponseDTO vehiculo;
+    private String fechaInicio;
+    private String fechaFin;
+    private BigDecimal importeTotal;
+    private BigDecimal precioDiario;
+    private EstadoReserva estado;
+}
