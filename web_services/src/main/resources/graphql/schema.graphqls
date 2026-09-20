@@ -106,4 +106,46 @@ type Query {
         """Identificador del cliente."""
         idCliente: ID!
     ): [HistorialAlquiler!]!
+    """Obtiene las reservas registradas. Permite filtros opcionales."""
+    reservas(
+        """Filtros opcionales para buscar reservas."""
+        filtro: FiltroReserva
+    ): [Reserva!]!
+}
+
+"""Representación de un cliente para uso en las reservas"""
+type ReservaCliente {
+    idCliente: ID!
+    nombre: String!
+    apellido: String!
+    dni: String!
+    email: String!
+}
+
+"""Representación de una reserva"""
+type Reserva {
+    idReserva: ID!
+    cliente: ReservaCliente!
+    vehiculo: Vehiculo!
+    fechaInicio: String!
+    fechaFin: String!
+    importeTotal: Float!
+    precioDiario: Float!
+    estado: EstadoReserva!
+}
+
+"""Filtros opcionales para buscar reservas."""
+input FiltroReserva {
+    """Id del cliente (opcional)."""
+    idCliente: ID
+    """Id del vehículo (opcional)."""
+    idVehiculo: ID
+    """Tipo de vehículo (opcional)."""
+    tipoVehiculo: TipoVehiculo
+    """Estado de la reserva (opcional)."""
+    estado: EstadoReserva
+    """Fecha desde para el rango (opcional)."""
+    fechaDesde: String
+    """Fecha hasta para el rango (opcional)."""
+    fechaHasta: String
 }

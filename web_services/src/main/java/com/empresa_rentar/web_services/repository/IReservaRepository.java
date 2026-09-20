@@ -3,6 +3,7 @@ package com.empresa_rentar.web_services.repository;
 import com.empresa_rentar.web_services.enums.EstadoReserva;
 import com.empresa_rentar.web_services.model.Reserva;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -11,7 +12,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
-public interface IReservaRepository extends CrudRepository<Reserva, Long> {
+public interface IReservaRepository extends CrudRepository<Reserva, Long>, JpaSpecificationExecutor<Reserva>{
     /**
      * Verifica si existe al menos una reserva CONFIRMADA para el mismo vehículo
      * que se solape temporalmente con el rango de fechas solicitado.

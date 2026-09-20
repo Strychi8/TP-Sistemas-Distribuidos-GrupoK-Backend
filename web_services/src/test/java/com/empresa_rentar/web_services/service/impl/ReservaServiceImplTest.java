@@ -1,7 +1,10 @@
 package com.empresa_rentar.web_services.service.impl;
 
 import com.empresa_rentar.web_services.dto.request.ReservaRequestDTO;
+import com.empresa_rentar.web_services.dto.request.FiltroReservaDTO;
 import com.empresa_rentar.web_services.dto.response.ReservaResponseDTO;
+import com.empresa_rentar.web_services.dto.response.ReservaGraphQLDTO;
+import com.empresa_rentar.web_services.dto.response.HistorialAlquilerResponseDTO;
 import com.empresa_rentar.web_services.enums.EstadoReserva;
 import com.empresa_rentar.web_services.exception.custom.BusinessException;
 import com.empresa_rentar.web_services.exception.custom.ResourceNotFoundException;
@@ -21,27 +24,30 @@ import org.mockito.Mock;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.List;
+import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import org.springframework.data.jpa.domain.Specification;
 
 @ExtendWith(org.mockito.junit.jupiter.MockitoExtension.class)
 class ReservaServiceImplTest {
 
     @Mock
-    private IReservaRepository reservaRepository;
+    private IReservaRepository reservaRepository; // Simulamos la BD
 
     @Mock
-    private IClienteRepository clienteRepository;
+    private IClienteRepository clienteRepository; // Simulamos la BD
 
     @Mock
-    private IVehiculoRepository vehiculoRepository;
+    private IVehiculoRepository vehiculoRepository; // Simulamos la BD
 
     @Mock
-    private ReservaMapper reservaMapper;
+    private ReservaMapper reservaMapper; // Simulamos el mapper
 
     @InjectMocks
-    private ReservaServiceImpl reservaServiceImpl;
+    private ReservaServiceImpl reservaServiceImpl; // Clase a probar
 
     @Test
     @DisplayName("CP01: Debe lanzar BusinessException cuando fechafin es anterior o igual a fechaInicio")
@@ -648,5 +654,88 @@ class ReservaServiceImplTest {
                 .activo(true)
                 .build();
     }
+
+    @Test
+    void consultarReservas_SinFiltros_DebeRetornarTodasLasReservas() {
+        // 1. Arrange (Preparar datos)
+        Cliente cliente = new Cliente();
+        cliente.setIdCliente(1L);
+        Vehiculo vehiculo = new Vehiculo();
+        vehiculo.setIdVehiculo(1L);
+        
+        Reserva reservaBD = new Reserva();
+        reservaBD.setIdReserva(100L);
+        reservaBD.setCliente(cliente);
+        reservaBD.setVehiculo(vehiculo);
+        
+        reservaBD.setFechaInicio(java.time.LocalDateTime.now());
+        reservaBD.setFechaFin(java.time.LocalDateTime.now().plusDays(1));
+        reservaBD.setEstado(EstadoReserva.CONFIRMADA);
+        reservaBD.setImporteTotal(new java.math.BigDecimal("50000.00"));
+
+        
+        when(reservaRepository.findAll(any(Specification.class)))
+               .thenReturn(java.util.List.of(reservaBD));
+
+        // 2. Act (Ejecutar método usando reservaServiceImpl)
+        FiltroReservaDTO filtroVacio = new FiltroReservaDTO();
+        java.util.List<ReservaGraphQLDTO> resultado = reservaServiceImpl.consultarReservas(filtroVacio);
+
+        // 3. Assert (Validar resultados)
+        assertNotNull(resultado);
+        assertEquals(1, resultado.size());
+        assertEquals(100L, resultado.get(0).getIdReserva());
+    }
+
+    @Test
+    void consultarHistorial_debeRetornarHistorialMapeadoYCalcularDiasCorrectamente() {
+        // Arrange
+        Long idCliente = 1L;
+        
+        Vehiculo vehiculoMock = new Vehiculo();
+        vehiculoMock.setMarca("Toyota");
+        vehiculoMock.setModelo("Corolla");
+        vehiculoMock.setPatente("ABC123BC");
+
+        // Reserva 1: Duración de 2.5 días -> Debería redondear a 3 días
+        Reserva reserva1 = new Reserva();
+        reserva1.setVehiculo(vehiculoMock);
+        reserva1.setFechaInicio(LocalDateTime.of(2023, 10, 1, 10, 0));
+        reserva1.setFechaFin(LocalDateTime.of(2023, 10, 3, 22, 0)); // 60 horas = 2.5 días
+        reserva1.setImporteTotal(BigDecimal.valueOf(150000));
+        reserva1.setEstado(EstadoReserva.FINALIZADA);
+
+        // Reserva 2: Duración muy corta (misma hora) -> Debería forzar mínimo 1 día
+        Reserva reserva2 = new Reserva();
+        reserva2.setVehiculo(vehiculoMock);
+        reserva2.setFechaInicio(LocalDateTime.of(2023, 11, 1, 10, 0));
+        reserva2.setFechaFin(LocalDateTime.of(2023, 11, 1, 12, 0)); // 2 horas
+        reserva2.setImporteTotal(BigDecimal.valueOf(50000));
+        reserva2.setEstado(EstadoReserva.CANCELADA);
+
+        List<Reserva> reservasMock = Arrays.asList(reserva1, reserva2);
+
+        when(reservaRepository.findHistorialByClienteId(eq(idCliente), anyList()))
+                .thenReturn(reservasMock);
+
+        // Act
+        List<HistorialAlquilerResponseDTO> resultado = reservaServiceImpl.consultarHistorial(idCliente);
+
+        // Assert
+        assertNotNull(resultado);
+        assertEquals(2, resultado.size());
+
+        // Verificamos el redondeo de la reserva 1 (2.5 días -> 3)
+        assertEquals(3L, resultado.get(0).cantidadDias());
+        assertEquals("Toyota Corolla", resultado.get(0).vehiculo());
+        assertEquals(EstadoReserva.FINALIZADA, resultado.get(0).estado());
+
+        // Verificamos el mínimo de 1 día de la reserva 2
+        assertEquals(1L, resultado.get(1).cantidadDias());
+        assertEquals(EstadoReserva.CANCELADA, resultado.get(1).estado());
+
+        verify(reservaRepository, times(1)).findHistorialByClienteId(eq(idCliente), anyList());
+    }
+
 
 }
