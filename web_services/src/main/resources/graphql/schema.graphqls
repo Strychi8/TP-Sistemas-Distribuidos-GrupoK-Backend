@@ -14,6 +14,13 @@ enum EstadoVehiculo {
     EN_ALQUILER
 }
 
+"""Estados posibles de una reserva"""
+enum EstadoReserva {
+    CONFIRMADA
+    CANCELADA
+    FINALIZADA
+}
+
 """Representaciónn de un vehículo de la flota"""
 type Vehiculo {
     """Identificador único del vehículo."""
@@ -52,6 +59,34 @@ input FiltroDisponibilidad {
     precioMax: Float
 }
 
+"""
+Registro del historial de un alquiler.
+Incluye alquileres finalizados y reservas canceladas.
+"""
+type HistorialAlquiler {
+
+    """Marca y modelo del vehículo."""
+    vehiculo: String!
+
+    """Patente del vehículo."""
+    patente: String!
+
+    """Fecha y hora de inicio del alquiler."""
+    fechaInicio: String!
+
+    """Fecha y hora de finalización del alquiler."""
+    fechaFinalizacion: String!
+
+    """Cantidad de días del alquiler."""
+    cantidadDias: Int!
+
+    """Importe total del alquiler."""
+    importeTotal: Float!
+
+    """Estado de la reserva."""
+    estado: EstadoReserva!
+}
+
 type Query {
     """Obtiene todos los vehículos registrados en el sistema."""
     vehiculos: [Vehiculo!]!
@@ -65,4 +100,10 @@ type Query {
         """Filtros opcionales para restringir la búsqueda."""
         filtro: FiltroDisponibilidad
     ): [Vehiculo!]!
+    
+    """Consulta el historial de alquileres de un cliente."""
+    historialAlquileres(
+        """Identificador del cliente."""
+        idCliente: ID!
+    ): [HistorialAlquiler!]!
 }

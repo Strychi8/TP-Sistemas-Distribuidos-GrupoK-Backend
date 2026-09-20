@@ -38,4 +38,25 @@ public interface IReservaRepository extends CrudRepository<Reserva, Long> {
 
     @Query("SELECT r FROM Reserva r WHERE r.cliente.idCliente = :idCliente")
     List<Reserva> findByClienteId(Long idCliente);
+
+    /**
+    * Obtiene el historial de reservas de un cliente,
+    * incluyendo únicamente las reservas que se encuentran
+    * en los estados indicados.
+    *
+    * @param idCliente identificador del cliente
+    * @param estados estados de reserva que se desean incluir
+    * @return lista de reservas del historial, ordenadas por fecha de inicio descendente
+    */
+    @Query("""
+            SELECT r
+            FROM Reserva r
+            WHERE r.cliente.idCliente = :idCliente
+            AND r.estado IN :estados
+            ORDER BY r.fechaInicio DESC
+            """)
+    List<Reserva> findHistorialByClienteId(
+            @Param("idCliente") Long idCliente,
+            @Param("estados") List<EstadoReserva> estados
+    );
 }
