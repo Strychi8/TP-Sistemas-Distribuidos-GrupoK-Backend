@@ -1,7 +1,7 @@
 package com.empresa_rentar.web_services.controller;
 
 import com.empresa_rentar.web_services.dto.request.FiltroReservaDTO;
-import com.empresa_rentar.web_services.dto.response.ReservaResponseDTO;
+import com.empresa_rentar.web_services.dto.response.ReservaGraphQLDTO;
 import com.empresa_rentar.web_services.service.IReservaService;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
@@ -19,7 +19,7 @@ public class ReservaGraphQLController {
     }
 
     @QueryMapping
-    public List<ReservaResponseDTO> reservas(@Argument FiltroReservaDTO filtro) {
+    public List<ReservaGraphQLDTO> reservas(@Argument FiltroReservaDTO filtro) {
         return reservaService.consultarReservas(filtro);
     }
 }

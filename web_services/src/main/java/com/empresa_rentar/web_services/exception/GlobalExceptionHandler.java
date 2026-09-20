@@ -150,6 +150,27 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
+    /**
+     * Maneja excepciones de negocio: validaciones de reglas de negocio
+     * (fechas solapadas, cliente/vehículo inactivo, reserva ya cancelada, etc.)
+     * Retorna HTTP 400 con el mensaje específico de la regla violada.
+     */
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ErrorResponseDTO> handleBusinessException(BusinessException ex, HttpServletRequest request) {
+        ErrorResponseDTO error = ErrorResponseDTO.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Bad Request")
+                .message(ex.getMessage())
+                .path(request.getRequestURI())
+                .build();
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * Maneja excepciones no controladas como fallback general.
+     * Retorna HTTP 500 con mensaje genérico para no expendar detalles internos.
+     */
     @ExceptionHandler(DniAlreadyExistsException.class)
     public ResponseEntity<ErrorResponseDTO> handleDniAlreadyExists(DniAlreadyExistsException ex, HttpServletRequest request) {
         ErrorResponseDTO error = ErrorResponseDTO.builder()
