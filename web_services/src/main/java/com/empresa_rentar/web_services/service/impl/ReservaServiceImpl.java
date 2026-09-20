@@ -3,6 +3,7 @@ package com.empresa_rentar.web_services.service.impl;
 import com.empresa_rentar.web_services.dto.request.ReservaRequestDTO;
 import com.empresa_rentar.web_services.dto.request.FiltroReservaDTO;
 import com.empresa_rentar.web_services.dto.response.ReservaResponseDTO;
+import com.empresa_rentar.web_services.dto.response.HistorialAlquilerResponseDTO;
 import com.empresa_rentar.web_services.dto.response.ReservaGraphQLDTO;
 import com.empresa_rentar.web_services.dto.response.ReservaClienteDTO;
 import com.empresa_rentar.web_services.dto.response.VehiculoResponseDTO;
@@ -27,8 +28,10 @@ import java.util.stream.Collectors;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.time.format.DateTimeFormatter;
 
 @Service
 @AllArgsConstructor
@@ -172,6 +175,70 @@ public class ReservaServiceImpl implements IReservaService {
         Reserva reserva = reservaRepository.findById(idReserva)
                 .orElseThrow(() -> new ResourceNotFoundException("Reserva no encontrada con ID: " + idReserva));
         return reservaMapper.mapToResponseDTO(reserva);
+    }
+
+    /**
+     * Consulta el historial de alquileres de un cliente.
+     * Obtiene únicamente las reservas finalizadas o canceladas,
+     * calcula la cantidad de días de cada alquiler y retorna
+     * la información en formato de historial.
+     *
+     * @param idCliente ID del cliente cuyo historial se desea consultar
+     * @return lista de DTOs con los datos del historial de alquileres
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<HistorialAlquilerResponseDTO> consultarHistorial(Long idCliente) {
+
+        // 1. Definir los estados de reserva que forman parte del historial
+        List<EstadoReserva> estadosHistorial = List.of(
+                EstadoReserva.FINALIZADA,
+                EstadoReserva.CANCELADA
+        );
+
+        // 2. Obtener las reservas del cliente correspondientes a los estados indicados
+        List<Reserva> reservas = reservaRepository.findHistorialByClienteId(
+                idCliente,
+                estadosHistorial
+        );
+
+        // 3. Transformar cada reserva en un DTO con la información del historial
+        return reservas.stream()
+                .map(reserva -> {
+
+                    // 3.1 Calcular la cantidad de días del alquiler
+                    long cantidadDias = (long) Math.ceil(
+                            (double) Duration.between(
+                                    reserva.getFechaInicio(),
+                                    reserva.getFechaFin()
+                            ).toHours() / 24
+                    );
+
+                    // Garantizar un mínimo de 1 día de alquiler
+                    if (cantidadDias == 0) {
+                        cantidadDias = 1;
+                    }
+
+                    // 3.2 Construir el DTO con los datos de la reserva
+                    return new HistorialAlquilerResponseDTO(
+                            reserva.getVehiculo().getMarca()
+                                    + " "
+                                    + reserva.getVehiculo().getModelo(),
+
+                            reserva.getVehiculo().getPatente(),
+
+                            reserva.getFechaInicio().toString(),
+
+                            reserva.getFechaFin().toString(),
+
+                            cantidadDias,
+
+                            reserva.getImporteTotal(),
+
+                            reserva.getEstado()
+                    );
+                })
+                .collect(Collectors.toList());
     }
 
     @Override
