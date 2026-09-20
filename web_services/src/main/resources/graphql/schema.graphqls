@@ -1,0 +1,68 @@
+"""Tipos de vehículos disponibles"""
+enum TipoVehiculo {
+    SEDAN
+    SUV
+    PICKUP
+    COUPE
+    HATCHBACK
+}
+
+"""Estados posibles de un vehículo"""
+enum EstadoVehiculo {
+    DISPONIBLE
+    RESERVADO
+    EN_ALQUILER
+}
+
+"""Representaciónn de un vehículo de la flota"""
+type Vehiculo {
+    """Identificador único del vehículo."""
+    idVehiculo: ID!
+    """Patente o matrícula del vehículo."""
+    patente: String!
+    """Marca del vehículo."""
+    marca: String!
+    """Modelo del vehículo."""
+    modelo: String!
+    """Año de fabricación del vehículo."""
+    anio: Int!
+    """Color del vehículo."""
+    color: String
+    """Tipo o categoría del vehículo."""
+    tipoVehiculo: TipoVehiculo!
+    """Precio diario de alquiler del vehículo."""
+    precioDiario: Float!
+    """Estado actual del vehículo."""
+    estado: EstadoVehiculo!
+    """Indica si el vehículo se encuentra activo en el sistema."""
+    activo: Boolean!
+}
+
+"""Filtros opcionales para buscar vehículos disponibles."""
+input FiltroDisponibilidad {
+    """Filtra por tipo de vehículo."""
+    tipoVehiculo: TipoVehiculo
+    """Filtra por marca del vehículo."""
+    marca: String
+    """Filtra por modelo del vehículo."""
+    modelo: String
+    """Precio diario mínimo."""
+    precioMin: Float
+    """Precio diario máximo."""
+    precioMax: Float
+}
+
+type Query {
+    """Obtiene todos los vehículos registrados en el sistema."""
+    vehiculos: [Vehiculo!]!
+    """Obtiene los vehículos disponibles para alquilar a partir de una fecha determinada.
+    Permite aplicar filtros opcionales por tipo, marca, modelo y rango de precio."""
+    vehiculosDisponibles(
+        """Fecha de inicio de la disponibilidad."""
+        inicio: String!
+        """Fecha de fin."""
+        fin: String!
+        """Filtros opcionales para restringir la búsqueda."""
+        filtro: FiltroDisponibilidad
+    ): [Vehiculo!]!
+}
