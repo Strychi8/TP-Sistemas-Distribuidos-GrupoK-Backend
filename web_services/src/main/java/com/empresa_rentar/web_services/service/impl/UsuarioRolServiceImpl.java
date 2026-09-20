@@ -11,7 +11,7 @@ import com.empresa_rentar.web_services.service.IUsuarioRolService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.util.List;
 
 @RequiredArgsConstructor
 @Service("usuarioRolService")
@@ -33,5 +33,13 @@ public class UsuarioRolServiceImpl implements IUsuarioRolService {
         usuarioRol.setRol(rol);
 
         usuarioRolRepository.save(usuarioRol);
+    }
+
+    @Override
+    public List<NombreRol> obtenerRolesDeUsuario(Long idUsuario) {
+        return usuarioRolRepository.findByUsuario_IdUsuario(idUsuario)
+                .stream()
+                .map(ur -> ur.getRol().getNombreRol())
+                .toList();
     }
 }
