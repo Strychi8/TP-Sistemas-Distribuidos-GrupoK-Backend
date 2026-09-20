@@ -2,7 +2,6 @@ package com.empresa_rentar.web_services.dto.response;
 
 import com.empresa_rentar.web_services.enums.EstadoReserva;
 import io.swagger.v3.oas.annotations.media.Schema;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 

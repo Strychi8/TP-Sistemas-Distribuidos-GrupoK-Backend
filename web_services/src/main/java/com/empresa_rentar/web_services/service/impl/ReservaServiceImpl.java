@@ -1,7 +1,11 @@
 package com.empresa_rentar.web_services.service.impl;
 
 import com.empresa_rentar.web_services.dto.request.ReservaRequestDTO;
+import com.empresa_rentar.web_services.dto.request.FiltroReservaDTO;
 import com.empresa_rentar.web_services.dto.response.ReservaResponseDTO;
+import com.empresa_rentar.web_services.dto.response.ReservaGraphQLDTO;
+import com.empresa_rentar.web_services.dto.response.ReservaClienteDTO;
+import com.empresa_rentar.web_services.dto.response.VehiculoResponseDTO;
 import com.empresa_rentar.web_services.enums.EstadoReserva;
 import com.empresa_rentar.web_services.enums.EstadoVehiculo;
 import com.empresa_rentar.web_services.exception.custom.BusinessException;
@@ -18,9 +22,13 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import com.empresa_rentar.web_services.mapper.*;
 
+import org.springframework.data.jpa.domain.Specification;
+import java.util.stream.Collectors;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 @Service
 @AllArgsConstructor
@@ -166,6 +174,62 @@ public class ReservaServiceImpl implements IReservaService {
         return reservaMapper.mapToResponseDTO(reserva);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<ReservaGraphQLDTO> consultarReservas(FiltroReservaDTO filtro) {
+        
+        // 1. Iniciamos con una condicion base siempre verdadera para evitar ambigüedades con null
+        Specification<Reserva> spec = (root, query, cb) -> cb.conjunction();
 
-
+        // 2. Agregamos dinámicamente las condiciones de SQL
+        if (filtro != null) {
+            if (filtro.getIdCliente() != null) {
+                spec = spec.and((root, query, cb) -> cb.equal(root.get("cliente").get("idCliente"), filtro.getIdCliente()));
+            }
+            if (filtro.getIdVehiculo() != null) {
+                spec = spec.and((root, query, cb) -> cb.equal(root.get("vehiculo").get("idVehiculo"), filtro.getIdVehiculo()));
+            }
+            if (filtro.getTipoVehiculo() != null) {
+                spec = spec.and((root, query, cb) -> cb.equal(root.get("vehiculo").get("tipoVehiculo"), filtro.getTipoVehiculo()));
+            }
+            if (filtro.getEstado() != null) {
+                spec = spec.and((root, query, cb) -> cb.equal(root.get("estado"), filtro.getEstado()));
+            }
+            if (filtro.getFechaDesde() != null) {
+                LocalDateTime desde = LocalDateTime.parse(filtro.getFechaDesde(), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+                spec = spec.and((root, query, cb) -> cb.greaterThanOrEqualTo(root.get("fechaInicio"), desde));
+            }
+            if (filtro.getFechaHasta() != null) {
+                LocalDateTime hasta = LocalDateTime.parse(filtro.getFechaHasta(), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+                spec = spec.and((root, query, cb) -> cb.lessThanOrEqualTo(root.get("fechaFin"), hasta));
+            }
+        }
+        // 3. Ejecutamos la consulta dinámica en la BD
+        List<Reserva> resultadosJPA = reservaRepository.findAll(spec);
+        
+        // 4. Mapeamos las entidades Reserva a nuestro ReservaGraphQLDTO 
+        return resultadosJPA.stream().map(r -> ReservaGraphQLDTO.builder()
+                .idReserva(r.getIdReserva())
+                .fechaInicio(r.getFechaInicio().toString())
+                .fechaFin(r.getFechaFin().toString())
+                .importeTotal(r.getImporteTotal())
+                .precioDiario(r.getPrecioDiario())
+                .estado(r.getEstado())
+                .cliente(ReservaClienteDTO.builder()
+                        .idCliente(r.getCliente().getIdCliente())
+                        .nombre(r.getCliente().getNombre())
+                        .apellido(r.getCliente().getApellido())
+                        .dni(r.getCliente().getDni())
+                        .email(r.getCliente().getEmail())
+                        .build())
+                .vehiculo(VehiculoResponseDTO.builder()
+                        .idVehiculo(r.getVehiculo().getIdVehiculo())
+                        .patente(r.getVehiculo().getPatente())
+                        .marca(r.getVehiculo().getMarca())
+                        .modelo(r.getVehiculo().getModelo())
+                        .tipoVehiculo(r.getVehiculo().getTipoVehiculo())
+                        .build())
+                .build()
+        ).collect(Collectors.toList());
+    }
 }
