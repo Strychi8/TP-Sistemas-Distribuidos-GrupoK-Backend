@@ -13,18 +13,19 @@ import com.empresa_rentar.web_services.exception.custom.BusinessException;
 import com.empresa_rentar.web_services.exception.custom.ResourceNotFoundException;
 import com.empresa_rentar.web_services.model.Cliente;
 import com.empresa_rentar.web_services.model.Reserva;
+import com.empresa_rentar.web_services.model.Usuario;
 import com.empresa_rentar.web_services.model.Vehiculo;
 import com.empresa_rentar.web_services.repository.IClienteRepository;
 import com.empresa_rentar.web_services.repository.IReservaRepository;
 import com.empresa_rentar.web_services.repository.IVehiculoRepository;
 import com.empresa_rentar.web_services.service.IReservaService;
+import com.empresa_rentar.web_services.service.IAuthService;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import com.empresa_rentar.web_services.mapper.*;
 
 import org.springframework.data.jpa.domain.Specification;
-import java.util.stream.Collectors;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -41,6 +42,7 @@ public class ReservaServiceImpl implements IReservaService {
     private final IClienteRepository clienteRepository;
     private final IVehiculoRepository vehiculoRepository;
     private final ReservaMapper reservaMapper;
+    private final IAuthService authService;
 
     /**
      * Crea una nueva reserva de alquiler validando todas las reglas de negocio:
@@ -137,6 +139,8 @@ public class ReservaServiceImpl implements IReservaService {
         Reserva reserva = reservaRepository.findById(idReserva)
                 .orElseThrow(() -> new ResourceNotFoundException("Reserva no encontrada con ID: " + idReserva));
 
+        validarPertenenciaReserva(reserva);
+
         // Validar que el periodo de alquiler aún no haya comenzado
         if (LocalDateTime.now().isAfter(reserva.getFechaInicio()) || LocalDateTime.now().isEqual(reserva.getFechaInicio())){
             throw new BusinessException("No se puede cancelar una reserva cuyo período de alquiler ya transcurrió");
@@ -174,6 +178,9 @@ public class ReservaServiceImpl implements IReservaService {
     public ReservaResponseDTO obtenerPorId(Long idReserva){
         Reserva reserva = reservaRepository.findById(idReserva)
                 .orElseThrow(() -> new ResourceNotFoundException("Reserva no encontrada con ID: " + idReserva));
+        
+        validarPertenenciaReserva(reserva);
+        
         return reservaMapper.mapToResponseDTO(reserva);
     }
 
@@ -190,6 +197,15 @@ public class ReservaServiceImpl implements IReservaService {
     @Transactional(readOnly = true)
     public List<HistorialAlquilerResponseDTO> consultarHistorial(Long idCliente) {
 
+        Usuario currentUser = authService.getCurrentUser();
+        Long clienteIdToUse = idCliente;
+
+        if (currentUser != null && currentUser.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("CLIENTE"))) {
+            Cliente miCliente = clienteRepository.findByUsuario(currentUser)
+                    .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado asociado al usuario"));
+            clienteIdToUse = miCliente.getIdCliente(); // Forzamos el ID del cliente logueado
+        }
+
         // 1. Definir los estados de reserva que forman parte del historial
         List<EstadoReserva> estadosHistorial = List.of(
                 EstadoReserva.FINALIZADA,
@@ -198,7 +214,7 @@ public class ReservaServiceImpl implements IReservaService {
 
         // 2. Obtener las reservas del cliente correspondientes a los estados indicados
         List<Reserva> reservas = reservaRepository.findHistorialByClienteId(
-                idCliente,
+                clienteIdToUse,
                 estadosHistorial
         );
 
@@ -245,12 +261,28 @@ public class ReservaServiceImpl implements IReservaService {
     @Transactional(readOnly = true)
     public List<ReservaGraphQLDTO> consultarReservas(FiltroReservaDTO filtro) {
         
+        Usuario currentUser = authService.getCurrentUser();
+        Long forceClienteId = null;
+
+        if (currentUser != null && currentUser.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("CLIENTE"))) {
+            Cliente miCliente = clienteRepository.findByUsuario(currentUser)
+                    .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado asociado al usuario"));
+            forceClienteId = miCliente.getIdCliente();
+        }
+
         // 1. Iniciamos con una condicion base siempre verdadera para evitar ambigüedades con null
         Specification<Reserva> spec = (root, query, cb) -> cb.conjunction();
 
-        // 2. Agregamos dinámicamente las condiciones de SQL
+        // 2. Aplicar restricción de seguridad obligatoria para clientes
+        if (forceClienteId != null) {
+            final Long finalClienteId = forceClienteId;
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("cliente").get("idCliente"), finalClienteId));
+        }
+
+        // 3. Agregamos dinámicamente las condiciones de SQL
         if (filtro != null) {
-            if (filtro.getIdCliente() != null) {
+            // Si no está forzado (es admin), aplicar el filtro que venga en la request
+            if (forceClienteId == null && filtro.getIdCliente() != null) {
                 spec = spec.and((root, query, cb) -> cb.equal(root.get("cliente").get("idCliente"), filtro.getIdCliente()));
             }
             if (filtro.getIdVehiculo() != null) {
@@ -298,5 +330,16 @@ public class ReservaServiceImpl implements IReservaService {
                         .build())
                 .build()
         ).collect(Collectors.toList());
+    }
+
+    private void validarPertenenciaReserva(Reserva reserva) {
+        Usuario currentUser = authService.getCurrentUser();
+        if (currentUser != null && currentUser.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("CLIENTE"))) {
+            Cliente miCliente = clienteRepository.findByUsuario(currentUser)
+                    .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado asociado al usuario"));
+            if (!reserva.getCliente().getIdCliente().equals(miCliente.getIdCliente())) {
+                throw new BusinessException("No tienes permiso para acceder o modificar una reserva que no te pertenece");
+            }
+        }
     }
 }

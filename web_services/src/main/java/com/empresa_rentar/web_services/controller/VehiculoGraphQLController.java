@@ -5,6 +5,7 @@ import com.empresa_rentar.web_services.dto.response.VehiculoResponseDTO;
 import com.empresa_rentar.web_services.service.VehiculoService;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 
 import java.time.LocalDateTime;
@@ -12,6 +13,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Controller
+@PreAuthorize("hasAnyAuthority('CLIENTE', 'ADMINISTRADOR')")
 public class VehiculoGraphQLController {
 
     private final VehiculoService vehiculoService;

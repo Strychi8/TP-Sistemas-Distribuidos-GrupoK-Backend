@@ -17,22 +17,22 @@ VALUES ('CLIENTE');
 -- ============================================================
 
 INSERT IGNORE INTO usuarios (email, password, activo)
-VALUES ('juan.perez@gmail.com', '123456', true);
+VALUES ('juan.perez@gmail.com', '$2a$10$6IPVfWABzMXZtj4OSzWPYeIH7p0WXz1o1leB2zrhAY/ZM96PxEp.u', true);
 
 INSERT IGNORE INTO usuarios (email, password, activo)
-VALUES ('maria.gomez@gmail.com', '123456', true);
+VALUES ('maria.gomez@gmail.com', '$2a$10$6IPVfWABzMXZtj4OSzWPYeIH7p0WXz1o1leB2zrhAY/ZM96PxEp.u', true);
 
 INSERT IGNORE INTO usuarios (email, password, activo)
-VALUES ('lucas.fernandez@gmail.com', '123456', true);
+VALUES ('lucas.fernandez@gmail.com', '$2a$10$6IPVfWABzMXZtj4OSzWPYeIH7p0WXz1o1leB2zrhAY/ZM96PxEp.u', true);
 
 INSERT IGNORE INTO usuarios (email, password, activo)
-VALUES ('ana.martinez@gmail.com', '123456', true);
+VALUES ('ana.martinez@gmail.com', '$2a$10$6IPVfWABzMXZtj4OSzWPYeIH7p0WXz1o1leB2zrhAY/ZM96PxEp.u', true);
 
 INSERT IGNORE INTO usuarios (email, password, activo)
-VALUES ('carlos.lopez@gmail.com', '123456', true);
+VALUES ('carlos.lopez@gmail.com', '$2a$10$6IPVfWABzMXZtj4OSzWPYeIH7p0WXz1o1leB2zrhAY/ZM96PxEp.u', true);
 
 INSERT IGNORE INTO usuarios (email, password, activo)
-VALUES ('admin@empresarentar.com', 'admin123', true);
+VALUES ('admin@empresarentar.com', '$2a$10$Vr6r0XMtisV0nQ1Dl4P.UONTi1lKoZYi9kwI6S5nVDszX5n.hTdlm', true);
 
 
 -- ============================================================

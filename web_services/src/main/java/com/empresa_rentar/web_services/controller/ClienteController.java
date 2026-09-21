@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -24,6 +25,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/clientes")
 @Tag(name = "Clientes", description = "ABM de clientes")
+@PreAuthorize("hasAuthority('ADMINISTRADOR')")
 public class ClienteController {
     private final IClienteService clienteService;
 
