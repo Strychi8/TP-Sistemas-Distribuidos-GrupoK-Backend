@@ -2,11 +2,8 @@ package com.empresa_rentar.web_services.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.UpdateTimestamp;
-import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "clientes")
@@ -37,7 +34,7 @@ public class Cliente {
     @Column(name = "email", nullable = false, unique = true, length = 150)
     private String email;
 
-    @Column(name = "telefono", length = 20)
+    @Column(name = "telefono", nullable = false, length = 20)
     private String telefono;
 
     @Column(name = "fecha_nacimiento")
