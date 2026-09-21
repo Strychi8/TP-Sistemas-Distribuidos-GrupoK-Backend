@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -42,10 +43,10 @@ public class AuthServiceImpl implements IAuthService {
         Usuario user = usuarioRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
-        String jwtToken = jwtService.generateToken(user);
-
         return AuthResponseDTO.builder()
-                .token(jwtToken)
+                .token(jwtService.generateToken(user))
+                .email(user.getEmail())
+                .roles(user.getRoles().stream().map(ur -> ur.getRol().getNombreRol().name()).collect(Collectors.toList()))
                 .build();
     }
 
