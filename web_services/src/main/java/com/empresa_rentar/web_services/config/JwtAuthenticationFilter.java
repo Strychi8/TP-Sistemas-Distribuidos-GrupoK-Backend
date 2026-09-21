@@ -1,27 +1,32 @@
 package com.empresa_rentar.web_services.config;
 
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
-    private final UserDetailsService userDetailsService;
 
     @Override
     protected void doFilterInternal(
@@ -43,8 +48,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             userEmail = jwtService.extractUsername(jwt);
             if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
-                if (jwtService.isTokenValid(jwt, userDetails)) {
+                // Se valida token, expiración y la blacklist
+                if (jwtService.isTokenValid(jwt, userEmail)) {
+                    // Extraer los roles de los claims del JWT
+                    var claims = jwtService.extractAllClaims(jwt);
+                    @SuppressWarnings("unchecked")
+                    List<String> roles = claims.get("roles", List.class);
+
+                    List<SimpleGrantedAuthority> authorities = roles != null
+                            ? roles.stream().map(SimpleGrantedAuthority::new).toList()
+                            : List.of();
+
+                    UserDetails  userDetails = new User(userEmail, "", authorities);
+
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             userDetails,
                             null,
@@ -56,8 +72,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             }
+        } catch (ExpiredJwtException e) {
+            log.debug("Token JWT expirado: {}", e.getMessage());
+        } catch (JwtException e) {
+            log.warn("Token JWT inválido o manipulado: {}", e.getMessage());
         } catch (Exception e) {
-            // Si el token es inválido, expirado o está en blacklist, simplemente no configuramos el contexto
+            // Error de fallo de conexión a BD al consultar la blacklist
+            log.error("Error crítico procesando la autenticación JWT", e);
         }
         filterChain.doFilter(request, response);
     }
