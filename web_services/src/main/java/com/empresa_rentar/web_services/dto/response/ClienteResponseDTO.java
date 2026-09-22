@@ -17,4 +17,5 @@ public class ClienteResponseDTO {
     private String apellido;
     private String telefono;
     private LocalDate fechaNacimiento;
+    private Boolean activo;
 }

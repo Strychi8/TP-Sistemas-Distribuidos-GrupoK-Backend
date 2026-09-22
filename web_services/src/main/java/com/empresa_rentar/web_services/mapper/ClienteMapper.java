@@ -28,6 +28,7 @@ public class ClienteMapper {
                 .apellido(cliente.getApellido())
                 .telefono(cliente.getTelefono())
                 .fechaNacimiento(cliente.getFechaNacimiento())
+                .activo(cliente.getActivo())
                 .build();
     }
 }
