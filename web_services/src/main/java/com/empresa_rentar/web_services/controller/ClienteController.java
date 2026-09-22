@@ -154,6 +154,7 @@ public class ClienteController {
     }
 
     @GetMapping("/activos")
+    @PreAuthorize("hasAnyAuthority('ADMINISTRADOR', 'CLIENTE')")
     @Operation(
             summary = "Listar clientes activos",
             description = "Obtiene únicamente los clientes que se encuentran activos en el sistema."
