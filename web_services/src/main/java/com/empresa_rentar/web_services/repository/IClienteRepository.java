@@ -21,4 +21,6 @@ public interface IClienteRepository extends JpaRepository<Cliente, Long> {
     List<Cliente> findAllByActivoTrue();
 
     Optional<Cliente> findByUsuario(Usuario usuario);
+
+    Optional<Cliente> findByEmail(String email);
 }

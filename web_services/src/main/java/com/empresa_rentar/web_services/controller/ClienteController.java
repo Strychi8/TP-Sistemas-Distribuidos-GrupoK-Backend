@@ -154,7 +154,6 @@ public class ClienteController {
     }
 
     @GetMapping("/activos")
-    @PreAuthorize("hasAnyAuthority('ADMINISTRADOR', 'CLIENTE')")
     @Operation(
             summary = "Listar clientes activos",
             description = "Obtiene únicamente los clientes que se encuentran activos en el sistema."
@@ -203,5 +202,30 @@ public class ClienteController {
             )
             @PathVariable Long id) {
         return ResponseEntity.ok().body(clienteService.obtenerClientePorId(id));
+    }
+
+    @GetMapping("/perfil")
+    @PreAuthorize("hasAnyAuthority('ADMINISTRADOR', 'CLIENTE')")
+    @Operation(
+            summary = "Obtener mi perfil",
+            description = "Obtiene la información del cliente autenticado."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Perfil obtenido correctamente",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ClienteResponseDTO.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Cliente no encontrado",
+                    content = @Content
+            )
+    })
+    public ResponseEntity<ClienteResponseDTO> obtenerMiPerfil(java.security.Principal principal) {
+        return ResponseEntity.ok().body(clienteService.obtenerMiPerfil(principal.getName()));
     }
 }

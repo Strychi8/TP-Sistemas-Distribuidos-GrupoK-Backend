@@ -13,4 +13,5 @@ public interface IClienteService {
     List<ClienteResponseDTO> listarClientes();
     List<ClienteResponseDTO> listarClientesActivos();
     ClienteResponseDTO obtenerClientePorId(Long id);
+    ClienteResponseDTO obtenerMiPerfil(String email);
 }
