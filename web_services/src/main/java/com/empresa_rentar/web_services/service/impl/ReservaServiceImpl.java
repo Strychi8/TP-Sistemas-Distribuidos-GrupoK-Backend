@@ -59,7 +59,11 @@ public class ReservaServiceImpl implements IReservaService {
     @Override
     @Transactional
     public ReservaResponseDTO crearReserva(ReservaRequestDTO dto){
-        // 1. Validar que la fechaFin sea posterior a fechaInicio
+        // 1. Validar que la fechaInicio sea futura y la fechaFin sea posterior a fechaInicio
+        if (dto.fechaInicio().isBefore(LocalDateTime.now())) {
+            throw new BusinessException("La fecha de inicio de la reserva debe ser futura");
+        }
+
         if(!dto.fechaFin().isAfter(dto.fechaInicio())){
             throw new BusinessException("La fecha de fin debe ser posterior a la fecha de inicio");
         }

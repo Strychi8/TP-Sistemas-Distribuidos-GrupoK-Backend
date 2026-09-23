@@ -110,4 +110,11 @@ public class ClienteServiceImpl implements IClienteService {
 
         return ClienteMapper.toClienteResponseDTO(cliente);
     }
+
+    @Transactional
+    @Override
+    public ClienteResponseDTO obtenerMiPerfil(String email) {
+        Cliente cliente = clienteRepository.findByEmail(email).orElseThrow(ClienteNotFoundException::new);
+        return ClienteMapper.toClienteResponseDTO(cliente);
+    }
 }
