@@ -1,4 +1,4 @@
-package com.empresa_rentar.web_services.controller;
+package com.empresa_rentar.web_services.graphql;
 
 import com.empresa_rentar.web_services.dto.request.VehiculoDisponibilidadRequestDTO;
 import com.empresa_rentar.web_services.dto.response.VehiculoResponseDTO;
