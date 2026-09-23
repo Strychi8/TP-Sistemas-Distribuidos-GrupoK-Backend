@@ -21,6 +21,8 @@ import com.empresa_rentar.web_services.repository.IVehiculoRepository;
 import com.empresa_rentar.web_services.service.IReservaService;
 import com.empresa_rentar.web_services.service.IAuthService;
 import org.springframework.transaction.annotation.Transactional;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import com.empresa_rentar.web_services.mapper.*;
@@ -34,6 +36,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.time.format.DateTimeFormatter;
 
+@Slf4j
 @Service
 @AllArgsConstructor
 public class ReservaServiceImpl implements IReservaService {
@@ -344,6 +347,54 @@ public class ReservaServiceImpl implements IReservaService {
             if (!reserva.getCliente().getIdCliente().equals(miCliente.getIdCliente())) {
                 throw new BusinessException("No tienes permiso para acceder o modificar una reserva que no te pertenece");
             }
+        }
+    }
+    
+      /**
+     * Tarea programada que se ejecuta periódicamente para revisar
+     * las reservas confirmadas cuya fecha de fin ya haya pasado,
+     * actualizando su estado a FINALIZADA y liberando el vehículo.
+     */
+    @Scheduled(cron = "0 */5 * * * *") // Se ejecuta cada 5 minutos
+    @Transactional
+    public void finalizarReservasVencidas() {
+        LocalDateTime ahora = LocalDateTime.now();
+        List<Reserva> vencidas = reservaRepository.findReservasVencidas(EstadoReserva.CONFIRMADA, ahora);
+
+        if (!vencidas.isEmpty()) {
+            for (Reserva r : vencidas) {
+                r.setEstado(EstadoReserva.FINALIZADA);
+                // El vehículo vuelve a estar disponible para futuros alquileres
+                if (r.getVehiculo() != null) {
+                    r.getVehiculo().setEstado(EstadoVehiculo.DISPONIBLE);
+                }
+            }
+            reservaRepository.saveAll(vencidas);
+            log.info("Se han finalizado automáticamente {} reservas vencidas.", vencidas.size());
+        }
+    }
+
+    /**
+     * Tarea programada que actualiza el estado de los vehículos a EN_ALQUILER
+     * cuando la fecha de inicio de su reserva confirmada ha llegado o pasado.
+     */
+    @Scheduled(cron = "0 */5 * * * *") // Se ejecuta cada 5 minutos
+    @Transactional
+    public void actualizarVehiculosEnAlquiler() {
+        LocalDateTime ahora = LocalDateTime.now();
+        List<Reserva> enCurso = reservaRepository.findReservasEnCurso(EstadoReserva.CONFIRMADA, ahora);
+
+        int count = 0;
+        for (Reserva r : enCurso) {
+            if (r.getVehiculo() != null && r.getVehiculo().getEstado() != EstadoVehiculo.EN_ALQUILER) {
+                r.getVehiculo().setEstado(EstadoVehiculo.EN_ALQUILER);
+                count++;
+            }
+        }
+        
+        if (count > 0) {
+            reservaRepository.saveAll(enCurso);
+            log.info("Se han actualizado {} vehículos a estado EN_ALQUILER.", count);
         }
     }
 }
