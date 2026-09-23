@@ -1,4 +1,4 @@
-package com.empresa_rentar.web_services.config;
+package com.empresa_rentar.web_services.security;
 
 import com.empresa_rentar.web_services.repository.ITokenBlacklistRepository;
 import io.jsonwebtoken.Claims;
