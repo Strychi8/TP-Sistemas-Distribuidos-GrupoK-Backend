@@ -11,10 +11,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.security.test.context.support.WithMockUser;
 import java.time.LocalDate;
 import java.util.List;
 import static org.hamcrest.Matchers.hasItem;
@@ -36,6 +38,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ClienteController.class)
+@AutoConfigureMockMvc(addFilters = false)
+@WithMockUser(authorities = "ADMINISTRADOR")
 @DisplayName("ClienteController - tests unitarios de la capa web")
 class ClienteControllerTest {
 
@@ -48,11 +52,13 @@ class ClienteControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper().registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
 
     @MockitoBean
     private IClienteService clienteService;
+
+    @MockitoBean
+    private com.empresa_rentar.web_services.security.JwtService jwtService;
 
     @Test
     @DisplayName("POST /api/clientes: crea el cliente y responde 201 con Location y body")
