@@ -46,6 +46,9 @@ class ReservaServiceImplTest {
     @Mock
     private ReservaMapper reservaMapper; // Simulamos el mapper
 
+    @Mock
+    private com.empresa_rentar.web_services.service.IAuthService authService; // Simulamos auth
+
     @InjectMocks
     private ReservaServiceImpl reservaServiceImpl; // Clase a probar
 

@@ -60,4 +60,25 @@ public interface IReservaRepository extends CrudRepository<Reserva, Long>, JpaSp
             @Param("idCliente") Long idCliente,
             @Param("estados") List<EstadoReserva> estados
     );
+    
+     @Query("""
+            SELECT r FROM Reserva r
+            WHERE r.estado = :estado
+            AND r.fechaFin <= :fechaActual
+            """)
+    List<Reserva> findReservasVencidas(
+            @Param("estado") EstadoReserva estado,
+            @Param("fechaActual") LocalDateTime fechaActual
+    );
+
+    @Query("""
+            SELECT r FROM Reserva r
+            WHERE r.estado = :estado
+            AND r.fechaInicio <= :fechaActual
+            AND r.fechaFin > :fechaActual
+            """)
+    List<Reserva> findReservasEnCurso(
+            @Param("estado") EstadoReserva estado,
+            @Param("fechaActual") LocalDateTime fechaActual
+    );
 }

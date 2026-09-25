@@ -1,6 +1,6 @@
 package com.empresa_rentar.web_services.service.impl;
 
-import com.empresa_rentar.web_services.config.JwtService;
+import com.empresa_rentar.web_services.security.JwtService;
 import com.empresa_rentar.web_services.dto.request.LoginRequestDTO;
 import com.empresa_rentar.web_services.dto.response.AuthResponseDTO;
 import com.empresa_rentar.web_services.exception.custom.ResourceNotFoundException;

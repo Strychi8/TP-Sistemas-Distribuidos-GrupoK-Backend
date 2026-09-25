@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,8 +44,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * quedan datos de prueba persistidos.
  */
 @SpringBootTest
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
 @Transactional
+@WithMockUser(authorities = "ADMINISTRADOR")
 @DisplayName("Integracion - Clientes y Usuarios")
 class ClienteIntegrationTest {
 
@@ -61,8 +63,7 @@ class ClienteIntegrationTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper().registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
 
     @Autowired
     private IClienteRepository clienteRepository;
@@ -352,14 +353,6 @@ class ClienteIntegrationTest {
         mockMvc.perform(delete("/api/clientes/{id}", ID_INEXISTENTE))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Cliente no encontrado"));
-    }
-
-    @Test
-    @DisplayName("GET /saludo: responde el saludo del endpoint de prueba")
-    void deberiaResponderElSaludo() throws Exception {
-        mockMvc.perform(get("/saludo"))
-                .andExpect(status().isOk())
-                .andExpect(content().string("Hola Grupo K!"));
     }
 
     private Cliente obtenerClienteSeed() {

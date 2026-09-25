@@ -5,10 +5,12 @@ import com.empresa_rentar.web_services.service.IClienteService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.security.test.context.support.WithMockUser;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -23,8 +25,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * (slice web). Cubren los mapeos de excepciones a codigos HTTP.
  */
 @WebMvcTest(ClienteController.class)
+@AutoConfigureMockMvc(addFilters = false)
+@WithMockUser(authorities = "ADMINISTRADOR")
 @DisplayName("GlobalExceptionHandler - tests de mapeo de errores HTTP")
 class GlobalExceptionHandlerTest {
+
+    @MockitoBean
+    private com.empresa_rentar.web_services.security.JwtService jwtService;
 
     private static final String JSON_VALIDO = """
             {

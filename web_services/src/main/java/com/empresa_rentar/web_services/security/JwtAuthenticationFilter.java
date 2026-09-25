@@ -1,4 +1,4 @@
-package com.empresa_rentar.web_services.config;
+package com.empresa_rentar.web_services.security;
 
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
