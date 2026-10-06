@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package rentar.customer;
+
+option java_package = "com.rentar.customer.grpc";
+option java_multiple_files = true;
+
+message Customer {
+  int64 idCliente = 1;
+  string nombre = 2;
+  string apellido = 3;
+  string dni = 4;
+  string email = 5;
+  bool activo = 6; // Necesario para que el Gateway distinga entre 404 y 400
+}
+
+message CustomerList {
+  repeated Customer customers = 1;
+  int64 total_elements = 2;
+  int32 total_pages = 3;
+}
+
+message GetClientesRequest {
+  int32 page = 1;
+  int32 size = 2;
+}
+
+message GetClienteByIdRequest {
+  int64 idCliente = 1;
+}
+
+message VerificarTokenRequest {
+  string token = 1;
+}
+
+message VerificarTokenResponse {
+  bool revocado = 1;
+}
+
+service CustomerService {
+  rpc GetClientes (GetClientesRequest) returns (CustomerList);
+  rpc GetClienteById (GetClienteByIdRequest) returns (Customer);
+  rpc VerificarClienteExistente (GetClienteByIdRequest) returns (Customer);
+  rpc VerificarClienteActivo (GetClienteByIdRequest) returns (Customer);
+  rpc VerificarTokenBlacklist (VerificarTokenRequest) returns (VerificarTokenResponse);
+}
