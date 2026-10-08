@@ -37,10 +37,61 @@ message VerificarTokenResponse {
   bool revocado = 1;
 }
 
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  string token = 1;
+}
+
+message LogoutRequest {
+  string token = 1;
+}
+
+message LogoutResponse {
+  bool success = 1;
+}
+
+message CrearClienteRequest {
+  string email = 1;
+  string password = 2;
+  string dni = 3;
+  string nombre = 4;
+  string apellido = 5;
+  string telefono = 6;
+  string fechaNacimiento = 7;
+}
+
+message ActualizarClienteRequest {
+  int64 idCliente = 1;
+  string email = 2;
+  optional string password = 3;
+  string dni = 4;
+  string nombre = 5;
+  string apellido = 6;
+  string telefono = 7;
+  string fechaNacimiento = 8;
+}
+
+message EliminarClienteRequest {
+  int64 idCliente = 1;
+}
+
+message EliminarClienteResponse {
+  bool success = 1;
+}
+
 service CustomerService {
   rpc GetClientes (GetClientesRequest) returns (CustomerList);
   rpc GetClienteById (GetClienteByIdRequest) returns (Customer);
   rpc VerificarClienteExistente (GetClienteByIdRequest) returns (Customer);
   rpc VerificarClienteActivo (GetClienteByIdRequest) returns (Customer);
   rpc VerificarTokenBlacklist (VerificarTokenRequest) returns (VerificarTokenResponse);
+  rpc Login (LoginRequest) returns (LoginResponse);
+  rpc Logout (LogoutRequest) returns (LogoutResponse);
+  rpc CrearCliente (CrearClienteRequest) returns (Customer);
+  rpc ActualizarCliente (ActualizarClienteRequest) returns (Customer);
+  rpc EliminarCliente (EliminarClienteRequest) returns (EliminarClienteResponse);
 }

@@ -66,10 +66,6 @@ message CrearReservaRequest {
   google.protobuf.Timestamp fechaFin = 4;
   double precioDiario = 5;
   double importeTotal = 6;
-  
-  // Datos desnormalizados como recomendaba el Trello
-  string clienteNombre = 7;
-  string vehiculoMarcaModelo = 8;
 }
 
 message SolapamientoRequest {
