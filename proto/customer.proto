@@ -1,0 +1,116 @@
+syntax = "proto3";
+
+package rentar.customer;
+
+option java_package = "com.rentar.customer.grpc";
+option java_multiple_files = true;
+
+import "google/type/date.proto";
+
+message Customer {
+  int64 idCliente = 1;
+  string nombre = 2;
+  string apellido = 3;
+  string dni = 4;
+  string email = 5;
+  bool activo = 6; // Necesario para que el Gateway distinga entre 404 y 400
+}
+
+message CustomerList {
+  repeated Customer customers = 1;
+  int64 total_elements = 2;
+  int32 total_pages = 3;
+}
+
+message GetClientesRequest {
+  int32 page = 1;
+  int32 size = 2;
+}
+
+message GetClienteByIdRequest {
+  int64 idCliente = 1;
+}
+
+message VerificarTokenRequest {
+  string token = 1;
+}
+
+message VerificarTokenResponse {
+  bool revocado = 1;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  string token = 1;
+}
+
+message LogoutRequest {
+  string token = 1;
+}
+
+message LogoutResponse {
+  bool success = 1;
+}
+
+message CrearClienteRequest {
+  string email = 1;
+  string password = 2;
+  string dni = 3;
+  string nombre = 4;
+  string apellido = 5;
+  string telefono = 6;
+  string fechaNacimiento = 7;
+}
+
+message ActualizarClienteRequest {
+  int64 idCliente = 1;
+  string email = 2;
+  optional string password = 3;
+  string dni = 4;
+  string nombre = 5;
+  string apellido = 6;
+  string telefono = 7;
+  string fechaNacimiento = 8;
+}
+
+message EliminarClienteRequest {
+  int64 idCliente = 1;
+}
+
+message EliminarClienteResponse {
+  bool success = 1;
+}
+
+message GetMiPerfilRequest {
+  string email = 1;
+}
+
+message GetMiPerfilResponse {
+  int64 idCliente;
+  int64 idUsuario;
+  string email;
+  string dni;
+  string nombre;
+  string apellido;
+  string telefono;
+  google.type.Date fechaNacimiento;
+  bool activo;
+}
+
+service CustomerService {
+  rpc GetClientes (GetClientesRequest) returns (CustomerList);
+  rpc GetClienteById (GetClienteByIdRequest) returns (Customer);
+  rpc GetMiPerfil (GetMiPerfilRequest) returns (GetMiPerfilResponse);
+  rpc VerificarClienteExistente (GetClienteByIdRequest) returns (Customer);
+  rpc VerificarClienteActivo (GetClienteByIdRequest) returns (Customer);
+  rpc VerificarTokenBlacklist (VerificarTokenRequest) returns (VerificarTokenResponse);
+  rpc Login (LoginRequest) returns (LoginResponse);
+  rpc Logout (LogoutRequest) returns (LogoutResponse);
+  rpc CrearCliente (CrearClienteRequest) returns (Customer);
+  rpc ActualizarCliente (ActualizarClienteRequest) returns (Customer);
+  rpc EliminarCliente (EliminarClienteRequest) returns (EliminarClienteResponse);
+}

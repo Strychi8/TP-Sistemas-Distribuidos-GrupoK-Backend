@@ -1,0 +1,93 @@
+syntax = "proto3";
+
+package rentar.rental;
+
+option java_package = "com.rentar.rental.grpc";
+option java_multiple_files = true;
+
+import "google/protobuf/timestamp.proto";
+
+enum EstadoReserva {
+  ESTADO_RESERVA_UNSPECIFIED = 0;
+  CONFIRMADA = 1;
+  CANCELADA = 2;
+  FINALIZADA = 3;
+}
+
+message Reservation {
+  int64 idReserva = 1;
+  int64 idCliente = 2; 
+  int64 idVehiculo = 3; 
+  google.protobuf.Timestamp fechaInicio = 4;
+  google.protobuf.Timestamp fechaFin = 5;
+  double importeTotal = 6;
+  double precioDiario = 7;
+  EstadoReserva estado = 8;
+}
+
+message ReservationList {
+  repeated Reservation reservations = 1;
+}
+
+message FiltroReserva {
+  optional int64 idCliente = 1;
+  optional int64 idVehiculo = 2;
+  optional string tipoVehiculo = 3;
+  optional EstadoReserva estado = 4;
+  optional google.protobuf.Timestamp fechaDesde = 5;
+  optional google.protobuf.Timestamp fechaHasta = 6;
+}
+
+message RentalHistory {
+  int64 vehiculo = 1;
+  string patente = 2;
+  google.protobuf.Timestamp fechaInicio = 3;
+  google.protobuf.Timestamp fechaFinalizacion = 4;
+  int32 cantidadDias = 5;
+  double importeTotal = 6;
+  EstadoReserva estado = 7;
+}
+
+message RentalHistoryList {
+  repeated RentalHistory history = 1;
+}
+
+message CrearReservaRequest {
+  int64 idCliente = 1;
+  int64 idVehiculo = 2;
+  google.protobuf.Timestamp fechaInicio = 3;
+  google.protobuf.Timestamp fechaFin = 4;
+  double precioDiario = 5;
+  double importeTotal = 6;
+}
+
+message SolapamientoRequest {
+  int64 idVehiculo = 1;
+  google.protobuf.Timestamp fechaInicio = 2;
+  google.protobuf.Timestamp fechaFin = 3;
+}
+
+message SolapamientoResponse {
+  bool solapado = 1;
+}
+
+message GetReservaByIdRequest {
+  int64 idReserva = 1;
+}
+
+message CancelarReservaRequest {
+  int64 idReserva = 1;
+}
+
+message ConsultarHistorialRequest {
+  int64 idCliente = 1;
+}
+
+service RentalService {
+  rpc CrearReserva (CrearReservaRequest) returns (Reservation);
+  rpc ConsultarReservas (FiltroReserva) returns (ReservationList);
+  rpc GetReservaById (GetReservaByIdRequest) returns (Reservation);
+  rpc CancelarReserva (CancelarReservaRequest) returns (Reservation);
+  rpc ConsultarHistorialAlquileres (ConsultarHistorialRequest) returns (RentalHistoryList);
+  rpc VerificarSolapamientoVehiculo (SolapamientoRequest) returns (SolapamientoResponse);
+}
