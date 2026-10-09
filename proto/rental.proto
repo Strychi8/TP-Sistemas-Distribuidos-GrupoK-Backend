@@ -9,16 +9,15 @@ import "google/protobuf/timestamp.proto";
 
 enum EstadoReserva {
   ESTADO_RESERVA_UNSPECIFIED = 0;
-  PENDIENTE = 1;
-  CONFIRMADA = 2;
-  CANCELADA = 3;
-  FINALIZADA = 4;
+  CONFIRMADA = 1;
+  CANCELADA = 2;
+  FINALIZADA = 3;
 }
 
 message Reservation {
   int64 idReserva = 1;
-  int64 cliente = 2; 
-  int64 vehiculo = 3; 
+  int64 idCliente = 2; 
+  int64 idVehiculo = 3; 
   google.protobuf.Timestamp fechaInicio = 4;
   google.protobuf.Timestamp fechaFin = 5;
   double importeTotal = 6;
@@ -28,8 +27,6 @@ message Reservation {
 
 message ReservationList {
   repeated Reservation reservations = 1;
-  int64 total_elements = 2;
-  int32 total_pages = 3;
 }
 
 message FiltroReserva {
@@ -39,8 +36,6 @@ message FiltroReserva {
   optional EstadoReserva estado = 4;
   optional google.protobuf.Timestamp fechaDesde = 5;
   optional google.protobuf.Timestamp fechaHasta = 6;
-  int32 page = 7;
-  int32 size = 8;
 }
 
 message RentalHistory {
@@ -55,8 +50,6 @@ message RentalHistory {
 
 message RentalHistoryList {
   repeated RentalHistory history = 1;
-  int64 total_elements = 2;
-  int32 total_pages = 3;
 }
 
 message CrearReservaRequest {
@@ -88,8 +81,6 @@ message CancelarReservaRequest {
 
 message ConsultarHistorialRequest {
   int64 idCliente = 1;
-  int32 page = 2;
-  int32 size = 3;
 }
 
 service RentalService {
