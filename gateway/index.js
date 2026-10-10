@@ -3,6 +3,10 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { errorMiddleware } from './middleware/error.middleware.js';
 import graphqlRouter from './graphql/index.js';
+import authRouter from './routes/auth.routes.js';
+import clienteRouter from './routes/cliente.routes.js';
+import vehiculoRouter from './routes/vehiculo.routes.js';
+import reservaRouter from './routes/reserva.routes.js';
 
 // Configurar variables de entorno
 dotenv.config();
@@ -22,6 +26,12 @@ app.get('/', (req, res) => {
 
 // Rutas de GraphQL
 app.use('/graphql', graphqlRouter);
+
+// Rutas REST
+app.use('/api/auth', authRouter);
+app.use('/api/clientes', clienteRouter);
+app.use('/api/vehiculos', vehiculoRouter);
+app.use('/api/reservas', reservaRouter);
 
 
 // Manejo global de errores
