@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import { errorMiddleware } from './middleware/error.middleware.js';
 
 // Configurar variables de entorno
 dotenv.config();
@@ -17,6 +18,9 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/', (req, res) => {
   res.json({ message: 'El API Gateway esta corriendo' });
 });
+
+// Manejo global de errores
+app.use(errorMiddleware);
 
 // Iniciar servidor
 if (process.env.NODE_ENV !== 'test') {
