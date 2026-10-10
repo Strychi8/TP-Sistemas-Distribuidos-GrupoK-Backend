@@ -90,15 +90,29 @@ router.post('/', async (req, res, next) => {
     });
 
     // 6. Gateway -> VehicleService.ActualizarEstadoVehiculo a RESERVADO
-    await new Promise((resolve, reject) => {
-      vehicleClient.ActualizarEstadoVehiculo({
-        idVehiculo,
-        estado: 'RESERVADO'
-      }, meta, (err, response) => {
-        if (err) return reject(err);
-        resolve(response);
+    try {
+      await new Promise((resolve, reject) => {
+        vehicleClient.ActualizarEstadoVehiculo({
+          idVehiculo,
+          estado: 'RESERVADO'
+        }, meta, (err, response) => {
+          if (err) return reject(err);
+          resolve(response);
+        });
       });
-    });
+    } catch (updateError) {
+      // Rollback: Cancelar la reserva si falló la actualización del vehículo
+      await new Promise((resolve) => {
+        rentalClient.CancelarReserva({ idReserva: reserva.idReserva }, meta, (err) => {
+          if (err) console.error(`Error crítico en rollback de reserva ${reserva.idReserva}:`, err);
+          resolve();
+        });
+      });
+      
+      const error = new Error('Error de consistencia: Falló la actualización del vehículo. Se canceló la reserva (Rollback).');
+      error.details = updateError.details;
+      throw error;
+    }
 
     // Mapeo explicito gRPC -> ReservaResponseDTO (Contrato Hito 1 UI)
     const { formatGrpcTimestamp, mapEstadoReserva } = await import('../utils/mappers.js');
