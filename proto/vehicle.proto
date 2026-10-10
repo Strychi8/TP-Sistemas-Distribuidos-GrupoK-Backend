@@ -9,17 +9,18 @@ import "google/protobuf/timestamp.proto";
 
 enum TipoVehiculo {
   TIPO_VEHICULO_UNSPECIFIED = 0;
-  AUTO = 1;
-  MOTO = 2;
-  CAMIONETA = 3;
+  SEDAN = 1;
+  SUV = 2;
+  PICKUP = 3;
+  COUPE = 4;
+  HATCHBACK = 5;
 }
 
 enum EstadoVehiculo {
   ESTADO_VEHICULO_UNSPECIFIED = 0;
   DISPONIBLE = 1;
-  ALQUILADO = 2;
-  EN_MANTENIMIENTO = 3;
-  INACTIVO = 4;
+  RESERVADO = 2;
+  EN_ALQUILER = 3;
 }
 
 message Vehicle {
