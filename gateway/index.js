@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { errorMiddleware } from './middleware/error.middleware.js';
+import graphqlRouter from './graphql/index.js';
 
 // Configurar variables de entorno
 dotenv.config();
@@ -18,6 +19,10 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/', (req, res) => {
   res.json({ message: 'El API Gateway esta corriendo' });
 });
+
+// Rutas de GraphQL
+app.use('/graphql', graphqlRouter);
+
 
 // Manejo global de errores
 app.use(errorMiddleware);
