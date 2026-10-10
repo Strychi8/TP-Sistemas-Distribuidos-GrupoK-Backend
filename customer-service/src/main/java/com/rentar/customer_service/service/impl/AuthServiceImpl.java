@@ -49,37 +49,37 @@ public class AuthServiceImpl implements IAuthService {
                 .build();
     }
 
+    /**
+     * Recibe el JWT crudo (sin prefijo "Bearer "): en Hito 1 ese prefijo era parte
+     * del header HTTP Authorization, pero H2-4 expone logout exclusivamente vía
+     * gRPC (LogoutRequest.token ya es el JWT, sin convenciones de header HTTP).
+     */
     @Override
     @Transactional
     public void logout(String token) {
-        if (token != null && token.startsWith("Bearer ")) {
-            String jwt = token.substring(7);
-            
-            try {
-                if (tokenBlacklistRepository.existsByToken(jwt)) {
-                    SecurityContextHolder.clearContext();
-                    return;
-                }
+        try {
+            if (token == null || token.isBlank() || tokenBlacklistRepository.existsByToken(token)) {
+                return;
+            }
 
-                Date expiration = jwtService.extractExpiration(jwt);
-                
-                LocalDateTime exp = expiration.toInstant()
+            Date expiration = jwtService.extractExpiration(token);
+
+            LocalDateTime exp = expiration.toInstant()
                     .atZone(ZoneId.systemDefault())
                     .toLocalDateTime();
-                
-                TokenBlacklist tokenBlacklist = TokenBlacklist.builder()
-                        .token(jwt)
-                        .fechaExpiracion(exp)
-                        .build();
-                
-                tokenBlacklistRepository.save(tokenBlacklist);
-            } catch (io.jsonwebtoken.ExpiredJwtException e) {
-                // Si ya expiró, no es necesario agregarlo a la blacklist (o ya no representa riesgo)
-            } catch (Exception e) {
-                // Cualquier otro error de parseo de JWT, lo ignoramos para no tirar 500
-            } finally {
-                SecurityContextHolder.clearContext();
-            }
+
+            TokenBlacklist tokenBlacklist = TokenBlacklist.builder()
+                    .token(token)
+                    .fechaExpiracion(exp)
+                    .build();
+
+            tokenBlacklistRepository.save(tokenBlacklist);
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            // Si ya expiró, no es necesario agregarlo a la blacklist (o ya no representa riesgo)
+        } catch (Exception e) {
+            // Cualquier otro error de parseo de JWT, lo ignoramos para no romper el flujo de logout
+        } finally {
+            SecurityContextHolder.clearContext();
         }
     }
 
