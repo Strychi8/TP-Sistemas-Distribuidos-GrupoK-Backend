@@ -93,14 +93,28 @@ router.post('/', async (req, res, next) => {
     await new Promise((resolve, reject) => {
       vehicleClient.ActualizarEstadoVehiculo({
         idVehiculo,
-        estado: 'ALQUILADO'
+        estado: 'RESERVADO'
       }, meta, (err, response) => {
         if (err) return reject(err);
         resolve(response);
       });
     });
 
-    return res.status(201).json(reserva);
+    // Mapeo explicito gRPC -> ReservaResponseDTO (Contrato Hito 1 UI)
+    const { formatGrpcTimestamp, mapEstadoReserva } = await import('../utils/mappers.js');
+    
+    const responseDTO = {
+      idReserva: reserva.idReserva,
+      idCliente: reserva.idCliente,
+      idVehiculo: reserva.idVehiculo,
+      fechaInicio: formatGrpcTimestamp(reserva.fechaInicio),
+      fechaFin: formatGrpcTimestamp(reserva.fechaFin),
+      precioDiario: reserva.precioDiario,
+      importeTotal: reserva.importeTotal,
+      estadoReserva: mapEstadoReserva(reserva.estado) || 'CONFIRMADA'
+    };
+
+    return res.status(201).json(responseDTO);
 
   } catch (error) {
     // El manejador global de errores capturará los fallos gRPC (como el 404 de cliente no existe)

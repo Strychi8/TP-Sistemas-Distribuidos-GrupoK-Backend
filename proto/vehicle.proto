@@ -20,6 +20,7 @@ enum EstadoVehiculo {
   ALQUILADO = 2;
   EN_MANTENIMIENTO = 3;
   INACTIVO = 4;
+  RESERVADO = 5;
 }
 
 message Vehicle {
