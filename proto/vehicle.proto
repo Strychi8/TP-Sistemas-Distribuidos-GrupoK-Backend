@@ -38,8 +38,6 @@ message Vehicle {
 
 message VehicleList {
   repeated Vehicle vehicles = 1;
-  int64 total_elements = 2;
-  int32 total_pages = 3;
 }
 
 message FiltroDisponibilidad {
@@ -48,8 +46,6 @@ message FiltroDisponibilidad {
   optional string modelo = 3;
   optional double precioMin = 4;
   optional double precioMax = 5;
-  int32 page = 6;
-  int32 size = 7;
 }
 
 message RangoFechas {
