@@ -62,7 +62,6 @@ public class GrpcSecurityConfig {
                                     "rentar.customer.CustomerService/ActualizarCliente",
                                     "rentar.customer.CustomerService/EliminarCliente",
                                     "rentar.customer.CustomerService/GetClientes",
-                                    "rentar.customer.CustomerService/GetClientesActivos",
                                     "rentar.customer.CustomerService/GetClienteById")
                             .hasAnyAuthority("ADMINISTRADOR");
 
