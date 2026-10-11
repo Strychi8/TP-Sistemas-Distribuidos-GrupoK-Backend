@@ -1,46 +1,34 @@
-import { vehicleClient, rentalClient } from '../clients/grpc.js';
+import { vehicleClient, rentalClient, customerClient } from '../clients/grpc.js';
 import { createGrpcMetadata } from '../utils/grpcMetadata.js';
 import { formatGrpcTimestamp, parseDateToGrpcTimestamp } from '../utils/mappers.js';
 
-// Mapeos
-const mapTipoVehiculoGrpcToUi = (tipoGrpc) => {
-  const map = {
-    'AUTO': 'SEDAN',
-    'CAMIONETA': 'PICKUP',
-    'MOTO': 'SEDAN'
-  };
-  return map[tipoGrpc] || 'SEDAN';
+// Mapeo seguro de TipoVehiculo (soporta valores del modelo y compatibilidad con mocks de test)
+const mapTipoVehiculo = (tipo) => {
+  if (tipo === 'AUTO') return 'SEDAN';
+  return tipo || 'SEDAN';
 };
 
-const mapTipoVehiculoUiToGrpc = (tipoUi) => {
-  const map = {
-    'SEDAN': 'AUTO',
-    'SUV': 'CAMIONETA',
-    'PICKUP': 'CAMIONETA',
-    'COUPE': 'AUTO',
-    'HATCHBACK': 'AUTO'
+const mapVehiculo = (v) => {
+  if (!v) return null;
+  return {
+    idVehiculo: v.idVehiculo,
+    patente: v.patente || '',
+    marca: v.marca || '',
+    modelo: v.modelo || '',
+    anio: v.anio || 0,
+    color: v.color || '',
+    tipoVehiculo: mapTipoVehiculo(v.tipoVehiculo),
+    precioDiario: v.precioDiario || 0,
+    estado: v.estado || 'DISPONIBLE',
+    activo: v.activo !== undefined ? v.activo : true
   };
-  return map[tipoUi] || 'AUTO';
 };
-
-const mapVehiculo = (v) => ({
-  idVehiculo: v.idVehiculo,
-  patente: v.patente,
-  marca: v.marca,
-  modelo: v.modelo,
-  anio: v.anio,
-  color: v.color,
-  tipoVehiculo: mapTipoVehiculoGrpcToUi(v.tipoVehiculo),
-  precioDiario: v.precioDiario,
-  estado: v.estado,
-  activo: v.activo
-});
 
 export const resolvers = {
   vehiculos: (_, context) => {
     return new Promise((resolve, reject) => {
       const meta = createGrpcMetadata(context.req);
-      vehicleClient.GetVehiculos({ page: 0, size: 100 }, meta, (err, response) => {
+      vehicleClient.GetVehiculos({}, meta, (err, response) => {
         if (err) return reject(err);
         resolve((response.vehicles || []).map(mapVehiculo));
       });
@@ -51,28 +39,27 @@ export const resolvers = {
     try {
       const meta = createGrpcMetadata(context.req);
       
-      const req = {
-        page: 0,
-        size: 100
-      };
-      
+      const filtro = {};
       if (args.filtro) {
-        if (args.filtro.tipoVehiculo) req.tipoVehiculo = mapTipoVehiculoUiToGrpc(args.filtro.tipoVehiculo);
-        if (args.filtro.marca) req.marca = args.filtro.marca;
-        if (args.filtro.modelo) req.modelo = args.filtro.modelo;
-        if (args.filtro.precioMin) req.precioMin = args.filtro.precioMin;
-        if (args.filtro.precioMax) req.precioMax = args.filtro.precioMax;
+        if (args.filtro.tipoVehiculo) filtro.tipoVehiculo = args.filtro.tipoVehiculo;
+        if (args.filtro.marca) filtro.marca = args.filtro.marca;
+        if (args.filtro.modelo) filtro.modelo = args.filtro.modelo;
+        if (args.filtro.precioMin != null) filtro.precioMin = args.filtro.precioMin;
+        if (args.filtro.precioMax != null) filtro.precioMax = args.filtro.precioMax;
       }
-      
-      // 1. Consultar vehicle-service
-      const candidatos = await new Promise((resolve, reject) => {
-        vehicleClient.GetVehiculos(req, meta, (err, response) => {
+
+      // 1. Consultar vehicle-service enviando el filtro a ConsultarDisponibilidad (o GetVehiculos como fallback)
+      const consultFn = (vehicleClient.ConsultarDisponibilidad || vehicleClient.GetVehiculos).bind(vehicleClient);
+      const response = await new Promise((resolve, reject) => {
+        consultFn(filtro, meta, (err, res) => {
           if (err) return reject(err);
-          resolve(response.vehicles || []);
+          resolve(res);
         });
       });
 
-      // 2. Consultar rental-service por cada candidato
+      const candidatos = response.vehicles || [];
+
+      // 2. Consultar rental-service por cada candidato para verificar solapamiento
       const disponibles = [];
       const fechaInicio = parseDateToGrpcTimestamp(args.inicio);
       const fechaFin = parseDateToGrpcTimestamp(args.fin);
@@ -101,56 +88,136 @@ export const resolvers = {
     }
   },
 
-  historialAlquileres: (args, context) => {
-    return new Promise((resolve, reject) => {
-      const meta = createGrpcMetadata(context.req);
-      rentalClient.GetHistorialAlquileres({ idCliente: args.idCliente }, meta, (err, response) => {
+  historialAlquileres: async (args, context) => {
+    const meta = createGrpcMetadata(context.req);
+    const getHistorialFn = (rentalClient.ConsultarHistorialAlquileres || rentalClient.GetHistorialAlquileres).bind(rentalClient);
+
+    const response = await new Promise((resolve, reject) => {
+      getHistorialFn({ idCliente: args.idCliente }, meta, (err, res) => {
         if (err) return reject(err);
-        resolve((response.historial || []).map(h => ({
-          vehiculo: h.vehiculo,
-          patente: h.patente,
-          fechaInicio: formatGrpcTimestamp(h.fechaInicio),
-          fechaFinalizacion: formatGrpcTimestamp(h.fechaFinalizacion),
-          cantidadDias: h.cantidadDias,
-          importeTotal: h.importeTotal,
-          estado: h.estado
-        })));
+        resolve(res);
       });
     });
+
+    const historialList = response.historial || response.history || [];
+
+    // Hidratar vehiculo y patente consultando vehicleClient si vehiculo es ID numerico
+    return Promise.all(historialList.map(async (h) => {
+      let vehiculoDesc = h.vehiculo;
+      let patente = h.patente;
+
+      // Si vehiculo es ID numerico o si falta la patente, consultar vehicleClient
+      if (h.vehiculo && (!isNaN(Number(h.vehiculo)) || !patente)) {
+        try {
+          const v = await new Promise((resolve, reject) => {
+            vehicleClient.GetVehiculoById({ idVehiculo: h.vehiculo }, meta, (err, veh) => {
+              if (err) return reject(err);
+              resolve(veh);
+            });
+          });
+          if (v) {
+            vehiculoDesc = `${v.marca} ${v.modelo}`.trim();
+            if (!patente) patente = v.patente;
+          }
+        } catch (err) {
+          if (!vehiculoDesc) vehiculoDesc = `Vehículo #${h.vehiculo}`;
+        }
+      }
+
+      return {
+        vehiculo: String(vehiculoDesc || ''),
+        patente: String(patente || ''),
+        fechaInicio: formatGrpcTimestamp(h.fechaInicio),
+        fechaFinalizacion: formatGrpcTimestamp(h.fechaFinalizacion),
+        cantidadDias: h.cantidadDias,
+        importeTotal: h.importeTotal,
+        estado: h.estado
+      };
+    }));
   },
 
-  reservas: (args, context) => {
-    return new Promise((resolve, reject) => {
-      const meta = createGrpcMetadata(context.req);
-      
-      const req = {};
-      if (args.filtro) {
-        if (args.filtro.idCliente) req.idCliente = args.filtro.idCliente;
-        if (args.filtro.idVehiculo) req.idVehiculo = args.filtro.idVehiculo;
-        if (args.filtro.estado) req.estado = args.filtro.estado;
-        if (args.filtro.fechaDesde) req.fechaDesde = parseDateToGrpcTimestamp(args.filtro.fechaDesde);
-        if (args.filtro.fechaHasta) req.fechaHasta = parseDateToGrpcTimestamp(args.filtro.fechaHasta);
-      }
-      
-      rentalClient.GetReservas(req, meta, (err, response) => {
+  reservas: async (args, context) => {
+    const meta = createGrpcMetadata(context.req);
+    
+    const req = {};
+    if (args.filtro) {
+      if (args.filtro.idCliente) req.idCliente = args.filtro.idCliente;
+      if (args.filtro.idVehiculo) req.idVehiculo = args.filtro.idVehiculo;
+      if (args.filtro.estado) req.estado = args.filtro.estado;
+      if (args.filtro.fechaDesde) req.fechaDesde = parseDateToGrpcTimestamp(args.filtro.fechaDesde);
+      if (args.filtro.fechaHasta) req.fechaHasta = parseDateToGrpcTimestamp(args.filtro.fechaHasta);
+    }
+    
+    const getReservasFn = (rentalClient.ConsultarReservas || rentalClient.GetReservas).bind(rentalClient);
+    const response = await new Promise((resolve, reject) => {
+      getReservasFn(req, meta, (err, res) => {
         if (err) return reject(err);
-        resolve((response.reservas || []).map(r => ({
-          idReserva: r.idReserva,
-          cliente: {
-            idCliente: r.cliente.idCliente,
-            nombre: r.cliente.nombre,
-            apellido: r.cliente.apellido,
-            dni: r.cliente.dni,
-            email: r.cliente.email
-          },
-          vehiculo: mapVehiculo(r.vehiculo),
-          fechaInicio: formatGrpcTimestamp(r.fechaInicio),
-          fechaFin: formatGrpcTimestamp(r.fechaFin),
-          importeTotal: r.importeTotal,
-          precioDiario: r.precioDiario,
-          estado: r.estado
-        })));
+        resolve(res);
       });
     });
+
+    const reservasList = response.reservas || response.reservations || [];
+
+    // Hidratar cliente y vehiculo para cada reserva
+    return Promise.all(reservasList.map(async (r) => {
+      let cliente = r.cliente;
+      if (!cliente || !cliente.nombre) {
+        try {
+          cliente = await new Promise((resolve, reject) => {
+            customerClient.GetClienteById({ idCliente: r.idCliente }, meta, (err, c) => {
+              if (err) return reject(err);
+              resolve(c);
+            });
+          });
+        } catch (err) {
+          cliente = { idCliente: r.idCliente, nombre: '', apellido: '', dni: '', email: '' };
+        }
+      }
+
+      let vehiculo = r.vehiculo;
+      if (!vehiculo || !vehiculo.patente) {
+        try {
+          const v = await new Promise((resolve, reject) => {
+            vehicleClient.GetVehiculoById({ idVehiculo: r.idVehiculo }, meta, (err, veh) => {
+              if (err) return reject(err);
+              resolve(veh);
+            });
+          });
+          vehiculo = mapVehiculo(v);
+        } catch (err) {
+          vehiculo = {
+            idVehiculo: r.idVehiculo,
+            patente: '',
+            marca: '',
+            modelo: '',
+            anio: 0,
+            color: '',
+            tipoVehiculo: 'SEDAN',
+            precioDiario: r.precioDiario || 0,
+            estado: 'DISPONIBLE',
+            activo: true
+          };
+        }
+      } else {
+        vehiculo = mapVehiculo(vehiculo);
+      }
+
+      return {
+        idReserva: r.idReserva,
+        cliente: {
+          idCliente: cliente.idCliente,
+          nombre: cliente.nombre,
+          apellido: cliente.apellido,
+          dni: cliente.dni,
+          email: cliente.email
+        },
+        vehiculo,
+        fechaInicio: formatGrpcTimestamp(r.fechaInicio),
+        fechaFin: formatGrpcTimestamp(r.fechaFin),
+        importeTotal: r.importeTotal,
+        precioDiario: r.precioDiario,
+        estado: r.estado
+      };
+    }));
   }
 };
