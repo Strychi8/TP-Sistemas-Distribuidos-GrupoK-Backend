@@ -27,6 +27,10 @@ message GetClienteByIdRequest {
   int64 idCliente = 1;
 }
 
+message VerificarClienteExistenteRequest {
+  string dni = 1;
+}
+
 message VerificarTokenRequest {
   string token = 1;
 }
@@ -101,7 +105,7 @@ service CustomerService {
   rpc GetClientes (GetClientesRequest) returns (CustomerList);
   rpc GetClienteById (GetClienteByIdRequest) returns (Customer);
   rpc GetMiPerfil (GetMiPerfilRequest) returns (GetMiPerfilResponse);
-  rpc VerificarClienteExistente (GetClienteByIdRequest) returns (Customer);
+  rpc VerificarClienteExistente (VerificarClienteExistenteRequest) returns (Customer);
   rpc VerificarClienteActivo (GetClienteByIdRequest) returns (Customer);
   rpc VerificarTokenBlacklist (VerificarTokenRequest) returns (VerificarTokenResponse);
   rpc Login (LoginRequest) returns (LoginResponse);
