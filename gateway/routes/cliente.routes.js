@@ -39,12 +39,9 @@ router.delete('/:id', (req, res, next) => {
 // Consulta de clientes
 router.get('/', (req, res, next) => {
   const meta = createGrpcMetadata(req);
-  const page = req.query.page ? parseInt(req.query.page) : 0;
-  const size = req.query.size ? parseInt(req.query.size) : 100;
-
-  customerClient.GetClientes({ page, size }, meta, (err, response) => {
+  customerClient.GetClientes({}, meta, (err, response) => {
     if (err) return next(err);
-    res.json(response);
+    res.json(response?.customers || response || []);
   });
 });
 

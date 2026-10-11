@@ -50,9 +50,8 @@ export const mapEstadoReserva = (estadoGrpc) => {
 export const mapEstadoVehiculo = (estadoGrpc) => {
   const map = {
     'DISPONIBLE': 'DISPONIBLE',
-    'ALQUILADO': 'ALQUILADO',
-    'EN_MANTENIMIENTO': 'EN_MANTENIMIENTO',
-    'INACTIVO': 'INACTIVO',
+    'RESERVADO': 'RESERVADO',
+    'EN_ALQUILER': 'EN_ALQUILER',
     'ESTADO_VEHICULO_UNSPECIFIED': null
   };
   return map[estadoGrpc] || estadoGrpc;
@@ -63,9 +62,11 @@ export const mapEstadoVehiculo = (estadoGrpc) => {
  */
 export const mapTipoVehiculo = (tipoGrpc) => {
   const map = {
-    'AUTO': 'AUTO',
-    'MOTO': 'MOTO',
-    'CAMIONETA': 'CAMIONETA',
+    'SEDAN': 'SEDAN',
+    'SUV': 'SUV',
+    'PICKUP': 'PICKUP',
+    'COUPE': 'COUPE',
+    'HATCHBACK': 'HATCHBACK',
     'TIPO_VEHICULO_UNSPECIFIED': null
   };
   return map[tipoGrpc] || tipoGrpc;
