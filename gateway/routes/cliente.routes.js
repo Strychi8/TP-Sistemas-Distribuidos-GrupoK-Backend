@@ -45,21 +45,19 @@ router.get('/', (req, res, next) => {
   });
 });
 
-// Consulta cliente específico
-router.get('/:id', (req, res, next) => {
+// Mi Perfil
+router.get('/me/perfil', (req, res, next) => {
   const meta = createGrpcMetadata(req);
-  customerClient.GetClienteById({ idCliente: req.params.id }, meta, (err, response) => {
+  customerClient.GetMiPerfil({ email: req.user.sub }, meta, (err, response) => {
     if (err) return next(err);
     res.json(response);
   });
 });
 
-// Mi Perfil
-router.get('/me/perfil', (req, res, next) => {
+// Consulta cliente específico
+router.get('/:id', (req, res, next) => {
   const meta = createGrpcMetadata(req);
-  // req.user.sub suele tener el email en Hito 1 si es Jwt principal
-  // pero usaremos el metadata para que customerService lo extraiga
-  customerClient.GetMiPerfil({ email: req.user.sub }, meta, (err, response) => {
+  customerClient.GetClienteById({ idCliente: req.params.id }, meta, (err, response) => {
     if (err) return next(err);
     res.json(response);
   });

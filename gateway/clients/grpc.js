@@ -34,9 +34,9 @@ const vehicleProto = grpc.loadPackageDefinition(packageDefinitionVehicle).rentar
 const rentalProto = grpc.loadPackageDefinition(packageDefinitionRental).rentar.rental;
 
 // Obtener las URLs de los servicios desde el archivo .env (con valores por defecto seguros)
-const CUSTOMER_URL = process.env.CUSTOMER_SERVICE_URL || 'localhost:9090';
 const VEHICLE_URL = process.env.VEHICLE_SERVICE_URL || 'localhost:9091';
-const RENTAL_URL = process.env.RENTAL_SERVICE_URL || 'localhost:9092';
+const CUSTOMER_URL = process.env.CUSTOMER_SERVICE_URL || 'localhost:9092';
+const RENTAL_URL = process.env.RENTAL_SERVICE_URL || 'localhost:9093';
 
 // Instanciar los clientes
 export const customerClient = new customerProto.CustomerService(
