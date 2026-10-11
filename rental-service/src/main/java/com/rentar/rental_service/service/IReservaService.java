@@ -12,13 +12,6 @@ import java.util.List;
 public interface IReservaService {
 
     ReservaResponseDTO crearReserva(ReservaRequestDTO dto);
-    
-    ReservaResponseDTO crearReserva(
-        Long idCliente,
-        Long idVehiculo,
-        LocalDateTime fechaInicio,
-        LocalDateTime fechaFin,
-        BigDecimal precioDiario);
 
     ReservaResponseDTO cancelarReserva(Long idReserva);
     ReservaResponseDTO obtenerPorId(Long idReserva);
