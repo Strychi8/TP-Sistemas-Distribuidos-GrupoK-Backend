@@ -8,7 +8,6 @@ import lombok.Data;
 public class FiltroReservaDTO {
     private Long idCliente;
     private Long idVehiculo;
-    private String tipoVehiculo;
     private EstadoReserva estado;
     private String fechaDesde;
     private String fechaHasta;
