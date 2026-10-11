@@ -18,13 +18,9 @@ message Customer {
 
 message CustomerList {
   repeated Customer customers = 1;
-  int64 total_elements = 2;
-  int32 total_pages = 3;
 }
 
 message GetClientesRequest {
-  int32 page = 1;
-  int32 size = 2;
 }
 
 message GetClienteByIdRequest {
@@ -90,15 +86,15 @@ message GetMiPerfilRequest {
 }
 
 message GetMiPerfilResponse {
-  int64 idCliente;
-  int64 idUsuario;
-  string email;
-  string dni;
-  string nombre;
-  string apellido;
-  string telefono;
-  google.type.Date fechaNacimiento;
-  bool activo;
+  int64 idCliente = 1;
+  int64 idUsuario = 2;
+  string email = 3;
+  string dni = 4;
+  string nombre = 5;
+  string apellido = 6;
+  string telefono = 7;
+  google.type.Date fechaNacimiento = 8;
+  bool activo = 9;
 }
 
 service CustomerService {
