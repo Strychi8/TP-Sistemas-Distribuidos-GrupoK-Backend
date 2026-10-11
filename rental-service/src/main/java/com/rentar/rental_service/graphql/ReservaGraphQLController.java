@@ -1,8 +1,8 @@
 package com.rentar.rental_service.graphql;
 
-import com.empresa_rentar.web_services.dto.request.FiltroReservaDTO;
-import com.empresa_rentar.web_services.dto.response.ReservaGraphQLDTO;
-import com.empresa_rentar.web_services.service.IReservaService;
+import com.rentar.rental_service.dto.request.FiltroReservaDTO;
+import com.rentar.rental_service.dto.response.ReservaGraphQLDTO;
+import com.rentar.rental_service.service.IReservaService;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.security.access.prepost.PreAuthorize;

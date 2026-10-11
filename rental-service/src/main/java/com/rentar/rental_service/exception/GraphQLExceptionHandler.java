@@ -1,6 +1,6 @@
 package com.rentar.rental_service.exception;
 
-import com.rentar.vehicle_service.exception.custom.BadRequestException;
+import com.rentar.rental_service.exception.custom.BadRequestException;
 import graphql.GraphQLError;
 import graphql.GraphqlErrorBuilder;
 import org.springframework.graphql.data.method.annotation.GraphQlExceptionHandler;
