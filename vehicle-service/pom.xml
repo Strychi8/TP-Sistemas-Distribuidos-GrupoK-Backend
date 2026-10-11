@@ -99,6 +99,10 @@
 							${project.basedir}/../proto
 						</source>
 					</sourceDirectories>
+					<excludes>
+						<exclude>rental.proto</exclude>
+						<exclude>customer.proto</exclude>
+					</excludes>
 				</configuration>
 				<executions>
 					<execution>
