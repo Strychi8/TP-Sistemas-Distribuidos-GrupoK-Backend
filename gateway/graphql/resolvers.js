@@ -5,9 +5,9 @@ import { formatGrpcTimestamp, parseDateToGrpcTimestamp } from '../utils/mappers.
 // Mapeos
 const mapTipoVehiculoGrpcToUi = (tipoGrpc) => {
   const map = {
-    'AUTO': 'SEDAN', // Simplificación
+    'AUTO': 'SEDAN',
     'CAMIONETA': 'PICKUP',
-    'MOTO': 'SEDAN' // No hay moto en UI, fallback
+    'MOTO': 'SEDAN'
   };
   return map[tipoGrpc] || 'SEDAN';
 };
@@ -47,8 +47,8 @@ export const resolvers = {
     });
   },
 
-  vehiculosDisponibles: (args, context) => {
-    return new Promise((resolve, reject) => {
+  vehiculosDisponibles: async (args, context) => {
+    try {
       const meta = createGrpcMetadata(context.req);
       
       const req = {
@@ -64,15 +64,41 @@ export const resolvers = {
         if (args.filtro.precioMax) req.precioMax = args.filtro.precioMax;
       }
       
-      // La verificación de fechas se hace post-filtro o el servicio podría soportarlo,
-      // pero en este caso el gRPC no tiene las fechas en FiltroDisponibilidad.
-      // Solo devolveremos lo que GetVehiculos retorne y luego se podría filtrar más si fuera necesario.
-      
-      vehicleClient.GetVehiculos(req, meta, (err, response) => {
-        if (err) return reject(err);
-        resolve((response.vehicles || []).map(mapVehiculo));
+      // 1. Consultar vehicle-service
+      const candidatos = await new Promise((resolve, reject) => {
+        vehicleClient.GetVehiculos(req, meta, (err, response) => {
+          if (err) return reject(err);
+          resolve(response.vehicles || []);
+        });
       });
-    });
+
+      // 2. Consultar rental-service por cada candidato
+      const disponibles = [];
+      const fechaInicio = parseDateToGrpcTimestamp(args.inicio);
+      const fechaFin = parseDateToGrpcTimestamp(args.fin);
+
+      for (const vehiculo of candidatos) {
+        const solapado = await new Promise((resolve, reject) => {
+          rentalClient.VerificarSolapamientoVehiculo({
+            idVehiculo: vehiculo.idVehiculo,
+            fechaInicio,
+            fechaFin
+          }, meta, (err, res) => {
+            if (err) return reject(err);
+            resolve(res.solapado);
+          });
+        });
+        
+        // 3. Conservar solo los vehículos sin solapamiento
+        if (!solapado) {
+          disponibles.push(vehiculo);
+        }
+      }
+
+      return disponibles.map(mapVehiculo);
+    } catch (err) {
+      throw err;
+    }
   },
 
   historialAlquileres: (args, context) => {
