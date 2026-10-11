@@ -4,11 +4,17 @@ import com.rentar.customer_service.validation.MayorDeEdad;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
-@Getter
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class ClienteRequestDTO {
     @NotBlank(message = "El email es obligatorio")
     @Email(message = "El email debe ser válido")
