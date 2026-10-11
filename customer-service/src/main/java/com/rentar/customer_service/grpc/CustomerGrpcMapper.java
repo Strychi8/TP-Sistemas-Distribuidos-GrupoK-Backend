@@ -1,9 +1,16 @@
 package com.rentar.customer_service.grpc;
 
+import com.rentar.customer.grpc.ActualizarClienteRequest;
+import com.rentar.customer.grpc.CrearClienteRequest;
 import com.rentar.customer.grpc.Customer;
 import com.rentar.customer.grpc.CustomerList;
+import com.rentar.customer.grpc.EliminarClienteResponse;
+import com.rentar.customer.grpc.GetMiPerfilResponse;
+import com.rentar.customer_service.dto.request.ClienteRequestDTO;
+import com.rentar.customer_service.dto.request.ClienteUpdateDTO;
 import com.rentar.customer_service.dto.response.ClienteResponseDTO;
 
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -26,11 +33,6 @@ public class CustomerGrpcMapper {
                 .build();
     }
 
-    /**
-     * NOTA (H2-4, Fase 2): ClienteServiceImpl.listarClientes() todavía no pagina en la
-     * base de datos. Hasta que se implemente paginación real, se expone la lista
-     * completa como una única página para no bloquear el resto del flujo.
-     */
     public static CustomerList toCustomerList(List<ClienteResponseDTO> clientes) {
         CustomerList.Builder builder = CustomerList.newBuilder();
 
@@ -38,9 +40,65 @@ public class CustomerGrpcMapper {
             builder.addCustomers(toCustomer(cliente));
         }
 
-        builder.setTotalElements(clientes.size());
-        builder.setTotalPages(1);
+        return builder.build();
+    }
+
+    public static ClienteRequestDTO toClienteRequestDTO(CrearClienteRequest req) {
+        return ClienteRequestDTO.builder()
+                .email(req.getEmail())
+                .password(req.getPassword())
+                .dni(req.getDni())
+                .nombre(req.getNombre())
+                .apellido(req.getApellido())
+                .telefono(req.getTelefono())
+                .fechaNacimiento(parseLocalDate(req.getFechaNacimiento()))
+                .build();
+    }
+
+    public static ClienteUpdateDTO toClienteUpdateDTO(ActualizarClienteRequest req) {
+        return ClienteUpdateDTO.builder()
+                .email(req.getEmail())
+                .password(req.hasPassword() ? req.getPassword() : null)
+                .dni(req.getDni())
+                .nombre(req.getNombre())
+                .apellido(req.getApellido())
+                .telefono(req.getTelefono())
+                .fechaNacimiento(parseLocalDate(req.getFechaNacimiento()))
+                .build();
+    }
+
+    public static EliminarClienteResponse toEliminarClienteResponse(boolean success) {
+        return EliminarClienteResponse.newBuilder()
+                .setSuccess(success)
+                .build();
+    }
+
+    public static GetMiPerfilResponse toGetMiPerfilResponse(ClienteResponseDTO cliente) {
+        GetMiPerfilResponse.Builder builder = GetMiPerfilResponse.newBuilder()
+                .setIdCliente(cliente.getIdCliente() != null ? cliente.getIdCliente() : 0L)
+                .setIdUsuario(cliente.getIdUsuario() != null ? cliente.getIdUsuario() : 0L)
+                .setEmail(cliente.getEmail() != null ? cliente.getEmail() : "")
+                .setDni(cliente.getDni() != null ? cliente.getDni() : "")
+                .setNombre(cliente.getNombre() != null ? cliente.getNombre() : "")
+                .setApellido(cliente.getApellido() != null ? cliente.getApellido() : "")
+                .setTelefono(cliente.getTelefono() != null ? cliente.getTelefono() : "")
+                .setActivo(Boolean.TRUE.equals(cliente.getActivo()));
+
+        if (cliente.getFechaNacimiento() != null) {
+            builder.setFechaNacimiento(com.google.type.Date.newBuilder()
+                    .setYear(cliente.getFechaNacimiento().getYear())
+                    .setMonth(cliente.getFechaNacimiento().getMonthValue())
+                    .setDay(cliente.getFechaNacimiento().getDayOfMonth())
+                    .build());
+        }
 
         return builder.build();
+    }
+
+    private static LocalDate parseLocalDate(String str) {
+        if (str == null || str.isBlank()) {
+            return null;
+        }
+        return LocalDate.parse(str.trim());
     }
 }

@@ -1,17 +1,6 @@
 package com.rentar.customer_service.grpc;
 
-import com.rentar.customer.grpc.Customer;
-import com.rentar.customer.grpc.CustomerList;
-import com.rentar.customer.grpc.CustomerServiceGrpc;
-import com.rentar.customer.grpc.GetClienteByIdRequest;
-import com.rentar.customer.grpc.GetClientesRequest;
-import com.rentar.customer.grpc.LoginRequest;
-import com.rentar.customer.grpc.LoginResponse;
-import com.rentar.customer.grpc.LogoutRequest;
-import com.rentar.customer.grpc.LogoutResponse;
-import com.rentar.customer.grpc.VerificarClienteExistenteRequest;
-import com.rentar.customer.grpc.VerificarTokenRequest;
-import com.rentar.customer.grpc.VerificarTokenResponse;
+import com.rentar.customer.grpc.*;
 import com.rentar.customer_service.service.IAuthService;
 import com.rentar.customer_service.service.IClienteService;
 import com.rentar.customer_service.service.impl.JwtService;
@@ -103,6 +92,36 @@ public class CustomerGrpcServiceImpl extends CustomerServiceGrpc.CustomerService
             StreamObserver<VerificarTokenResponse> responseObserver) {
         boolean revocado = jwtService.esTokenRevocado(request.getToken());
         responseObserver.onNext(AuthGrpcMapper.toVerificarTokenResponse(revocado));
+        responseObserver.onCompleted();
+    }
+
+    @Override
+    public void crearCliente(CrearClienteRequest request, StreamObserver<Customer> responseObserver) {
+        var dto = CustomerGrpcMapper.toClienteRequestDTO(request);
+        var creado = clienteService.crearCliente(dto);
+        responseObserver.onNext(CustomerGrpcMapper.toCustomer(creado));
+        responseObserver.onCompleted();
+    }
+
+    @Override
+    public void actualizarCliente(ActualizarClienteRequest request, StreamObserver<Customer> responseObserver) {
+        var dto = CustomerGrpcMapper.toClienteUpdateDTO(request);
+        var actualizado = clienteService.actualizarCliente(request.getIdCliente(), dto);
+        responseObserver.onNext(CustomerGrpcMapper.toCustomer(actualizado));
+        responseObserver.onCompleted();
+    }
+
+    @Override
+    public void eliminarCliente(EliminarClienteRequest request, StreamObserver<EliminarClienteResponse> responseObserver) {
+        clienteService.eliminarCliente(request.getIdCliente());
+        responseObserver.onNext(CustomerGrpcMapper.toEliminarClienteResponse(true));
+        responseObserver.onCompleted();
+    }
+
+    @Override
+    public void getMiPerfil(GetMiPerfilRequest request, StreamObserver<GetMiPerfilResponse> responseObserver) {
+        var perfil = clienteService.obtenerMiPerfil(request.getEmail());
+        responseObserver.onNext(CustomerGrpcMapper.toGetMiPerfilResponse(perfil));
         responseObserver.onCompleted();
     }
 }
