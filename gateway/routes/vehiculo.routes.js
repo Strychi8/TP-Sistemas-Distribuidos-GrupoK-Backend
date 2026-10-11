@@ -47,6 +47,24 @@ router.get('/', (req, res, next) => {
   });
 });
 
+// Consulta de vehículos activos (para catálogo y clientes)
+router.get('/activos', (req, res, next) => {
+  const meta = createGrpcMetadata(req);
+  vehicleClient.GetVehiculosActivos({}, meta, (err, response) => {
+    if (err) return next(err);
+    res.json(response?.vehicles || response || []);
+  });
+});
+
+// Consulta vehículo por patente
+router.get('/patente/:patente', (req, res, next) => {
+  const meta = createGrpcMetadata(req);
+  vehicleClient.GetVehiculoByPatente({ patente: req.params.patente }, meta, (err, response) => {
+    if (err) return next(err);
+    res.json(response);
+  });
+});
+
 // Consulta vehículo específico
 router.get('/:id', (req, res, next) => {
   const meta = createGrpcMetadata(req);
