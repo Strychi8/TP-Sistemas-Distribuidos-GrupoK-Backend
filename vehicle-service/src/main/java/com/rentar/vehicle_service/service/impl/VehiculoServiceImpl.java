@@ -4,6 +4,7 @@ import com.rentar.vehicle_service.dto.request.FiltroDisponibilidadDTO;
 import com.rentar.vehicle_service.dto.request.VehiculoRequestDTO;
 import com.rentar.vehicle_service.dto.request.VehiculoUpdateRequestDTO;
 import com.rentar.vehicle_service.dto.response.VehiculoResponseDTO;
+import com.rentar.vehicle_service.enums.EstadoVehiculo;
 import com.rentar.vehicle_service.exception.custom.BadRequestException;
 import com.rentar.vehicle_service.exception.custom.ConflictException;
 import com.rentar.vehicle_service.exception.custom.ResourceNotFoundException;
@@ -62,6 +63,17 @@ public class VehiculoServiceImpl implements IVehiculoService {
         vehiculoMapper.updateEntityFromDTO(dto, vehiculo);
         Vehiculo actualizado = vehiculoRepository.save(vehiculo);
         return vehiculoMapper.toDTO(actualizado);
+    }
+
+    @Override
+    public VehiculoResponseDTO actualizarEstado(Long id, EstadoVehiculo nuevoEstado) {
+        if (nuevoEstado == null) {
+            throw new BadRequestException("El estado del vehículo es obligatorio");
+        }
+        Vehiculo vehiculo = vehiculoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Vehículo no encontrado con ID: " + id));
+        vehiculo.setEstado(nuevoEstado);
+        return vehiculoMapper.toDTO(vehiculoRepository.save(vehiculo));
     }
 
     @Override
