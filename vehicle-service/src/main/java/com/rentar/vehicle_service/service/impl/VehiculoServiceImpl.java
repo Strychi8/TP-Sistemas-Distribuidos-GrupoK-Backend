@@ -1,8 +1,10 @@
 package com.rentar.vehicle_service.service.impl;
 
+import com.rentar.vehicle_service.dto.request.FiltroDisponibilidadDTO;
 import com.rentar.vehicle_service.dto.request.VehiculoRequestDTO;
 import com.rentar.vehicle_service.dto.request.VehiculoUpdateRequestDTO;
 import com.rentar.vehicle_service.dto.response.VehiculoResponseDTO;
+import com.rentar.vehicle_service.enums.EstadoVehiculo;
 import com.rentar.vehicle_service.exception.custom.BadRequestException;
 import com.rentar.vehicle_service.exception.custom.ConflictException;
 import com.rentar.vehicle_service.exception.custom.ResourceNotFoundException;
@@ -64,6 +66,17 @@ public class VehiculoServiceImpl implements IVehiculoService {
     }
 
     @Override
+    public VehiculoResponseDTO actualizarEstado(Long id, EstadoVehiculo nuevoEstado) {
+        if (nuevoEstado == null) {
+            throw new BadRequestException("El estado del vehículo es obligatorio");
+        }
+        Vehiculo vehiculo = vehiculoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Vehículo no encontrado con ID: " + id));
+        vehiculo.setEstado(nuevoEstado);
+        return vehiculoMapper.toDTO(vehiculoRepository.save(vehiculo));
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public VehiculoResponseDTO obtenerVehiculoPorId(Long id) {
         Vehiculo vehiculo = vehiculoRepository.findById(id)
@@ -105,5 +118,18 @@ public class VehiculoServiceImpl implements IVehiculoService {
 
         vehiculo.setActivo(false);
         vehiculoRepository.save(vehiculo);
+    }
+
+    @Override
+    public List<VehiculoResponseDTO> consultarDisponibilidad(FiltroDisponibilidadDTO filtro) {
+        return vehiculoRepository.buscarConFiltros(
+                filtro.getTipoVehiculo(),
+                filtro.getMarca(),
+                filtro.getModelo(),
+                filtro.getPrecioMin(),
+                filtro.getPrecioMax()
+        ).stream()
+                .map(vehiculoMapper::toDTO)
+                .collect(Collectors.toList());
     }
 }

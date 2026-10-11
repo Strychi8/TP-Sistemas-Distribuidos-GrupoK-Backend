@@ -1,13 +1,13 @@
 # TP Sistemas Distribuidos - Grupo K - Backend
 
-Este backend implementa la lógica de negocio y la comunicación distribuida para el sistema de la **Empresa Rentar**.
+Este backend implementa la lógica de negocio y la comunicación distribuida para el sistema **Rentar**.
 
-### Integrantes del Grupo K
+### Integrantes
 
 - Diego Fernandez
-- Enzo Piñol
+- Enzo Ignacio Piñol
 - Tomas Strycharski
-- Valentina Vargas
+- Valentina Rocio Vargas
 - Noelia Lezcano
 
 ---
