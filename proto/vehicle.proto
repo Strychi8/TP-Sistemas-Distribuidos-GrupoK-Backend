@@ -6,6 +6,7 @@ option java_package = "com.rentar.vehicle.grpc";
 option java_multiple_files = true;
 
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
 
 enum TipoVehiculo {
   TIPO_VEHICULO_UNSPECIFIED = 0;
@@ -62,16 +63,6 @@ message GetVehiculoByIdRequest {
   int64 idVehiculo = 1;
 }
 
-message CheckDisponibilidadRequest {
-  int64 idVehiculo = 1;
-  google.protobuf.Timestamp fechaInicio = 2;
-  google.protobuf.Timestamp fechaFin = 3;
-}
-
-message CheckDisponibilidadResponse {
-  bool disponible = 1;
-}
-
 message CrearVehiculoRequest {
   string patente = 1;
   string marca = 2;
@@ -101,12 +92,18 @@ message EliminarVehiculoResponse {
   bool success = 1;
 }
 
+message GetVehiculoByPatenteRequest {
+  string patente = 1;
+}
+
 service VehicleService {
-  rpc GetVehiculos (FiltroDisponibilidad) returns (VehicleList);
-  rpc GetVehiculoById (GetVehiculoByIdRequest) returns (Vehicle);
-  rpc VerificarDisponibilidad (CheckDisponibilidadRequest) returns (CheckDisponibilidadResponse);
-  rpc ActualizarEstadoVehiculo (ActualizarEstadoRequest) returns (Vehicle);
   rpc CrearVehiculo (CrearVehiculoRequest) returns (Vehicle);
   rpc ActualizarVehiculo (ActualizarVehiculoRequest) returns (Vehicle);
+  rpc ActualizarEstadoVehiculo (ActualizarEstadoRequest) returns (Vehicle);
   rpc EliminarVehiculo (EliminarVehiculoRequest) returns (EliminarVehiculoResponse);
+  rpc GetVehiculos (google.protobuf.Empty) returns (VehicleList);
+  rpc GetVehiculosActivos (google.protobuf.Empty) returns (VehicleList);
+  rpc GetVehiculoById (GetVehiculoByIdRequest) returns (Vehicle);
+  rpc GetVehiculoByPatente (GetVehiculoByPatenteRequest) returns (Vehicle);
+  rpc ConsultarDisponibilidad(FiltroDisponibilidad) returns (VehicleList);
 }
