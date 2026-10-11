@@ -1,5 +1,6 @@
 package com.rentar.vehicle_service.service;
 
+import com.rentar.vehicle_service.dto.request.FiltroDisponibilidadDTO;
 import com.rentar.vehicle_service.dto.request.VehiculoRequestDTO;
 import com.rentar.vehicle_service.dto.request.VehiculoUpdateRequestDTO;
 import com.rentar.vehicle_service.dto.response.VehiculoResponseDTO;
@@ -15,12 +16,15 @@ public interface IVehiculoService {
 
     VehiculoResponseDTO obtenerVehiculoPorId(Long id);
 
-    VehiculoResponseDTO obtenerVehiculoPorPatente(String patente);
+    void eliminarVehiculo(Long id);
 
     List<VehiculoResponseDTO> listarVehiculos();
 
     List<VehiculoResponseDTO> listarVehiculosActivos();
 
-    void eliminarVehiculo(Long id);
-}
+    VehiculoResponseDTO obtenerVehiculoPorId(Long id);
 
+    VehiculoResponseDTO obtenerVehiculoPorPatente(String patente);
+
+    List<VehiculoResponseDTO> consultarDisponibilidad(FiltroDisponibilidadDTO filtro);
+}

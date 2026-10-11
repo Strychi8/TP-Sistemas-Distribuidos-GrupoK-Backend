@@ -1,5 +1,6 @@
 package com.rentar.vehicle_service.service.impl;
 
+import com.rentar.vehicle_service.dto.request.FiltroDisponibilidadDTO;
 import com.rentar.vehicle_service.dto.request.VehiculoRequestDTO;
 import com.rentar.vehicle_service.dto.request.VehiculoUpdateRequestDTO;
 import com.rentar.vehicle_service.dto.response.VehiculoResponseDTO;
@@ -105,5 +106,18 @@ public class VehiculoServiceImpl implements IVehiculoService {
 
         vehiculo.setActivo(false);
         vehiculoRepository.save(vehiculo);
+    }
+
+    @Override
+    public List<VehiculoResponseDTO> consultarDisponibilidad(FiltroDisponibilidadDTO filtro) {
+        return vehiculoRepository.buscarConFiltros(
+                filtro.getTipoVehiculo(),
+                filtro.getMarca(),
+                filtro.getModelo(),
+                filtro.getPrecioMin(),
+                filtro.getPrecioMax()
+        ).stream()
+                .map(vehiculoMapper::toDTO)
+                .collect(Collectors.toList());
     }
 }
