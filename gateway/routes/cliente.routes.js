@@ -45,14 +45,17 @@ router.get('/', (req, res, next) => {
   });
 });
 
-// Mi Perfil
-router.get('/me/perfil', (req, res, next) => {
+// Mi Perfil (soporta /perfil y /me/perfil)
+const perfilHandler = (req, res, next) => {
   const meta = createGrpcMetadata(req);
   customerClient.GetMiPerfil({ email: req.user.sub }, meta, (err, response) => {
     if (err) return next(err);
     res.json(response);
   });
-});
+};
+
+router.get('/perfil', perfilHandler);
+router.get('/me/perfil', perfilHandler);
 
 // Consulta cliente específico
 router.get('/:id', (req, res, next) => {

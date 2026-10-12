@@ -136,13 +136,16 @@ router.post('/', async (req, res, next) => {
   }
 });
 
-// Cancelación de reserva
-router.delete('/:id', (req, res, next) => {
+// Cancelación de reserva (soporta tanto PUT /:id/cancelar como DELETE /:id)
+const cancelarHandler = (req, res, next) => {
   const meta = createGrpcMetadata(req);
   rentalClient.CancelarReserva({ idReserva: req.params.id }, meta, (err, response) => {
     if (err) return next(err);
     res.json({ message: 'Reserva cancelada correctamente', ...response });
   });
-});
+};
+
+router.put('/:id/cancelar', cancelarHandler);
+router.delete('/:id', cancelarHandler);
 
 export default router;
