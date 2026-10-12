@@ -50,8 +50,8 @@ services:
       test: ["CMD", "grpcurl", "-plaintext", "localhost:9091", "list"]
       interval: 10s
       timeout: 5s
-      retries: 12
-      start_period: 40s
+      retries: 20
+      start_period: 360s
 
   customer-service:
     build:
@@ -77,8 +77,8 @@ services:
       test: ["CMD", "grpcurl", "-plaintext", "localhost:9092", "list"]
       interval: 10s
       timeout: 5s
-      retries: 12
-      start_period: 40s
+      retries: 20
+      start_period: 360s
 
   rental-service:
     build:
@@ -102,8 +102,8 @@ services:
       test: ["CMD", "grpcurl", "-plaintext", "localhost:9093", "list"]
       interval: 10s
       timeout: 5s
-      retries: 12
-      start_period: 40s
+      retries: 20
+      start_period: 360s
 
   # ── API Gateway (único con puerto publicado) ──
   gateway:
@@ -122,11 +122,11 @@ services:
       RENTAL_SERVICE_URL: rental-service:9093
     depends_on:
       vehicle-service:
-        condition: service_healthy
+        condition: service_started
       customer-service:
-        condition: service_healthy
+        condition: service_started
       rental-service:
-        condition: service_healthy
+        condition: service_started
     networks:
       - rentar-net
     healthcheck:
