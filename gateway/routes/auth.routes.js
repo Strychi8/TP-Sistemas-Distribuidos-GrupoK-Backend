@@ -1,3 +1,4 @@
+import jwt from 'jsonwebtoken';
 import express from 'express';
 import { customerClient } from '../clients/grpc.js';
 import { authMiddleware } from '../middleware/auth.middleware.js';
@@ -13,7 +14,17 @@ router.post('/login', (req, res, next) => {
 
   customerClient.Login({ email, password }, (err, response) => {
     if (err) return next(err);
-    res.json(response); // { token: '...' }
+    try {
+      const decoded = jwt.decode(response.token);
+      const roles = decoded && decoded.roles ? (Array.isArray(decoded.roles) ? decoded.roles : [decoded.roles]) : [];
+      return res.json({
+        token: response.token,
+        email: decoded?.sub || email,
+        roles: roles
+      });
+    } catch {
+      return res.json(response);
+    }
   });
 });
 

@@ -25,6 +25,12 @@ export const errorMiddleware = (err, req, res, next) => {
       case grpc.status.UNAVAILABLE:
         httpStatus = 503;
         break;
+      case grpc.status.UNAUTHENTICATED:
+        httpStatus = 401;
+        break;
+      case grpc.status.PERMISSION_DENIED:
+        httpStatus = 403;
+        break;
       default:
         httpStatus = 500;
         break;
