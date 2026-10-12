@@ -32,20 +32,18 @@ message ReservationList {
 message FiltroReserva {
   optional int64 idCliente = 1;
   optional int64 idVehiculo = 2;
-  optional string tipoVehiculo = 3;
-  optional EstadoReserva estado = 4;
-  optional google.protobuf.Timestamp fechaDesde = 5;
-  optional google.protobuf.Timestamp fechaHasta = 6;
+  optional EstadoReserva estado = 3;
+  optional google.protobuf.Timestamp fechaDesde = 4;
+  optional google.protobuf.Timestamp fechaHasta = 5;
 }
 
 message RentalHistory {
-  int64 vehiculo = 1;
-  string patente = 2;
-  google.protobuf.Timestamp fechaInicio = 3;
-  google.protobuf.Timestamp fechaFinalizacion = 4;
-  int32 cantidadDias = 5;
-  double importeTotal = 6;
-  EstadoReserva estado = 7;
+  int64 idVehiculo = 1;
+  google.protobuf.Timestamp fechaInicio = 2;
+  google.protobuf.Timestamp fechaFinalizacion = 3;
+  int32 cantidadDias = 4;
+  double importeTotal = 5;
+  EstadoReserva estado = 6;
 }
 
 message RentalHistoryList {

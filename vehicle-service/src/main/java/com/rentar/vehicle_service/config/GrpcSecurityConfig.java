@@ -69,7 +69,7 @@ public class GrpcSecurityConfig {
                             .hasAnyAuthority("CLIENTE", "ADMINISTRADOR");
 
                     // RPC interno del Gateway: identidad presente, rol irrelevante.
-                    requests.methods("rentar.vehicle.VehicleService/VerificarDisponibilidad")
+                    requests.methods("rentar.vehicle.VehicleService/ConsultarDisponibilidad")
                             .authenticated();
 
                     // Un RPC nuevo sin regla se rechaza solo.

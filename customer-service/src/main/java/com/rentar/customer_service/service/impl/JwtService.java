@@ -78,6 +78,15 @@ public class JwtService {
         return blacklistRepository.existsByToken(token);
     }
 
+    /**
+     * Alias semántico de isTokenBlacklisted, pensado para el futuro RPC gRPC
+     * VerificarTokenBlacklist (H2-4): consulta el repositorio de blacklist y expone
+     * el resultado con el mismo vocabulario que usa el contrato (VerificarTokenResponse.revocado).
+     */
+    public boolean esTokenRevocado(String token) {
+        return isTokenBlacklisted(token);
+    }
+
     public Claims extractAllClaims(String token) {
         return Jwts
                 .parserBuilder()
