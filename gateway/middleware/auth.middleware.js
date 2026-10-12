@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { customerClient } from '../clients/grpc.js';
+import { createGrpcMetadata } from '../utils/grpcMetadata.js';
 
 export const authMiddleware = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -9,9 +10,16 @@ export const authMiddleware = (req, res, next) => {
   }
 
   const token = authHeader.split(' ')[1];
-  const secret = process.env.JWT_SECRET || 'secretKey_para_desarrollo_local_123';
 
-  // 1 y 2. Verificar firma HS256 y expiración
+  // customer-service firma con la clave BASE64-decodificada
+  // (Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey))). jsonwebtoken interpreta
+  // un string como UTF-8, así que replicamos la decodificación para que los bytes
+  // de la clave HMAC coincidan. Sin esto, jwt.verify SIEMPRE falla con 401.
+  const secret = Buffer.from(
+    process.env.JWT_SECRET || '404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970',
+    'base64'
+  );
+
   jwt.verify(token, secret, (err, decoded) => {
     if (err) {
       if (err.name === 'TokenExpiredError') {
@@ -20,8 +28,12 @@ export const authMiddleware = (req, res, next) => {
       return res.status(401).json({ message: 'Firma de token inválida.' });
     }
 
-    // 3. Verificar en la Blacklist vía RPC a customer-service
-    customerClient.VerificarTokenBlacklist({ token }, (grpcErr, grpcRes) => {
+    const roles = Array.isArray(decoded.roles) ? decoded.roles.join(',') : (decoded.roles || '');
+    req.user = { sub: decoded.sub, roles };
+
+    // La verificación de blacklist es un RPC interno que exige identidad (authenticated()).
+    // Propagamos sub + roles como el resto de las llamadas del gateway.
+    customerClient.VerificarTokenBlacklist({ token }, createGrpcMetadata(req), (grpcErr, grpcRes) => {
       if (grpcErr) {
         console.error('Error al verificar blacklist:', grpcErr);
         return res.status(503).json({ message: 'Error interno de autenticación (Customer Service no disponible).' });
@@ -30,15 +42,6 @@ export const authMiddleware = (req, res, next) => {
       if (grpcRes && grpcRes.revocado) {
         return res.status(401).json({ message: 'El token ha sido revocado (sesión cerrada).' });
       }
-
-      // 4. Extraer sub y roles
-      // Según Hito 1, los roles podrían venir como array o string. Lo normalizamos.
-      const roles = Array.isArray(decoded.roles) ? decoded.roles.join(',') : (decoded.roles || '');
-      
-      req.user = {
-        sub: decoded.sub,
-        roles: roles
-      };
 
       next();
     });

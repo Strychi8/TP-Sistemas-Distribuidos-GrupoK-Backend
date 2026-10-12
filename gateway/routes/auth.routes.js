@@ -1,6 +1,7 @@
 import express from 'express';
 import { customerClient } from '../clients/grpc.js';
 import { authMiddleware } from '../middleware/auth.middleware.js';
+import { createGrpcMetadata } from '../utils/grpcMetadata.js';
 
 const router = express.Router();
 
@@ -18,9 +19,9 @@ router.post('/login', (req, res, next) => {
 
 router.post('/logout', authMiddleware, (req, res, next) => {
   const authHeader = req.headers.authorization;
-  const token = authHeader.split(' ')[1];
+  const token = authHeader.split(" ")[1];
 
-  customerClient.Logout({ token }, (err, response) => {
+  customerClient.Logout({ token }, createGrpcMetadata(req), (err, response) => {
     if (err) return next(err);
     res.json({ message: 'Sesión cerrada correctamente' });
   });

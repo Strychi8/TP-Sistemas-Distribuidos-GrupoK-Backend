@@ -103,24 +103,22 @@ export const resolvers = {
 
     // Hidratar vehiculo y patente consultando vehicleClient si vehiculo es ID numerico
     return Promise.all(historialList.map(async (h) => {
-      let vehiculoDesc = h.vehiculo;
-      let patente = h.patente;
+      const idVehiculo = h.idVehiculo ?? h.vehiculo;
+      let vehiculoDesc = '';
+      let patente = '';
 
-      // Si vehiculo es ID numerico o si falta la patente, consultar vehicleClient
-      if (h.vehiculo && (!isNaN(Number(h.vehiculo)) || !patente)) {
-        try {
+      if (idVehiculo) {
+        try  {
           const v = await new Promise((resolve, reject) => {
-            vehicleClient.GetVehiculoById({ idVehiculo: h.vehiculo }, meta, (err, veh) => {
-              if (err) return reject(err);
-              resolve(veh);
-            });
+            vehicleClient.GetVehiculoById({ idVehiculo }, meta,
+              (err, veh) => (err ? reject(err) : resolve(veh)));
           });
           if (v) {
             vehiculoDesc = `${v.marca} ${v.modelo}`.trim();
             if (!patente) patente = v.patente;
           }
-        } catch (err) {
-          if (!vehiculoDesc) vehiculoDesc = `Vehículo #${h.vehiculo}`;
+        } catch {
+          vehiculoDesc = `Vehículo #${idVehiculo}`;
         }
       }
 
