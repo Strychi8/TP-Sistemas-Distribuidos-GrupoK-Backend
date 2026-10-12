@@ -19,6 +19,10 @@ COPY --from=deps /app/gateway/node_modules ./node_modules
 # Layout /app/gateway + /app/proto hace que /app/gateway/clients/../../proto = /app/proto
 COPY proto/ /app/proto/
 
+# Dependencias de contrato que protobufjs NO trae bundleadas (p.ej. google/type/date.proto,
+# importado por customer.proto). Quedan en /app/proto/google/... para que proto-loader las resuelva.
+COPY gateway/protos/ /app/proto/
+
 USER node
 EXPOSE 3000
 CMD ["node", "index.js"]
