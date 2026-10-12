@@ -17,6 +17,22 @@ RUN --mount=type=cache,target=/root/.m2 \
 
 # ---- Stage 2: runtime ----
 FROM eclipse-temurin:21-jre-jammy
+
+ARG TARGETARCH
+# grpcurl es requerido por el healthcheck de compose
+RUN case "${TARGETARCH}" in \
+      amd64) GRPCURL_ARCH=x86_64 ;; \
+      arm64) GRPCURL_ARCH=arm64 ;; \
+      *) echo "unsupported arch: ${TARGETARCH}"; exit 1 ;; \
+    esac \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends curl ca-certificates \
+ && curl -fsSL "https://github.com/fullstorydev/grpcurl/releases/download/v1.9.3/grpcurl_1.9.3_linux_${GRPCURL_ARCH}.tar.gz" \
+    | tar -xz -C /usr/local/bin grpcurl \
+ && apt-get purge -y curl \
+ && apt-get autoremove -y \
+ && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 COPY --from=build /build/customer-service/target/*.jar app.jar
 EXPOSE 9092
