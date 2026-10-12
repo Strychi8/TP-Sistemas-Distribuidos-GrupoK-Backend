@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Inicializacion de MySQL para Rentar (Hito 2).
+# Se ejecuta SOLO la primera vez que se crea el volumen (datadir vacio).
+# Las credenciales NO estan hardcodeadas: se leen de variables de entorno
+# definidas en .env y pasadas al contenedor mysql-db por docker-compose.yml.
+set -e
+
+mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" <<EOSQL
+CREATE DATABASE IF NOT EXISTS \`${VEHICLE_DB_NAME}\`  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS \`${CUSTOMER_DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS \`${RENTAL_DB_NAME}\`   CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE USER IF NOT EXISTS '${VEHICLE_DB_USER}'@'%'  IDENTIFIED BY '${VEHICLE_DB_PASSWORD}';
+CREATE USER IF NOT EXISTS '${CUSTOMER_DB_USER}'@'%' IDENTIFIED BY '${CUSTOMER_DB_PASSWORD}';
+CREATE USER IF NOT EXISTS '${RENTAL_DB_USER}'@'%'   IDENTIFIED BY '${RENTAL_DB_PASSWORD}';
+
+GRANT ALL PRIVILEGES ON \`${VEHICLE_DB_NAME}\`.*  TO '${VEHICLE_DB_USER}'@'%';
+GRANT ALL PRIVILEGES ON \`${CUSTOMER_DB_NAME}\`.* TO '${CUSTOMER_DB_USER}'@'%';
+GRANT ALL PRIVILEGES ON \`${RENTAL_DB_NAME}\`.*   TO '${RENTAL_DB_USER}'@'%';
+
+FLUSH PRIVILEGES;
+EOSQL

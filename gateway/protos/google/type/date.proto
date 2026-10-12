@@ -1,0 +1,26 @@
+// Vendored dependency of customer.proto.
+// Source: https://github.com/googleapis/googleapis/blob/master/google/type/date.proto
+// @grpc/proto-loader (Node) does NOT bundle google/type/*, unlike the Java
+// protobuf-maven-plugin, so this file must exist on the proto include path.
+
+syntax = "proto3";
+
+package google.type;
+
+option java_multiple_files = true;
+option java_outer_classname = "DateProto";
+option java_package = "com.google.type";
+option objc_class_prefix = "GTP";
+
+// Represents a whole or partial calendar date, such as a birthday.
+message Date {
+  // Year of the date. Must be from 1 to 9999, or 0 to specify a date without a year.
+  int32 year = 1;
+
+  // Month of the year. Must be from 1 to 12, or 0 to specify a year without a month and day.
+  int32 month = 2;
+
+  // Day of the month. Must be from 1 to 31 and valid for the year and month, or
+  // 0 to specify a year by itself or a year and month where the day isn't significant.
+  int32 day = 3;
+}

@@ -1,0 +1,4 @@
+# Normaliza los saltos de linea de los scripts shell a LF, incluso si se
+# commitean o clonan desde Windows. Sin esto, un .sh con CRLF (por ejemplo
+# mysql/init/01-init.sh) rompe dentro del contenedor Linux por el \r fantasma.
+*.sh text eol=lf
