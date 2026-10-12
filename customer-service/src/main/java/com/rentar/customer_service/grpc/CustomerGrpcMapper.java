@@ -23,14 +23,21 @@ public class CustomerGrpcMapper {
     }
 
     public static Customer toCustomer(ClienteResponseDTO cliente) {
-        return Customer.newBuilder()
+        Customer.Builder builder = Customer.newBuilder()
                 .setIdCliente(cliente.getIdCliente())
                 .setNombre(cliente.getNombre())
                 .setApellido(cliente.getApellido())
                 .setDni(cliente.getDni())
                 .setEmail(cliente.getEmail())
                 .setActivo(Boolean.TRUE.equals(cliente.getActivo()))
-                .build();
+                .setTelefono(cliente.getTelefono() != null ? cliente.getTelefono() : "");
+
+
+        if (cliente.getFechaNacimiento() != null) {
+            builder.setFechaNacimiento(toGoogleDate(cliente.getFechaNacimiento()));
+        }
+
+        return builder.build();
     }
 
     public static CustomerList toCustomerList(List<ClienteResponseDTO> clientes) {
@@ -85,11 +92,7 @@ public class CustomerGrpcMapper {
                 .setActivo(Boolean.TRUE.equals(cliente.getActivo()));
 
         if (cliente.getFechaNacimiento() != null) {
-            builder.setFechaNacimiento(com.google.type.Date.newBuilder()
-                    .setYear(cliente.getFechaNacimiento().getYear())
-                    .setMonth(cliente.getFechaNacimiento().getMonthValue())
-                    .setDay(cliente.getFechaNacimiento().getDayOfMonth())
-                    .build());
+            builder.setFechaNacimiento(toGoogleDate(cliente.getFechaNacimiento()));
         }
 
         return builder.build();
@@ -100,5 +103,14 @@ public class CustomerGrpcMapper {
             return null;
         }
         return LocalDate.parse(str.trim());
+    }
+
+    // Helper reutilizable (LocalDate -> google.type.Date)
+    private static com.google.type.Date toGoogleDate(LocalDate fecha) {
+        return com.google.type.Date.newBuilder()
+                .setYear(fecha.getYear())
+                .setMonth(fecha.getMonthValue())
+                .setDay(fecha.getDayOfMonth())
+                .build();
     }
 }

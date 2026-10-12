@@ -14,6 +14,8 @@ message Customer {
   string dni = 4;
   string email = 5;
   bool activo = 6; // Necesario para que el Gateway distinga entre 404 y 400
+  string telefono = 7;
+  google.type.Date fechaNacimiento = 8;
 }
 
 message CustomerList {
