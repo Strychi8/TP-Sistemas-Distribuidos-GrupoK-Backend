@@ -1,6 +1,13 @@
 -- ============================================================
 -- Insertamos las reservas
 --
+-- IMPORTANTE: llevamos id_reserva explicito a proposito.
+-- spring.sql.init.mode=always -> este script corre en CADA arranque.
+-- Como reservas solo tiene PK auto-increment (sin clave unica natural),
+-- un INSERT IGNORE sin id explicito nunca choca y duplica filas.
+-- Al fijar el id, el IGNORE del proximo arranque choca contra el PK
+-- y lo descarta -> la semilla queda idempotente.
+--
 -- importe_total = cantidad de días * precio_diario_historico
 --
 -- Vehículos:
@@ -20,11 +27,11 @@
 -- Estado: FINALIZADA
 -- ============================================================
 
-INSERT INTO reservas
-(cliente_id, vehiculo_id, fecha_inicio, fecha_fin,
+INSERT IGNORE INTO reservas
+(id_reserva, cliente_id, vehiculo_id, fecha_inicio, fecha_fin,
  importe_total, precio_diario_historico, estado, fecha_creacion)
 VALUES
-    (1, 1,
+    (1, 1, 1,
      '2026-09-01 10:00:00',
      '2026-09-04 10:00:00',
      150000.00,
@@ -41,11 +48,11 @@ VALUES
 -- Estado: FINALIZADA
 -- ============================================================
 
-INSERT INTO reservas
-(cliente_id, vehiculo_id, fecha_inicio, fecha_fin,
+INSERT IGNORE INTO reservas
+(id_reserva, cliente_id, vehiculo_id, fecha_inicio, fecha_fin,
  importe_total, precio_diario_historico, estado, fecha_creacion)
 VALUES
-    (2, 2,
+    (2, 2, 2,
      '2026-09-05 09:00:00',
      '2026-09-10 09:00:00',
      300000.00,
@@ -62,11 +69,11 @@ VALUES
 -- Estado: CANCELADA
 -- ============================================================
 
-INSERT INTO reservas
-(cliente_id, vehiculo_id, fecha_inicio, fecha_fin,
+INSERT IGNORE INTO reservas
+(id_reserva, cliente_id, vehiculo_id, fecha_inicio, fecha_fin,
  importe_total, precio_diario_historico, estado, fecha_creacion)
 VALUES
-    (3, 3,
+    (3, 3, 3,
      '2026-09-12 14:00:00',
      '2026-09-14 14:00:00',
      80000.00,
@@ -83,11 +90,11 @@ VALUES
 -- Estado: FINALIZADA
 -- ============================================================
 
-INSERT INTO reservas
-(cliente_id, vehiculo_id, fecha_inicio, fecha_fin,
+INSERT IGNORE INTO reservas
+(id_reserva, cliente_id, vehiculo_id, fecha_inicio, fecha_fin,
  importe_total, precio_diario_historico, estado, fecha_creacion)
 VALUES
-    (4, 4,
+    (4, 4, 4,
      '2026-09-15 11:00:00',
      '2026-09-19 11:00:00',
      520000.00,
@@ -104,11 +111,11 @@ VALUES
 -- Estado: FINALIZADA
 -- ============================================================
 
-INSERT INTO reservas
-(cliente_id, vehiculo_id, fecha_inicio, fecha_fin,
+INSERT IGNORE INTO reservas
+(id_reserva, cliente_id, vehiculo_id, fecha_inicio, fecha_fin,
  importe_total, precio_diario_historico, estado, fecha_creacion)
 VALUES
-    (5, 5,
+    (5, 5, 5,
      '2026-09-20 08:00:00',
      '2026-09-23 08:00:00',
      120000.00,
@@ -125,11 +132,11 @@ VALUES
 -- Estado: CONFIRMADA
 -- ============================================================
 
-INSERT INTO reservas
-(cliente_id, vehiculo_id, fecha_inicio, fecha_fin,
+INSERT IGNORE INTO reservas
+(id_reserva, cliente_id, vehiculo_id, fecha_inicio, fecha_fin,
  importe_total, precio_diario_historico, estado, fecha_creacion)
 VALUES
-    (1, 2,
+    (6, 1, 2,
      '2026-10-10 10:00:00',
      '2026-10-14 10:00:00',
      240000.00,
@@ -146,11 +153,11 @@ VALUES
 -- Estado: CONFIRMADA
 -- ============================================================
 
-INSERT INTO reservas
-(cliente_id, vehiculo_id, fecha_inicio, fecha_fin,
+INSERT IGNORE INTO reservas
+(id_reserva, cliente_id, vehiculo_id, fecha_inicio, fecha_fin,
  importe_total, precio_diario_historico, estado, fecha_creacion)
 VALUES
-    (2, 1,
+    (7, 2, 1,
      '2026-10-15 09:00:00',
      '2026-10-22 09:00:00',
      350000.00,
@@ -167,11 +174,11 @@ VALUES
 -- Estado: CONFIRMADA
 -- ============================================================
 
-INSERT INTO reservas
-(cliente_id, vehiculo_id, fecha_inicio, fecha_fin,
+INSERT IGNORE INTO reservas
+(id_reserva, cliente_id, vehiculo_id, fecha_inicio, fecha_fin,
  importe_total, precio_diario_historico, estado, fecha_creacion)
 VALUES
-    (3, 4,
+    (8, 3, 4,
      '2026-10-20 12:00:00',
      '2026-10-23 12:00:00',
      390000.00,
@@ -188,11 +195,11 @@ VALUES
 -- Estado: CONFIRMADA
 -- ============================================================
 
-INSERT INTO reservas
-(cliente_id, vehiculo_id, fecha_inicio, fecha_fin,
+INSERT IGNORE INTO reservas
+(id_reserva, cliente_id, vehiculo_id, fecha_inicio, fecha_fin,
  importe_total, precio_diario_historico, estado, fecha_creacion)
 VALUES
-    (4, 3,
+    (9, 4, 3,
      '2026-10-25 10:00:00',
      '2026-10-30 10:00:00',
      200000.00,
@@ -209,11 +216,11 @@ VALUES
 -- Estado: CONFIRMADA
 -- ============================================================
 
-INSERT INTO reservas
-(cliente_id, vehiculo_id, fecha_inicio, fecha_fin,
+INSERT IGNORE INTO reservas
+(id_reserva, cliente_id, vehiculo_id, fecha_inicio, fecha_fin,
  importe_total, precio_diario_historico, estado, fecha_creacion)
 VALUES
-    (5, 5,
+    (10, 5, 5,
      '2026-10-28 14:00:00',
      '2026-10-30 14:00:00',
      80000.00,
