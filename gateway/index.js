@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerDocument } from './swagger.js';
 import { errorMiddleware } from './middleware/error.middleware.js';
 import graphqlRouter from './graphql/index.js';
 import authRouter from './routes/auth.routes.js';
@@ -23,6 +25,10 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/', (req, res) => {
   res.json({ message: 'El API Gateway esta corriendo' });
 });
+
+// Documentación Swagger / OpenAPI
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.get('/api-docs', (req, res) => res.json(swaggerDocument));
 
 // Rutas de GraphQL
 app.use('/graphql', graphqlRouter);
