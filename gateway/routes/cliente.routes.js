@@ -2,6 +2,7 @@ import express from 'express';
 import { customerClient } from '../clients/grpc.js';
 import { authMiddleware } from '../middleware/auth.middleware.js';
 import { createGrpcMetadata } from '../utils/grpcMetadata.js';
+import { toClientListRest, toClientRest } from '../utils/clientMapper.js';
 
 const router = express.Router();
 
@@ -41,7 +42,7 @@ router.get('/', (req, res, next) => {
   const meta = createGrpcMetadata(req);
   customerClient.GetClientes({}, meta, (err, response) => {
     if (err) return next(err);
-    res.json(response?.customers || response || []);
+    res.json(toClientListRest(response?.customers || response || []));
   });
 });
 
@@ -50,7 +51,7 @@ const perfilHandler = (req, res, next) => {
   const meta = createGrpcMetadata(req);
   customerClient.GetMiPerfil({ email: req.user.sub }, meta, (err, response) => {
     if (err) return next(err);
-    res.json(response);
+    res.json(toClientRest(response));
   });
 };
 
@@ -62,7 +63,7 @@ router.get('/:id', (req, res, next) => {
   const meta = createGrpcMetadata(req);
   customerClient.GetClienteById({ idCliente: req.params.id }, meta, (err, response) => {
     if (err) return next(err);
-    res.json(response);
+    res.json(toClientRest(response));
   });
 });
 
