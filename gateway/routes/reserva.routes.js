@@ -11,7 +11,7 @@ router.use(authMiddleware);
 // Alta de reserva (con orquestación gRPC)
 router.post('/', async (req, res, next) => {
   const meta = createGrpcMetadata(req);
-  const { idVehiculo, idCliente, fechaInicio, fechaFin } = req.body;
+  const { idVehiculo, fechaInicio, fechaFin } = req.body;
 
   // 1. Validar fechas: fail-fast local
   const inicioDate = new Date(fechaInicio);
@@ -29,9 +29,10 @@ router.post('/', async (req, res, next) => {
   }
 
   try {
-    // 2. CustomerService.GetClienteById
+    // 2. CustomerService.GetMiPerfil: resolvemos el cliente desde el TOKEN (sub),
+    //    NO desde el body. Evita que un cliente opere a nombre de otro.
     const cliente = await new Promise((resolve, reject) => {
-      customerClient.GetClienteById({ idCliente }, meta, (err, response) => {
+      customerClient.GetMiPerfil({ email: req.user.sub }, meta, (err, response) => {
         if (err) return reject(err);
         resolve(response);
       });
@@ -40,6 +41,9 @@ router.post('/', async (req, res, next) => {
     if (!cliente.activo) {
       return res.status(400).json({ message: 'El cliente se encuentra inactivo' });
     }
+
+    // idCliente derivado de la identidad autenticada (no del payload del cliente).
+    const idCliente = cliente.idCliente;
 
     // 3. VehicleService.GetVehiculoById
     const vehiculo = await new Promise((resolve, reject) => {
