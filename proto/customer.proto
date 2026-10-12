@@ -18,13 +18,9 @@ message Customer {
 
 message CustomerList {
   repeated Customer customers = 1;
-  int64 total_elements = 2;
-  int32 total_pages = 3;
 }
 
 message GetClientesRequest {
-  int32 page = 1;
-  int32 size = 2;
 }
 
 message GetClienteByIdRequest {
