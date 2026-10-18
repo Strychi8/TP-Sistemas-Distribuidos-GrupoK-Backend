@@ -10,8 +10,15 @@ import clienteRouter from './routes/cliente.routes.js';
 import vehiculoRouter from './routes/vehiculo.routes.js';
 import reservaRouter from './routes/reserva.routes.js';
 
-// Configurar variables de entorno
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Configurar variables de entorno (busca en gateway/.env y en ../.env)
 dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const app = express();
 const PORT = process.env.GATEWAY_PORT || 3000;
@@ -32,6 +39,7 @@ app.get('/api-docs', (req, res) => res.json(swaggerDocument));
 
 // Rutas de GraphQL
 app.use('/graphql', graphqlRouter);
+app.get('/graphiql', (req, res) => res.redirect('/graphql'));
 
 // Rutas REST
 app.use('/api/auth', authRouter);

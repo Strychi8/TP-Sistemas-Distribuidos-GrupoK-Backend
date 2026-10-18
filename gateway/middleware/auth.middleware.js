@@ -16,7 +16,7 @@ export const authMiddleware = (req, res, next) => {
   // un string como UTF-8, así que replicamos la decodificación para que los bytes
   // de la clave HMAC coincidan. Sin esto, jwt.verify SIEMPRE falla con 401.
   const secret = Buffer.from(
-    process.env.JWT_SECRET || '404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970',
+    process.env.JWT_SECRET || 'c2VjcmV0LWtleS1kZWZpbmlkYS1wYXJhLWVsLXRyYWJham8tcHJhY3RpY28tZ3J1cG8tay0yMDI2LWFwaS1iYWNrZW5k',
     'base64'
   );
 

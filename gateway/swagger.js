@@ -1,17 +1,43 @@
 export const swaggerDocument = {
   openapi: '3.0.0',
   info: {
-    title: 'Rentar API Gateway',
-    version: '2.0.0',
-    description: 'API Gateway REST & GraphQL para la plataforma Rentar (Hito 2 - RPC con gRPC)',
+    title: 'Rentar - API REST',
+    version: '1.0.0',
+    description: 'API REST para la gestión de vehículos, clientes y reservas de alquileres.',
+    license: {
+      name: 'Apache 2.0',
+      url: 'https://www.apache.org/licenses/LICENSE-2.0'
+    },
     contact: {
       name: 'Grupo K - Sistemas Distribuidos'
     }
+  },
+  externalDocs: {
+    description: 'Repositorio del proyecto en GitHub',
+    url: 'https://github.com/Strychi8/TP-Sistemas-Distribuidos-GrupoK-Backend'
   },
   servers: [
     {
       url: 'http://localhost:3000',
       description: 'Servidor local API Gateway'
+    }
+  ],
+  tags: [
+    {
+      name: 'Autenticación',
+      description: 'Endpoints para login y logout'
+    },
+    {
+      name: 'Vehículos',
+      description: 'Endpoints para la gestión de vehículos de la flota de Rentar'
+    },
+    {
+      name: 'Clientes',
+      description: 'Endpoints para la gestión de clientes'
+    },
+    {
+      name: 'Reservas',
+      description: 'Endpoints para la gestión transaccional de reservas de vehiculos'
     }
   ],
   components: {
@@ -28,14 +54,20 @@ export const swaggerDocument = {
         type: 'object',
         required: ['email', 'password'],
         properties: {
-          email: { type: 'string', example: 'admin@rentar.com' },
+          email: { type: 'string', example: 'admin@empresarentar.com' },
           password: { type: 'string', example: 'admin123' }
         }
       },
       LoginResponse: {
         type: 'object',
         properties: {
-          token: { type: 'string', example: 'eyJhbGciOiJIUzI1Ni...' }
+          token: { type: 'string', example: 'eyJhbGciOiJIUzI1Ni...' },
+          email: { type: 'string', example: 'admin@empresarentar.com' },
+          roles: {
+            type: 'array',
+            items: { type: 'string' },
+            example: ['ADMINISTRADOR']
+          }
         }
       },
       Vehiculo: {
@@ -86,6 +118,8 @@ export const swaggerDocument = {
           apellido: { type: 'string', example: 'Pérez' },
           dni: { type: 'string', example: '35123456' },
           email: { type: 'string', example: 'juan.perez@example.com' },
+          telefono: { type: 'string', example: '1122334455' },
+          fechaNacimiento: { type: 'string', example: '1990-05-15' },
           activo: { type: 'boolean', example: true }
         }
       },
@@ -104,9 +138,9 @@ export const swaggerDocument = {
       },
       ReservaCrearRequest: {
         type: 'object',
-        required: ['idCliente', 'idVehiculo', 'fechaInicio', 'fechaFin'],
+        required: ['idVehiculo', 'fechaInicio', 'fechaFin'],
         properties: {
-          idCliente: { type: 'integer', example: 1 },
+          idCliente: { type: 'integer', example: 1, description: 'Opcional (se infiere del usuario logueado)' },
           idVehiculo: { type: 'integer', example: 1 },
           fechaInicio: { type: 'string', format: 'date-time', example: '2026-11-01T10:00:00.000Z' },
           fechaFin: { type: 'string', format: 'date-time', example: '2026-11-05T10:00:00.000Z' }
@@ -134,6 +168,159 @@ export const swaggerDocument = {
     }
   },
   paths: {
+    '/api/clientes/{id}': {
+      get: {
+        tags: ['Clientes'],
+        summary: 'Obtener un cliente por ID',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'integer' } }
+        ],
+        responses: {
+          200: {
+            description: 'Cliente obtenido correctamente',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/Cliente' }
+              }
+            }
+          },
+          404: { description: 'Cliente no encontrado' }
+        }
+      },
+      put: {
+        tags: ['Clientes'],
+        summary: 'Actualizar un cliente',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'integer' } }
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/ClienteCrearRequest' }
+            }
+          }
+        },
+        responses: {
+          200: {
+            description: 'Cliente actualizado correctamente',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/Cliente' }
+              }
+            }
+          },
+          404: { description: 'Cliente no encontrado' }
+        }
+      },
+      delete: {
+        tags: ['Clientes'],
+        summary: 'Eliminar un cliente',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'integer' } }
+        ],
+        responses: {
+          200: { description: 'Cliente eliminado correctamente' },
+          404: { description: 'Cliente no encontrado' }
+        }
+      }
+    },
+    '/api/clientes': {
+      get: {
+        tags: ['Clientes'],
+        summary: 'Listar todos los clientes',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: {
+            description: 'Listado obtenido correctamente',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: { $ref: '#/components/schemas/Cliente' }
+                }
+              }
+            }
+          }
+        }
+      },
+      post: {
+        tags: ['Clientes'],
+        summary: 'Crear un cliente',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/ClienteCrearRequest' }
+            }
+          }
+        },
+        responses: {
+          201: {
+            description: 'Cliente creado correctamente',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/Cliente' }
+              }
+            }
+          },
+          400: { description: 'Datos inválidos o cliente ya existente' }
+        }
+      }
+    },
+    '/api/clientes/perfil': {
+      get: {
+        tags: ['Clientes'],
+        summary: 'Obtener mi perfil',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: {
+            description: 'Perfil del cliente actual obtenido correctamente',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/Cliente' }
+              }
+            }
+          },
+          404: { description: 'Cliente no encontrado' }
+        }
+      }
+    },
+    '/api/clientes/activos': {
+      get: {
+        tags: ['Clientes'],
+        summary: 'Listar clientes activos',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: {
+            description: 'Listado de clientes activos obtenido correctamente',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: { $ref: '#/components/schemas/Cliente' }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    '/api/auth/logout': {
+      post: {
+        tags: ['Autenticación'],
+        summary: 'Cerrar sesión',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: { description: 'Sesión cerrada correctamente' },
+          401: { description: 'No autenticado o token revocado' }
+        }
+      }
+    },
     '/api/auth/login': {
       post: {
         tags: ['Autenticación'],
@@ -159,224 +346,25 @@ export const swaggerDocument = {
         }
       }
     },
-    '/api/auth/logout': {
-      post: {
-        tags: ['Autenticación'],
-        summary: 'Cerrar sesión (revocar token en blacklist)',
-        security: [{ bearerAuth: [] }],
-        responses: {
-          200: { description: 'Sesión cerrada correctamente' },
-          401: { description: 'No autenticado o token revocado' }
-        }
-      }
-    },
-    '/api/vehiculos': {
-      get: {
-        tags: ['Vehículos'],
-        summary: 'Listar todos los vehículos (Admin)',
-        security: [{ bearerAuth: [] }],
-        responses: {
-          200: {
-            description: 'Lista de vehículos',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'array',
-                  items: { $ref: '#/components/schemas/Vehiculo' }
-                }
-              }
-            }
-          }
-        }
-      },
-      post: {
-        tags: ['Vehículos'],
-        summary: 'Alta de vehículo (Admin)',
-        security: [{ bearerAuth: [] }],
-        requestBody: {
-          required: true,
-          content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/VehiculoCrearRequest' }
-            }
-          }
-        },
-        responses: {
-          201: {
-            description: 'Vehículo creado',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/Vehiculo' }
-              }
-            }
-          }
-        }
-      }
-    },
-    '/api/vehiculos/activos': {
-      get: {
-        tags: ['Vehículos'],
-        summary: 'Listar solo vehículos activos (Catálogo)',
-        security: [{ bearerAuth: [] }],
-        responses: {
-          200: {
-            description: 'Lista de vehículos activos',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'array',
-                  items: { $ref: '#/components/schemas/Vehiculo' }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    '/api/vehiculos/{id}': {
-      get: {
-        tags: ['Vehículos'],
-        summary: 'Obtener vehículo por ID',
-        security: [{ bearerAuth: [] }],
-        parameters: [
-          { name: 'id', in: 'path', required: true, schema: { type: 'integer' } }
-        ],
-        responses: {
-          200: {
-            description: 'Vehículo encontrado',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/Vehiculo' }
-              }
-            }
-          },
-          404: { description: 'Vehículo no encontrado' }
-        }
-      },
+    '/api/reservas/{id}/cancelar': {
       put: {
-        tags: ['Vehículos'],
-        summary: 'Modificar vehículo (Admin)',
-        security: [{ bearerAuth: [] }],
-        parameters: [
-          { name: 'id', in: 'path', required: true, schema: { type: 'integer' } }
-        ],
-        requestBody: {
-          required: true,
-          content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/VehiculoCrearRequest' }
-            }
-          }
-        },
-        responses: {
-          200: { description: 'Vehículo actualizado' }
-        }
-      },
-      delete: {
-        tags: ['Vehículos'],
-        summary: 'Baja lógica de vehículo (Admin)',
+        tags: ['Reservas'],
+        summary: 'Cancelar Reserva',
         security: [{ bearerAuth: [] }],
         parameters: [
           { name: 'id', in: 'path', required: true, schema: { type: 'integer' } }
         ],
         responses: {
-          200: { description: 'Vehículo inhabilitado' }
-        }
-      }
-    },
-    '/api/clientes': {
-      get: {
-        tags: ['Clientes'],
-        summary: 'Listar clientes (Admin)',
-        security: [{ bearerAuth: [] }],
-        responses: {
-          200: {
-            description: 'Lista de clientes',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'array',
-                  items: { $ref: '#/components/schemas/Cliente' }
-                }
-              }
-            }
-          }
-        }
-      },
-      post: {
-        tags: ['Clientes'],
-        summary: 'Alta de cliente (Registro/Admin)',
-        security: [{ bearerAuth: [] }],
-        requestBody: {
-          required: true,
-          content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/ClienteCrearRequest' }
-            }
-          }
-        },
-        responses: {
-          201: { description: 'Cliente creado' }
-        }
-      }
-    },
-    '/api/clientes/perfil': {
-      get: {
-        tags: ['Clientes'],
-        summary: 'Obtener mi perfil (Cliente logueado)',
-        security: [{ bearerAuth: [] }],
-        responses: {
-          200: {
-            description: 'Perfil del cliente actual',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/Cliente' }
-              }
-            }
-          }
-        }
-      }
-    },
-    '/api/clientes/{id}': {
-      get: {
-        tags: ['Clientes'],
-        summary: 'Obtener cliente por ID',
-        security: [{ bearerAuth: [] }],
-        parameters: [
-          { name: 'id', in: 'path', required: true, schema: { type: 'integer' } }
-        ],
-        responses: {
-          200: { description: 'Cliente obtenido' },
-          404: { description: 'Cliente no encontrado' }
-        }
-      },
-      put: {
-        tags: ['Clientes'],
-        summary: 'Modificar cliente',
-        security: [{ bearerAuth: [] }],
-        parameters: [
-          { name: 'id', in: 'path', required: true, schema: { type: 'integer' } }
-        ],
-        responses: {
-          200: { description: 'Cliente actualizado' }
-        }
-      },
-      delete: {
-        tags: ['Clientes'],
-        summary: 'Baja lógica de cliente',
-        security: [{ bearerAuth: [] }],
-        parameters: [
-          { name: 'id', in: 'path', required: true, schema: { type: 'integer' } }
-        ],
-        responses: {
-          200: { description: 'Cliente eliminado' }
+          200: { description: 'Reserva cancelada exitosamente' },
+          400: { description: 'No se puede cancelar (ya inició o estado incompatible)' },
+          404: { description: 'Reserva no encontrada' }
         }
       }
     },
     '/api/reservas': {
       post: {
         tags: ['Reservas'],
-        summary: 'Crear una nueva reserva (Orquestación gRPC + Rollback)',
+        summary: 'Alta de Reserva',
         security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
@@ -400,18 +388,169 @@ export const swaggerDocument = {
         }
       }
     },
-    '/api/reservas/{id}/cancelar': {
-      put: {
+    '/api/reservas/{id}': {
+      get: {
         tags: ['Reservas'],
-        summary: 'Cancelar una reserva (Cliente)',
+        summary: 'Consultar Reserva por ID',
         security: [{ bearerAuth: [] }],
         parameters: [
           { name: 'id', in: 'path', required: true, schema: { type: 'integer' } }
         ],
         responses: {
-          200: { description: 'Reserva cancelada exitosamente' },
-          400: { description: 'No se puede cancelar (ya inició o estado incompatible)' },
+          200: {
+            description: 'Reserva encontrada',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ReservaResponse' }
+              }
+            }
+          },
           404: { description: 'Reserva no encontrada' }
+        }
+      }
+    },
+    '/api/vehiculos/{id}': {
+      get: {
+        tags: ['Vehículos'],
+        summary: 'Buscar vehículo por ID',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'integer' } }
+        ],
+        responses: {
+          200: {
+            description: 'Vehículo encontrado',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/Vehiculo' }
+              }
+            }
+          },
+          404: { description: 'Vehículo no encontrado' }
+        }
+      },
+      put: {
+        tags: ['Vehículos'],
+        summary: 'Actualizar vehículo',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'integer' } }
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/VehiculoCrearRequest' }
+            }
+          }
+        },
+        responses: {
+          200: {
+            description: 'Vehículo actualizado',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/Vehiculo' }
+              }
+            }
+          },
+          404: { description: 'Vehículo no encontrado' }
+        }
+      },
+      delete: {
+        tags: ['Vehículos'],
+        summary: 'Dar de baja vehículo',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'integer' } }
+        ],
+        responses: {
+          200: { description: 'Vehículo inhabilitado' },
+          404: { description: 'Vehículo no encontrado' }
+        }
+      }
+    },
+    '/api/vehiculos': {
+      get: {
+        tags: ['Vehículos'],
+        summary: 'Listar todos los vehículos',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: {
+            description: 'Lista de vehículos',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: { $ref: '#/components/schemas/Vehiculo' }
+                }
+              }
+            }
+          }
+        }
+      },
+      post: {
+        tags: ['Vehículos'],
+        summary: 'Crear vehículo',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/VehiculoCrearRequest' }
+            }
+          }
+        },
+        responses: {
+          201: {
+            description: 'Vehículo creado',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/Vehiculo' }
+              }
+            }
+          },
+          400: { description: 'Datos inválidos o patente duplicada' }
+        }
+      }
+    },
+    '/api/vehiculos/patente/{patente}': {
+      get: {
+        tags: ['Vehículos'],
+        summary: 'Buscar vehículo por patente',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'patente', in: 'path', required: true, schema: { type: 'string', example: 'AA123BB' } }
+        ],
+        responses: {
+          200: {
+            description: 'Vehículo encontrado',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/Vehiculo' }
+              }
+            }
+          },
+          404: { description: 'Vehículo no encontrado' }
+        }
+      }
+    },
+    '/api/vehiculos/activos': {
+      get: {
+        tags: ['Vehículos'],
+        summary: 'Listar vehículos activos',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: {
+            description: 'Lista de vehículos activos',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: { $ref: '#/components/schemas/Vehiculo' }
+                }
+              }
+            }
+          }
         }
       }
     }
