@@ -50,6 +50,8 @@ services:
         condition: service_healthy
     networks:
       - rentar-net
+    ports:
+      - "9091:9091"
     healthcheck:
       test: ["CMD", "grpcurl", "-plaintext", "localhost:9091", "list"]
       interval: 25s
@@ -78,6 +80,8 @@ services:
         condition: service_healthy
     networks:
       - rentar-net
+    ports:
+      - "9092:9092"
     healthcheck:
       test: ["CMD", "grpcurl", "-plaintext", "localhost:9092", "list"]
       interval: 25s
@@ -104,6 +108,8 @@ services:
         condition: service_healthy
     networks:
       - rentar-net
+    ports:
+      - "9093:9093"
     healthcheck:
       test: ["CMD", "grpcurl", "-plaintext", "localhost:9093", "list"]
       interval: 25s
