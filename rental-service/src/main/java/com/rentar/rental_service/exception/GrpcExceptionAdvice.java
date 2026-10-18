@@ -49,6 +49,11 @@ public class GrpcExceptionAdvice {
         return ex.getStatus();
     }
 
+    @GrpcExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public Status handleAccessDenied(org.springframework.security.access.AccessDeniedException ex) {
+        return Status.PERMISSION_DENIED.withDescription("Acceso denegado: se requieren permisos de ADMINISTRADOR");
+    }
+
     @GrpcExceptionHandler(Exception.class)
     public Status handleUnexpected(Exception ex) {
         return Status.INTERNAL.withDescription("Error interno del servicio - RentalService gRPC");

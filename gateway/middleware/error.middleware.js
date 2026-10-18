@@ -19,6 +19,9 @@ export const errorMiddleware = (err, req, res, next) => {
       case grpc.status.INVALID_ARGUMENT:
         httpStatus = 400;
         break;
+      case grpc.status.ALREADY_EXISTS:
+        httpStatus = 409;
+        break;
       case grpc.status.FAILED_PRECONDITION:
         httpStatus = 409;
         break;

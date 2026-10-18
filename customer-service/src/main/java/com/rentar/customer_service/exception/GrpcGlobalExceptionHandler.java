@@ -2,8 +2,11 @@ package com.rentar.customer_service.exception;
 
 import com.rentar.customer_service.exception.custom.BadRequestException;
 import com.rentar.customer_service.exception.custom.ClienteNotFoundException;
+import com.rentar.customer_service.exception.custom.DniAlreadyExistsException;
+import com.rentar.customer_service.exception.custom.EmailAlreadyExistsException;
 import com.rentar.customer_service.exception.custom.ResourceNotFoundException;
 import io.grpc.Status;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.grpc.server.advice.GrpcAdvice;
 import org.springframework.grpc.server.advice.GrpcExceptionHandler;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -85,6 +88,26 @@ public class GrpcGlobalExceptionHandler {
      * se deja explícito como INTERNAL para no filtrar detalles internos del servidor,
      * en paralelo con el fallback HTTP 500 de GlobalExceptionHandler.
      */
+    @GrpcExceptionHandler(DniAlreadyExistsException.class)
+    public Status handleDniAlreadyExists(DniAlreadyExistsException ex) {
+        return Status.ALREADY_EXISTS.withDescription(ex.getMessage());
+    }
+
+    @GrpcExceptionHandler(EmailAlreadyExistsException.class)
+    public Status handleEmailAlreadyExists(EmailAlreadyExistsException ex) {
+        return Status.ALREADY_EXISTS.withDescription(ex.getMessage());
+    }
+
+    @GrpcExceptionHandler(DataIntegrityViolationException.class)
+    public Status handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        return Status.ALREADY_EXISTS.withDescription("El DNI o email ya se encuentra registrado.");
+    }
+
+    @GrpcExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public Status handleAccessDenied(org.springframework.security.access.AccessDeniedException ex) {
+        return Status.PERMISSION_DENIED.withDescription("Acceso denegado: se requieren permisos de ADMINISTRADOR");
+    }
+
     @GrpcExceptionHandler(Exception.class)
     public Status handleGeneric(Exception ex) {
         return Status.INTERNAL.withDescription("Ha ocurrido un error inesperado en el servidor");
