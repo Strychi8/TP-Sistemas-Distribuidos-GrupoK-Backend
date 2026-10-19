@@ -1,0 +1,1462 @@
+{
+  "info": {
+    "_postman_id": "fb75343a-6b5f-46f8-b69e-8cc7b5bd5316",
+    "name": "TP Sistemas Distribuidos",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "47011236",
+    "_collection_link": "https://go.postman.co/collection/47011236-fb75343a-6b5f-46f8-b69e-8cc7b5bd5316?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "REST",
+      "item": [
+        {
+          "name": "Vehiculos",
+          "item": [
+            {
+              "name": "Listar Vehiculos",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code es 200 OK\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test(\"Respuesta es un array\", function () {",
+                      "    const data = pm.response.json();",
+                      "    pm.expect(data).to.be.an(\"array\");",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/vehiculos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "vehiculos"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Crear Vehiculo",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code es 201 Created\", function () {\n    pm.response.to.have.status(201);\n});\n\nconst data = pm.response.json();\n\npm.test(\"Estado inicial es DISPONIBLE y activo\", function () {\n    const estado = data.estado || data.estadoVehiculo;\n    pm.expect(estado).to.eql(\"DISPONIBLE\");\n    pm.expect(data.activo).to.eql(true);\n});\n\npm.test(\"Respuesta contiene ID del vehiculo\", function () {\n    pm.expect(data.idVehiculo || data.id).to.exist;\n});\n\n// Guardamos el ID para usarlo en los siguientes requests\nconst vehiculoId = data.idVehiculo || data.id;\nif (vehiculoId) {\n    pm.environment.set(\"idVehiculo\", vehiculoId);\n}"
+                    ]
+                  }
+                },
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// 1. Generamos una patente Mercosur aleatoria y válida (ej: AB123CD) para que nunca dé 409\nconst num = Math.floor(100 + Math.random() * 900);\nconst letra = () => String.fromCharCode(65 + Math.floor(Math.random() * 26));\nconst patente = `${letra()}${letra()}${num}${letra()}${letra()}`;\npm.environment.set(\"patente_runner\", patente);\n\nconst loginRequest = {\n    url: pm.environment.get(\"baseUrl\") + \"/api/auth/login\",\n    method: \"POST\",\n    header: { \"Content-Type\": \"application/json\" },\n    body: {\n        mode: \"raw\",\n        raw: JSON.stringify({ email: \"admin@empresarentar.com\", password: \"admin123\" })\n    }\n};\n\npm.sendRequest(loginRequest, function (err, res) {\n    if (!err && res.code === 200) {\n        const token = res.json().token;\n        pm.environment.set(\"token_admin\", token);\n    }\n});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token_admin}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"patente\": \"{{patente_runner}}\",\r\n  \"marca\": \"Toyota\",\r\n  \"modelo\": \"Corolla\",\r\n  \"anio\": 2024,\r\n  \"color\": \"Gris Plata\",\r\n  \"tipoVehiculo\": \"SEDAN\",\r\n  \"precioDiario\": 48000.0\r\n}\r\n",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/vehiculos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "vehiculos"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Obtener por ID",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code es 200 OK\", function () {\n    pm.response.to.have.status(200);\n});\n\nconst data = pm.response.json();\npm.test(\"Vehiculo encontrado con ID correcto\", function () {\n    pm.expect(data.idVehiculo || data.id).to.exist;\n});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/vehiculos/{{idVehiculo}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "vehiculos",
+                    "{{idVehiculo}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Obtener por Patente",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code es 200 OK\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "const data = pm.response.json();",
+                      "pm.test(\"Vehiculo encontrado por patente\", function () {",
+                      "    pm.expect(data.patente).to.exist;",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/vehiculos/patente/AF123JK",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "vehiculos",
+                    "patente",
+                    "AF123JK"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Modificar Vehiculo",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code es 200 OK\", function () {\n    pm.response.to.have.status(200);\n});\n\nconst data = pm.response.json();\npm.test(\"Vehiculo modificado correctamente\", function () {\n    pm.expect(data.color).to.eql(\"Negro\");\n    pm.expect(data.precioDiario).to.eql(52000.0);\n});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"patente\": \"AF123JK\",\r\n  \"marca\": \"Toyota\",\r\n  \"modelo\": \"Corolla\",\r\n  \"anio\": 2024,\r\n  \"color\": \"Negro\",\r\n  \"tipoVehiculo\": \"SEDAN\",\r\n  \"precioDiario\": 52000.0,\r\n  \"estado\": \"DISPONIBLE\"\r\n}\r\n",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/vehiculos/{{idVehiculo}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "vehiculos",
+                    "{{idVehiculo}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Baja Logica Eliminado",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code es 200 OK\", function () {\n    pm.response.to.have.status(200);\n});\n\npm.test(\"Vehículo inhabilitado correctamente\", function () {\n    const data = pm.response.json();\n    pm.expect(data.success).to.eql(true);\n    pm.expect(data.message).to.include(\"inhabilitado\");\n});\n"
+                    ]
+                  }
+                },
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      ""
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/vehiculos/{{idVehiculo}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "vehiculos",
+                    "{{idVehiculo}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Listar Activos",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code es 200 OK\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test(\"Respuesta es un array de vehiculos activos\", function () {",
+                      "    const data = pm.response.json();",
+                      "    pm.expect(data).to.be.an(\"array\");",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/vehiculos/activos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "vehiculos",
+                    "activos"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Crear Patente Duplicada (ERROR)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const loginRequest = {",
+                      "    url: pm.environment.get(\"baseUrl\") + \"/api/auth/login\",",
+                      "    method: \"POST\",",
+                      "    header: { \"Content-Type\": \"application/json\" },",
+                      "    body: {",
+                      "        mode: \"raw\",",
+                      "        raw: JSON.stringify({ email: \"admin@empresarentar.com\", password: \"admin123\" })",
+                      "    }",
+                      "};",
+                      "",
+                      "pm.sendRequest(loginRequest, function (err, res) {",
+                      "    if (!err && res.code === 200) {",
+                      "        pm.environment.set(\"token_admin\", res.json().token);",
+                      "    }",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code es 409 Conflict\", function () {",
+                      "    pm.response.to.have.status(409);",
+                      "});",
+                      "",
+                      "const data = pm.response.json();",
+                      "pm.test(\"Mensaje de error indica patente duplicada\", function () {",
+                      "    const errorMsg = data.error || data.message || data.mensaje || \"\";",
+                      "    pm.expect(errorMsg).to.be.a(\"string\");",
+                      "    pm.expect(errorMsg.length).to.be.above(0);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token_admin}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"patente\": \"AF123JK\",\r\n  \"marca\": \"Toyota\",\r\n  \"modelo\": \"Corolla\",\r\n  \"anio\": 2024,\r\n  \"color\": \"Gris Plata\",\r\n  \"tipoVehiculo\": \"SEDAN\",\r\n  \"precioDiario\": 48000.0\r\n}\r\n",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/vehiculos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "vehiculos"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Autenticacion y Autorizacion",
+          "item": [
+            {
+              "name": "Login Admin",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code es 200 OK\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "const data = pm.response.json();",
+                      "pm.test(\"Respuesta contiene token JWT\", function () {",
+                      "    pm.expect(data.token).to.be.a(\"string\");",
+                      "    pm.expect(data.token.length).to.be.above(0);",
+                      "});",
+                      "",
+                      "if (pm.response.code === 200) {",
+                      "    pm.environment.set(\"token_admin\", data.token);",
+                      "    console.log(\"Token guardado con éxito:\", data.token);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"email\": \"admin@empresarentar.com\",\r\n  \"password\": \"admin123\"\r\n}\r\n",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "login"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Logout y Blacklist de Token",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code es 200 OK\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/auth/logout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "logout"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Login Cliente",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code es 200 OK\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "const data = pm.response.json();",
+                      "pm.test(\"Respuesta contiene token JWT\", function () {",
+                      "    pm.expect(data.token).to.be.a(\"string\");",
+                      "    pm.expect(data.token.length).to.be.above(0);",
+                      "});",
+                      "",
+                      "if (pm.response.code === 200) {",
+                      "    pm.environment.set(\"token_cliente\", data.token);",
+                      "    console.log(\"Token de cliente guardado con éxito\");",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"email\": \"maria.gomez@gmail.com\",\r\n  \"password\": \"123456\"\r\n}\r\n",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "login"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Login Credenciales Invalidas",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code es 401 Unauthorized\", function () {",
+                      "    pm.response.to.have.status(401);",
+                      "});",
+                      "",
+                      "const data = pm.response.json();",
+                      "pm.test(\"Respuesta contiene mensaje de error\", function () {",
+                      "    const errorMsg = data.error || data.message || data.mensaje || \"\";",
+                      "    pm.expect(errorMsg).to.be.a(\"string\");",
+                      "    pm.expect(errorMsg.length).to.be.above(0);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"email\": \"admin@empresarentar.com\",\r\n  \"password\": \"admin1234\"\r\n}\r\n",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "login"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Clientes",
+          "item": [
+            {
+              "name": "Obtener Mi Perfil (Rol Cliente)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code es 200 OK\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "const data = pm.response.json();",
+                      "pm.test(\"Perfil del cliente retornado\", function () {",
+                      "    pm.expect(data.email).to.be.a(\"string\");",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token_cliente}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/clientes/perfil",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clientes",
+                    "perfil"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Intento de Reusar Token Revocado",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code es 401 Unauthorized\", function () {\n    pm.response.to.have.status(401);\n});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token_admin}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/clientes/perfil",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clientes",
+                    "perfil"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Listar Clientes",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code es 200 OK\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test(\"Respuesta es un array\", function () {",
+                      "    const data = pm.response.json();",
+                      "    pm.expect(data).to.be.an(\"array\");",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/clientes",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clientes"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Crear Cliente",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code 201 Created\", function () {\n    pm.response.to.have.status(201);\n});\n\nconst data = pm.response.json();\npm.test(\"Cliente creado activo\", function () {\n    pm.expect(data.activo).to.eql(true);\n});\n\npm.test(\"Respuesta contiene ID del cliente\", function () {\n    pm.expect(data.idCliente || data.id).to.exist;\n});\n\nconst clienteId = data.idCliente || data.id;\nif (clienteId) {\n    pm.environment.set(\"idCliente\", clienteId);\n}"
+                    ]
+                  }
+                },
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Generamos DNI y Email únicos para que nunca choque con 409\nconst randomDni = Math.floor(20000000 + Math.random() * 25000000).toString();\nconst randomEmail = `cliente_${Date.now()}@gmail.com`;\npm.environment.set(\"dni_runner\", randomDni);\npm.environment.set(\"email_runner\", randomEmail);\n\nconst loginRequest = {\n    url: pm.environment.get(\"baseUrl\") + \"/api/auth/login\",\n    method: \"POST\",\n    header: { \"Content-Type\": \"application/json\" },\n    body: {\n        mode: \"raw\",\n        raw: JSON.stringify({ email: \"admin@empresarentar.com\", password: \"admin123\" })\n    }\n};\n\npm.sendRequest(loginRequest, function (err, res) {\n    if (!err && res.code === 200) {\n        const token = res.json().token;\n        pm.environment.set(\"token_admin\", token);\n    }\n});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token_admin}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"dni\": \"{{dni_runner}}\",\r\n  \"nombre\": \"Pablo\",\r\n  \"apellido\": \"Salas\",\r\n  \"email\": \"{{email_runner}}\",\r\n  \"password\": \"123456\",\r\n  \"telefono\": \"1188885432\",\r\n  \"fechaNacimiento\": \"1998-02-05\"\r\n}\r\n",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/clientes",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clientes"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Obtener Cliente por ID",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code es 200 OK\", function () {\n    pm.response.to.have.status(200);\n});\n\nconst data = pm.response.json();\npm.test(\"Cliente encontrado con ID correcto\", function () {\n    pm.expect(data.idCliente || data.id).to.exist;\n});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/clientes/{{idCliente}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clientes",
+                    "{{idCliente}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Modificar Cliente",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code es 200 OK\", function () {\n    pm.response.to.have.status(200);\n});\n\nconst data = pm.response.json();\npm.test(\"Cliente modificado correctamente\", function () {\n    pm.expect(data.nombre).to.eql(\"Enzo\");\n});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"dni\": \"40999777\",\r\n  \"nombre\": \"Enzo\",\r\n  \"apellido\": \"Gonzalez\",\r\n  \"email\": \"enzo.gonzalez@gmail.com\",\r\n  \"telefono\": \"1144445555\",\r\n  \"fechaNacimiento\": \"1984-02-05\"\r\n}\r\n",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/clientes/46",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clientes",
+                    "46"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Baja Logica de Cliente",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code es 200 OK\", function () {\n    pm.response.to.have.status(200);\n});\n\npm.test(\"Cliente eliminado correctamente\", function () {\n    const data = pm.response.json();\n    pm.expect(data.success).to.eql(true);\n    pm.expect(data.message).to.include(\"eliminado\");\n});\n"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/clientes/{{idCliente}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clientes",
+                    "{{idCliente}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Validacion de Duplicados (DNI o Email ya existentes)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const loginRequest = {",
+                      "    url: pm.environment.get(\"baseUrl\") + \"/api/auth/login\",",
+                      "    method: \"POST\",",
+                      "    header: { \"Content-Type\": \"application/json\" },",
+                      "    body: {",
+                      "        mode: \"raw\",",
+                      "        raw: JSON.stringify({ email: \"admin@empresarentar.com\", password: \"admin123\" })",
+                      "    }",
+                      "};",
+                      "",
+                      "pm.sendRequest(loginRequest, function (err, res) {",
+                      "    if (!err && res.code === 200) {",
+                      "        pm.environment.set(\"token_admin\", res.json().token);",
+                      "    }",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code es 409 Conflict\", function () {",
+                      "    pm.response.to.have.status(409);",
+                      "});",
+                      "",
+                      "const data = pm.response.json();",
+                      "pm.test(\"Mensaje de error indica duplicado de DNI o email\", function () {",
+                      "    const errorMsg = data.error || data.message || data.mensaje || \"\";",
+                      "    pm.expect(errorMsg).to.be.a(\"string\");",
+                      "    pm.expect(errorMsg.length).to.be.above(0);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token_admin}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"dni\": \"42888777\",\r\n  \"nombre\": \"Cesar\",\r\n  \"apellido\": \"Villalba\",\r\n  \"email\": \"cesar.villalba@gmail.com\",\r\n  \"password\": \"123456\",\r\n  \"telefono\": \"1188885432\",\r\n  \"fechaNacimiento\": \"1998-02-05\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/clientes",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clientes"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Reservas",
+          "item": [
+            {
+              "name": "Crear Reserva Valida",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code es 201 Created\", function () {\r\n    pm.response.to.have.status(201);\r\n});\r\n\r\nconst data = pm.response.json();\r\npm.test(\"Estado de reserva es CONFIRMADA\", function () {\r\n    pm.expect(data.estadoReserva).to.eql(\"CONFIRMADA\");\r\n});\r\n\r\npm.test(\"Importe total calculado correctamente\", function () {\r\n    pm.expect(data.importeTotal).to.be.above(0);\r\n});\r\n\r\n// Guardamos el ID de la reserva creada\r\nif (data.idReserva) {\r\n    pm.environment.set(\"idReserva\", data.idReserva);\r\n}\r\n"
+                    ]
+                  }
+                },
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const loginRequest = {\n    url: pm.environment.get(\"baseUrl\") + \"/api/auth/login\",\n    method: \"POST\",\n    header: { \"Content-Type\": \"application/json\" },\n    body: {\n        mode: \"raw\",\n        raw: JSON.stringify({ email: \"maria.gomez@gmail.com\", password: \"123456\" })\n    }\n};\n\npm.sendRequest(loginRequest, function (err, res) {\n    if (!err && res.code === 200) {\n        const token = res.json().token;\n        pm.environment.set(\"token_cliente\", token);\n    }\n});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token_cliente}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"idVehiculo\": 4,\r\n  \"fechaInicio\": \"2026-12-01T10:00:00.000Z\",\r\n  \"fechaFin\": \"2026-12-05T10:00:00.000Z\"\r\n}\r\n\r\n",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/reservas",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "reservas"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "[Error] Solapamiento de Reserva (Mismo periodo)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const loginRequest = {\n    url: pm.environment.get(\"baseUrl\") + \"/api/auth/login\",\n    method: \"POST\",\n    header: { \"Content-Type\": \"application/json\" },\n    body: {\n        mode: \"raw\",\n        raw: JSON.stringify({ email: \"maria.gomez@gmail.com\", password: \"123456\" })\n    }\n};\npm.sendRequest(loginRequest, function (err, res) {\n    if (!err && res.code === 200) {\n        pm.environment.set(\"token_cliente\", res.json().token);\n    }\n});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code es 409 Conflict\", function () {\n    pm.response.to.have.status(409);\n});\n\nconst data = pm.response.json();\npm.test(\"Mensaje de error indica solapamiento de reserva\", function () {\n    pm.expect(data.error).to.be.a(\"string\");\n});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token_cliente}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"idVehiculo\": 3,\r\n  \"fechaInicio\": \"2026-12-02T10:00:00.000Z\",\r\n  \"fechaFin\": \"2026-12-04T10:00:00.000Z\"\r\n}\r\n",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/reservas",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "reservas"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "[Error] Fecha Fin Menor a Fecha Inicio",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const loginRequest = {\n    url: pm.environment.get(\"baseUrl\") + \"/api/auth/login\",\n    method: \"POST\",\n    header: { \"Content-Type\": \"application/json\" },\n    body: {\n        mode: \"raw\",\n        raw: JSON.stringify({ email: \"maria.gomez@gmail.com\", password: \"123456\" })\n    }\n};\npm.sendRequest(loginRequest, function (err, res) {\n    if (!err && res.code === 200) {\n        pm.environment.set(\"token_cliente\", res.json().token);\n    }\n});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code es 400 Bad Request\", function () {\n    pm.response.to.have.status(400);\n});\n\npm.test(\"Mensaje de error indica fecha inválida\", function () {\n    const data = pm.response.json();\n    const msg = data.message || data.error;\n    pm.expect(msg).to.include(\"posterior a la fecha de inicio\");\n});\n"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token_cliente}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"idVehiculo\": 1,\r\n  \"fechaInicio\": \"2026-12-10T10:00:00.000Z\",\r\n  \"fechaFin\": \"2026-12-05T10:00:00.000Z\"\r\n}\r\n",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/reservas",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "reservas"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "[Error] Fecha de Inicio en el Pasado",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const loginRequest = {",
+                      "    url: pm.environment.get(\"baseUrl\") + \"/api/auth/login\",",
+                      "    method: \"POST\",",
+                      "    header: { \"Content-Type\": \"application/json\" },",
+                      "    body: {",
+                      "        mode: \"raw\",",
+                      "        raw: JSON.stringify({ email: \"maria.gomez@gmail.com\", password: \"123456\" })",
+                      "    }",
+                      "};",
+                      "pm.sendRequest(loginRequest, function (err, res) {",
+                      "    if (!err && res.code === 200) {",
+                      "        pm.environment.set(\"token_cliente\", res.json().token);",
+                      "    }",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code es 400 Bad Request\", function () {",
+                      "    pm.response.to.have.status(400);",
+                      "});",
+                      "",
+                      "const data = pm.response.json();",
+                      "pm.test(\"Mensaje de error indica fecha en el pasado\", function () {",
+                      "    pm.expect(data.error).to.be.a(\"string\");",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token_cliente}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"idVehiculo\": 1,\r\n  \"fechaInicio\": \"2020-01-01T10:00:00.000Z\",\r\n  \"fechaFin\": \"2020-01-05T10:00:00.000Z\"\r\n}\r\n",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/reservas",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "reservas"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Cancelar Reserva",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code es 200 OK\", function () {\n    pm.response.to.have.status(200);\n});\n\nconst data = pm.response.json();\npm.test(\"Estado de reserva es CANCELADA\", function () {\n    const estado = data.estado || data.estadoReserva;\n    pm.expect(estado).to.eql(\"CANCELADA\");\n});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token_cliente}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/reservas/{{idReserva}}/cancelar",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "reservas",
+                    "{{idReserva}}",
+                    "cancelar"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Re-reserva tras Cancelacion (Regla Clave)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code es 201 Created\", function () {\n    pm.response.to.have.status(201);\n});\n\nconst data = pm.response.json();\npm.test(\"Estado de reserva es CONFIRMADA\", function () {\n    const estado = data.estado || data.estadoReserva;\n    pm.expect(estado).to.eql(\"CONFIRMADA\");\n});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token_cliente}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"idVehiculo\": 4,\r\n  \"fechaInicio\": \"2026-12-01T10:00:00.000Z\",\r\n  \"fechaFin\": \"2026-12-05T10:00:00.000Z\"\r\n}\r\n",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/reservas",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "reservas"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{token_admin}}",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "GraphQL",
+      "item": [
+        {
+          "name": "Consultas de Disponibilidad e Historial",
+          "item": [
+            {
+              "name": "Vehiculos Disponibles (Sin filtros adicionales)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token_cliente}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "graphql",
+                  "graphql": {
+                    "query": "query Disponibilidad($inicio: String!, $fin: String!) {\r\n  vehiculosDisponibles(inicio: $inicio, fin: $fin) {\r\n    idVehiculo\r\n    patente\r\n    marca\r\n    modelo\r\n    tipoVehiculo\r\n    precioDiario\r\n    estado\r\n  }\r\n}\r\n",
+                    "variables": "{\r\n  \"inicio\": \"2026-11-10\",\r\n  \"fin\": \"2026-11-15\"\r\n}\r\n"
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/graphql",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "graphql"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Vehiculos Disponibles con Filtros (Tipo y Precio Max)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token_cliente}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "graphql",
+                  "graphql": {
+                    "query": "query DisponibilidadFiltrada($inicio: String!, $fin: String!, $filtro: FiltroDisponibilidad) {\r\n  vehiculosDisponibles(inicio: $inicio, fin: $fin, filtro: $filtro) {\r\n    patente\r\n    marca\r\n    modelo\r\n    tipoVehiculo\r\n    precioDiario\r\n  }\r\n}\r\n",
+                    "variables": "{\r\n  \"inicio\": \"2026-12-01\",\r\n  \"fin\": \"2026-12-10\",\r\n  \"filtro\": {\r\n    \"tipoVehiculo\": \"SEDAN\",\r\n    \"precioMax\": 60000\r\n  }\r\n}\r\n"
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/graphql",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "graphql"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Historial de Alquileres de Cliente",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token_cliente}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "graphql",
+                  "graphql": {
+                    "query": "query HistorialCliente($idCliente: ID!) {\r\n  historialAlquileres(idCliente: $idCliente) {\r\n    vehiculo\r\n    patente\r\n    fechaInicio\r\n    fechaFinalizacion\r\n    cantidadDias\r\n    importeTotal\r\n    estado\r\n  }\r\n}\r\n",
+                    "variables": "{\r\n  \"idCliente\": 1\r\n}\r\n"
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/graphql",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "graphql"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Consulta General de Reservas (Rol Admin)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token_admin}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "graphql",
+                  "graphql": {
+                    "query": "query {\r\n  reservas {\r\n    idReserva\r\n    cliente {\r\n      idCliente\r\n      nombre\r\n      apellido\r\n      email\r\n    }\r\n    vehiculo {\r\n      idVehiculo\r\n      patente\r\n      marca\r\n      modelo\r\n    }\r\n    fechaInicio\r\n    fechaFin\r\n    importeTotal\r\n    estado\r\n  }\r\n}\r\n",
+                    "variables": ""
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/graphql",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "graphql"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Consulta de Reservas Filtradas (Por Estado)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token_admin}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "graphql",
+                  "graphql": {
+                    "query": "query ReservasFiltradas($filtro: FiltroReserva) {\r\n  reservas(filtro: $filtro) {\r\n    idReserva\r\n    estado\r\n    cliente {\r\n      nombre\r\n      apellido\r\n    }\r\n    vehiculo {\r\n      marca\r\n      modelo\r\n      patente\r\n    }\r\n    importeTotal\r\n  }\r\n}\r\n",
+                    "variables": "{\r\n  \"filtro\": {\r\n    \"estado\": \"CANCELADA\"\r\n  }\r\n}\r\n"
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/graphql",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "graphql"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
