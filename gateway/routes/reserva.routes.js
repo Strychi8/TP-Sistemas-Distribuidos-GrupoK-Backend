@@ -19,13 +19,13 @@ router.post('/', async (req, res, next) => {
   const now = new Date();
 
   if (isNaN(inicioDate.getTime()) || isNaN(finDate.getTime())) {
-    return res.status(400).json({ message: 'Fechas inválidas' });
+    return res.status(400).json({ error: 'Fechas inválidas', message: 'Fechas inválidas' });
   }
   if (inicioDate < now) {
-    return res.status(400).json({ message: 'La fecha de inicio de la reserva debe ser futura' });
+    return res.status(400).json({ error: 'La fecha de inicio de la reserva debe ser futura', message: 'La fecha de inicio de la reserva debe ser futura' });
   }
   if (finDate <= inicioDate) {
-    return res.status(400).json({ message: 'La fecha de fin de la reserva debe ser posterior a la fecha de inicio' });
+    return res.status(400).json({ error: 'La fecha de fin de la reserva debe ser posterior a la fecha de inicio', message: 'La fecha de fin de la reserva debe ser posterior a la fecha de inicio' });
   }
 
   try {
@@ -39,7 +39,7 @@ router.post('/', async (req, res, next) => {
     });
 
     if (!cliente.activo) {
-      return res.status(400).json({ message: 'El cliente se encuentra inactivo' });
+      return res.status(400).json({ error: 'El cliente se encuentra inactivo', message: 'El cliente se encuentra inactivo' });
     }
 
     // idCliente derivado de la identidad autenticada (no del payload del cliente).
@@ -54,7 +54,7 @@ router.post('/', async (req, res, next) => {
     });
 
     if (!vehiculo.activo) {
-      return res.status(400).json({ message: 'El vehículo se encuentra inactivo' });
+      return res.status(400).json({ error: 'El vehículo se encuentra inactivo', message: 'El vehículo se encuentra inactivo' });
     }
 
     // 4. RentalService.VerificarSolapamientoVehiculo
@@ -70,7 +70,10 @@ router.post('/', async (req, res, next) => {
     });
 
     if (solapamiento.solapado) {
-      return res.status(400).json({ message: 'El vehículo no está disponible en las fechas seleccionadas (solapamiento de reserva)' });
+      return res.status(409).json({ 
+        error: 'El vehículo no está disponible en las fechas seleccionadas (solapamiento de reserva)',
+        message: 'El vehículo no está disponible en las fechas seleccionadas (solapamiento de reserva)'
+      });
     }
 
     // Calcular importe total

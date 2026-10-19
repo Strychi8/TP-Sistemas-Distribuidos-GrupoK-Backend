@@ -140,7 +140,7 @@ describe('POST /api/reservas', () => {
       .post('/api/reservas')
       .send(validPayload);
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(409);
     expect(response.body.message).toContain('solapamiento');
     
     // Verificar que la orquestación se cortó
