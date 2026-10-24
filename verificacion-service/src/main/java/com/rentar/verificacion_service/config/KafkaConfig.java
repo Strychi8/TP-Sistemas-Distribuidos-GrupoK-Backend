@@ -31,7 +31,7 @@ public class KafkaConfig {
     public static final String TOPIC_EXTERNOS_VALIDACION_PATENTE = "vehiculos.externos.validacion.patente";
     public static final String TOPIC_EXTERNOS_VALIDACION_TITULARIDAD = "vehiculos.externos.validacion.titularidad";
 
-    @Value("${spring.kafka.bootstrap-servers:localhost:9094}")
+    @Value("${spring.kafka.bootstrap-servers:localhost:29092}")
     private String bootstrapServers;
 
     @Value("${spring.kafka.consumer.group-id:verificacion-service-group}")

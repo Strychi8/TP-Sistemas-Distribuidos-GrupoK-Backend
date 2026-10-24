@@ -170,12 +170,12 @@ services:
     image: apache/kafka:3.7.0
     container_name: rentar_kafka
     ports:
-      - "9094:9094"
+      - "29092:29092" # Acceso desde tu maquina local
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_LISTENERS: PLAINTEXT://:9092,EXTERNAL://:9094,CONTROLLER://:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
+      KAFKA_LISTENERS: PLAINTEXT://:9092,EXTERNAL://:29092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:29092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
@@ -192,6 +192,25 @@ services:
       timeout: 5s
       retries: 10
       start_period: 20s
+    
+  # ==========================================
+  # Interfaz Web para Kafka (Kafbat UI)
+  # ==========================================
+  kafka-ui:
+    image: ghcr.io/kafbat/kafka-ui:latest
+    container_name: rentar_kafka_ui
+    restart: unless-stopped
+    ports:
+      - "9000:8080"
+    environment:
+      JAVA_OPTS: "-Xmx128m"
+      KAFKA_CLUSTERS_0_NAME: rentar-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - rentar-net
   
   # ==========================================
   # Microservicio de Verificación (Kafka)
@@ -203,7 +222,7 @@ services:
     container_name: rentar_verificacion
     environment:
       JAVA_TOOL_OPTIONS: "-Xms64m -Xmx256m -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xss256k"
-      VERIFICACION_SERVER_PORT: 8084
+      VERIFICACION_SERVER_PORT: 9094
       DB_HOST: mysql-db
       DB_PORT: 3306
       VERIFICACION_DB_NAME: ${VERIFICACION_DB_NAME}
@@ -220,14 +239,13 @@ services:
     networks:
       - rentar-net
     ports:
-      - "8084:8084"
+      - "9094:9094"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8084/api/verificaciones/salud"]
+      test: ["CMD", "curl", "-f", "http://localhost:9094/api/verificaciones/salud"]
       interval: 25s
       timeout: 5s
       retries: 20
       start_period: 40s
-
 
 volumes:
   mysql_data:

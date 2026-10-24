@@ -21,5 +21,5 @@ RUN apt-get update \
 WORKDIR /app
 COPY --from=build /build/verificacion-service/target/*.jar app.jar
 
-EXPOSE 8084
+EXPOSE 9094
 ENTRYPOINT ["java", "-jar", "app.jar"]
