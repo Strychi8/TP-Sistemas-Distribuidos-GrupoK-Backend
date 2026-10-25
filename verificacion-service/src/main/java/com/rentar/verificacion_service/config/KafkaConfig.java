@@ -112,13 +112,14 @@ public class KafkaConfig {
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
         props.put(ErrorHandlingDeserializer.KEY_DESERIALIZER_CLASS, StringDeserializer.class);
-        props.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, JsonDeserializer.class);
-
-        // Acepta cualquier paquete y no falla por nombres de clases de otros microservicios
-        props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
-        props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
+        props.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, StringDeserializer.class);
 
         return new DefaultKafkaConsumerFactory<>(props);
+    }
+
+    @Bean
+    public org.springframework.kafka.support.converter.RecordMessageConverter recordMessageConverter() {
+        return new StringJsonMessageConverter();
     }
 
     @Bean
@@ -126,8 +127,8 @@ public class KafkaConfig {
         ConcurrentKafkaListenerContainerFactory<String, Object> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory());
-        // Facilita la conversión JSON a DTOs de Spring
-        factory.setRecordMessageConverter(new StringJsonMessageConverter());
+        // Facilita la conversión JSON a DTOs de Spring automáticamente mediante Jackson
+        factory.setRecordMessageConverter(recordMessageConverter());
         return factory;
     }
 }
