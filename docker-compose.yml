@@ -169,6 +169,7 @@ services:
   kafka:
     image: apache/kafka:3.7.0
     container_name: rentar_kafka
+    init: true
     ports:
       - "29092:29092" # Acceso desde tu maquina local
     environment:
@@ -187,11 +188,11 @@ services:
     networks:
       - rentar-net
     healthcheck:
-      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1"]
-      interval: 15s
+      test: ["CMD-SHELL", "nc -z localhost 9092 || exit 1"]
+      interval: 10s
       timeout: 5s
-      retries: 10
-      start_period: 20s
+      retries: 5
+      start_period: 15s
     
   # ==========================================
   # Interfaz Web para Kafka (Kafbat UI)
