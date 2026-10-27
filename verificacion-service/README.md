@@ -348,6 +348,12 @@ curl -X GET http://localhost:9094/api/verificaciones/patentes-robadas/verificar/
    Se configuró `JsonSerializer.ADD_TYPE_INFO_HEADERS = false` y `JsonDeserializer.USE_TYPE_INFO_HEADERS = false` con `TRUSTED_PACKAGES = "*"`. Esto permite que microservicios escritos en diferentes paquetes Java (o diferentes lenguajes) puedan intercambiar eventos JSON sin fallos por `ClassNotFoundException`.
 3. **Resiliencia de Datos Híbrida (Memoria + BD):**
    Tanto `RegistroPolicialServiceImpl` como `RegistroTitularidadServiceImpl` mantienen listas concurrentes precargadas en memoria. Si por algún motivo la base de datos MySQL presenta latencia o una falla transitoria, el servicio puede responder inmediatamente contra el caché seguro en memoria sin interrumpir el flujo del broker.
+4. **Garantía de Publicación Dual y Prevención de Flujos Colgados:**
+   En el registro de vehículos externos, las validaciones de antecedentes policiales y titularidad registral se ejecutan en bloques independientes protegidos por `try/catch`. Si una de las validaciones sufre un error técnico imprevisto, se emite preventivamente el dictamen `RECHAZADO`. Esto asegura que ambos eventos (`validacion.patente` y `validacion.titularidad`) se publiquen **siempre**, evitando que el servicio de vehículos quede esperando indefinidamente en estado `PENDIENTE`.
+5. **Idempotencia y Semántica de Mensajería (At-Least-Once):**
+   Apache Kafka garantiza semántica de entrega *al menos una vez* (*at-least-once*). Ante reintentos de red, caídas transitorias o rebalanceos de particiones, un evento puede ser entregado más de una vez. En consecuencia:
+   - Los consumidores de este microservicio son idempotentes: verificar múltiples veces la misma patente produce el mismo resultado determinista.
+   - Los servicios consumidores del ecosistema (como `vehicle-service`) deben procesar los eventos de forma idempotente, actualizando el estado de la entidad según el identificador de correlación (`vehiculoId` / `vehiculoExternoId`) sin crear registros duplicados.
 
 ---
 

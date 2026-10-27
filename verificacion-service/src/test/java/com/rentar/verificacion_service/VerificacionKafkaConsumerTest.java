@@ -70,13 +70,13 @@ class VerificacionKafkaConsumerTest {
     }
 
     @Test
-    @DisplayName("Caso 2: Vehiculo externo registrado -> Dispara ambas validaciones (patente y titularidad)")
-    void testVehiculoExternoRegistrado() {
+    @DisplayName("Caso 2: Vehiculo externo registrado con patente formato viejo (DEF456) -> Dispara ambas validaciones")
+    void testVehiculoExternoRegistradoFormatoViejo() {
         VehiculoExternoRegistradoEvent event = new VehiculoExternoRegistradoEvent(50L, 89L, "30123456", "DEF456");
 
         when(policialService.esRobado("DEF456")).thenReturn(false);
         when(titularidadService.verificarTitularidad(89L, "30123456", "DEF456"))
-                .thenReturn(new IRegistroTitularidadService.ResultadoTitularidad(true, "30123456", "Juan"));
+                .thenReturn(new IRegistroTitularidadService.ResultadoTitularidad(true, "30123456", "Ana Martinez"));
 
         consumer.consumirVehiculoExternoRegistrado(event);
 
@@ -91,5 +91,66 @@ class VerificacionKafkaConsumerTest {
         verify(producer).publicarValidacionTitularidad(titCaptor.capture());
         assertEquals("VALIDADO", titCaptor.getValue().getResultado());
         assertEquals("30123456", titCaptor.getValue().getDocumento());
+    }
+
+    @Test
+    @DisplayName("Caso 3: Si falla tecnicamente la titularidad, igual se publica validacion.patente y titularidad=RECHAZADO")
+    void testVehiculoExternoFalloTecnicoTitularidad() {
+        VehiculoExternoRegistradoEvent event = new VehiculoExternoRegistradoEvent(50L, 89L, "30123456", "DEF456");
+
+        when(policialService.esRobado("DEF456")).thenReturn(false);
+        when(titularidadService.verificarTitularidad(any(), any(), any()))
+                .thenThrow(new RuntimeException("Simulacion de fallo en base de datos"));
+
+        consumer.consumirVehiculoExternoRegistrado(event);
+
+        // La validacion de patente no debe verse afectada
+        ArgumentCaptor<ValidacionPatenteEvent> patCaptor = ArgumentCaptor.forClass(ValidacionPatenteEvent.class);
+        verify(producer).publicarValidacionPatente(patCaptor.capture());
+        assertEquals("VALIDADO", patCaptor.getValue().getResultado());
+
+        // La titularidad debe publicarse como RECHAZADO para no dejar el flujo colgado
+        ArgumentCaptor<ValidacionTitularidadEvent> titCaptor = ArgumentCaptor.forClass(ValidacionTitularidadEvent.class);
+        verify(producer).publicarValidacionTitularidad(titCaptor.capture());
+        assertEquals("RECHAZADO", titCaptor.getValue().getResultado());
+        assertEquals(50L, titCaptor.getValue().getVehiculoExternoId());
+    }
+
+    @Test
+    @DisplayName("Caso 4: verificacion-service NO debe publicar evento 'completada' (responsabilidad de vehicle-service)")
+    void testNoPublicaCompletadaDesdeVerificacionService() {
+        VehiculoExternoRegistradoEvent event = new VehiculoExternoRegistradoEvent(50L, 89L, "30123456", "DEF456");
+
+        when(policialService.esRobado("DEF456")).thenReturn(false);
+        when(titularidadService.verificarTitularidad(89L, "30123456", "DEF456"))
+                .thenReturn(new IRegistroTitularidadService.ResultadoTitularidad(true, "30123456", "Ana Martinez"));
+
+        consumer.consumirVehiculoExternoRegistrado(event);
+
+        // Solo debe publicar en patente y en titularidad, ninguna otra interaccion
+        verify(producer, times(1)).publicarValidacionPatente(any());
+        verify(producer, times(1)).publicarValidacionTitularidad(any());
+        verifyNoMoreInteractions(producer);
+    }
+
+    @Test
+    @DisplayName("Caso 5: Vehiculo externo con patente formato Mercosur (AA111BB) denunciada como robada")
+    void testVehiculoExternoPatenteMercosurRobada() {
+        VehiculoExternoRegistradoEvent event = new VehiculoExternoRegistradoEvent(60L, 89L, "30123456", "AA111BB");
+
+        when(policialService.esRobado("AA111BB")).thenReturn(true);
+        when(titularidadService.verificarTitularidad(89L, "30123456", "AA111BB"))
+                .thenReturn(new IRegistroTitularidadService.ResultadoTitularidad(true, "30123456", "Ana Martinez"));
+
+        consumer.consumirVehiculoExternoRegistrado(event);
+
+        ArgumentCaptor<ValidacionPatenteEvent> patCaptor = ArgumentCaptor.forClass(ValidacionPatenteEvent.class);
+        verify(producer).publicarValidacionPatente(patCaptor.capture());
+        assertEquals("RECHAZADO", patCaptor.getValue().getResultado());
+        assertEquals("AA111BB", patCaptor.getValue().getPatente());
+
+        ArgumentCaptor<ValidacionTitularidadEvent> titCaptor = ArgumentCaptor.forClass(ValidacionTitularidadEvent.class);
+        verify(producer).publicarValidacionTitularidad(titCaptor.capture());
+        assertEquals("VALIDADO", titCaptor.getValue().getResultado());
     }
 }

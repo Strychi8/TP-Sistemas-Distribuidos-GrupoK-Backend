@@ -32,17 +32,28 @@ public class VerificacionKafkaConsumer {
         log.info("[KAFKA CONSUMER] Recibida solicitud de verificacion policial: vehiculoId={}, patente={}",
                 event.getVehiculoId(), event.getPatente());
 
-        boolean robado = registroPolicialService.esRobado(event.getPatente());
-        String resultado = robado ? "ROBADO" : "VALIDADO";
+        try {
+            boolean robado = registroPolicialService.esRobado(event.getPatente());
+            String resultado = robado ? "ROBADO" : "VALIDADO";
 
-        VerificacionResultadoEvent resultadoEvent = VerificacionResultadoEvent.builder()
-                .vehiculoId(event.getVehiculoId())
-                .patente(event.getPatente())
-                .resultado(resultado)
-                .build();
+            VerificacionResultadoEvent resultadoEvent = VerificacionResultadoEvent.builder()
+                    .vehiculoId(event.getVehiculoId())
+                    .patente(event.getPatente())
+                    .resultado(resultado)
+                    .build();
 
-        log.info("[KAFKA CONSUMER] Emitiendo resultado de verificacion policial: {}", resultadoEvent);
-        producer.publicarResultadoVerificacion(resultadoEvent);
+            log.info("[KAFKA CONSUMER] Emitiendo resultado de verificacion policial: {}", resultadoEvent);
+            producer.publicarResultadoVerificacion(resultadoEvent);
+        } catch (Exception e) {
+            log.error("[KAFKA CONSUMER] Error técnico verificando vehiculoId={}: {}. Publicando ROBADO preventivamente.",
+                    event.getVehiculoId(), e.getMessage());
+            VerificacionResultadoEvent resultadoEvent = VerificacionResultadoEvent.builder()
+                    .vehiculoId(event.getVehiculoId())
+                    .patente(event.getPatente())
+                    .resultado("ROBADO")
+                    .build();
+            producer.publicarResultadoVerificacion(resultadoEvent);
+        }
     }
 
     // Requerimiento 5:
@@ -56,38 +67,62 @@ public class VerificacionKafkaConsumer {
                 event.getVehiculoExternoId(), event.getClienteId(), event.getPatente());
 
         // 1. Validacion de Patente (no denunciada como robada)
-        boolean robado = registroPolicialService.esRobado(event.getPatente());
-        String resultadoPatente = robado ? "RECHAZADO" : "VALIDADO";
+        try {
+            boolean robado = registroPolicialService.esRobado(event.getPatente());
+            String resultadoPatente = robado ? "RECHAZADO" : "VALIDADO";
 
-        ValidacionPatenteEvent patenteEvent = ValidacionPatenteEvent.builder()
-                .vehiculoExternoId(event.getVehiculoExternoId())
-                .patente(event.getPatente())
-                .resultado(resultadoPatente)
-                .build();
+            ValidacionPatenteEvent patenteEvent = ValidacionPatenteEvent.builder()
+                    .vehiculoExternoId(event.getVehiculoExternoId())
+                    .patente(event.getPatente())
+                    .resultado(resultadoPatente)
+                    .build();
 
-        producer.publicarValidacionPatente(patenteEvent);
+            producer.publicarValidacionPatente(patenteEvent);
+        } catch (Exception e) {
+            log.error("[KAFKA CONSUMER] Error técnico validando patente para vehiculoExternoId={}: {}. Publicando RECHAZADO.",
+                    event.getVehiculoExternoId(), e.getMessage());
+            ValidacionPatenteEvent patenteEvent = ValidacionPatenteEvent.builder()
+                    .vehiculoExternoId(event.getVehiculoExternoId())
+                    .patente(event.getPatente())
+                    .resultado("RECHAZADO")
+                    .build();
+            producer.publicarValidacionPatente(patenteEvent);
+        }
 
         // 2. Validacion de Titularidad (cliente solicitante es el titular del vehiculo)
-        IRegistroTitularidadService.ResultadoTitularidad resultadoTit =
-                registroTitularidadService.verificarTitularidad(
-                        event.getClienteId(),
-                        event.getDocumento(),
-                        event.getPatente()
-                );
+        try {
+            IRegistroTitularidadService.ResultadoTitularidad resultadoTit =
+                    registroTitularidadService.verificarTitularidad(
+                            event.getClienteId(),
+                            event.getDocumento(),
+                            event.getPatente()
+                    );
 
-        String resultadoTitularidad = resultadoTit.valido() ? "VALIDADO" : "RECHAZADO";
-        String documentoResuelto = resultadoTit.documento() != null && !resultadoTit.documento().isBlank()
-                ? resultadoTit.documento()
-                : (event.getDocumento() != null ? event.getDocumento() : "N/A");
+            String resultadoTitularidad = resultadoTit.valido() ? "VALIDADO" : "RECHAZADO";
+            String documentoResuelto = resultadoTit.documento() != null && !resultadoTit.documento().isBlank()
+                    ? resultadoTit.documento()
+                    : (event.getDocumento() != null ? event.getDocumento() : "N/A");
 
-        ValidacionTitularidadEvent titularidadEvent = ValidacionTitularidadEvent.builder()
-                .vehiculoExternoId(event.getVehiculoExternoId())
-                .clienteId(event.getClienteId())
-                .documento(documentoResuelto)
-                .patente(event.getPatente())
-                .resultado(resultadoTitularidad)
-                .build();
+            ValidacionTitularidadEvent titularidadEvent = ValidacionTitularidadEvent.builder()
+                    .vehiculoExternoId(event.getVehiculoExternoId())
+                    .clienteId(event.getClienteId())
+                    .documento(documentoResuelto)
+                    .patente(event.getPatente())
+                    .resultado(resultadoTitularidad)
+                    .build();
 
-        producer.publicarValidacionTitularidad(titularidadEvent);
+            producer.publicarValidacionTitularidad(titularidadEvent);
+        } catch (Exception e) {
+            log.error("[KAFKA CONSUMER] Error técnico validando titularidad para vehiculoExternoId={}: {}. Publicando RECHAZADO.",
+                    event.getVehiculoExternoId(), e.getMessage());
+            ValidacionTitularidadEvent titularidadEvent = ValidacionTitularidadEvent.builder()
+                    .vehiculoExternoId(event.getVehiculoExternoId())
+                    .clienteId(event.getClienteId())
+                    .documento(event.getDocumento() != null ? event.getDocumento() : "N/A")
+                    .patente(event.getPatente())
+                    .resultado("RECHAZADO")
+                    .build();
+            producer.publicarValidacionTitularidad(titularidadEvent);
+        }
     }
 }
