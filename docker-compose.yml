@@ -1,5 +1,7 @@
 services:
-  # ── Motor de base de datos ──
+  # ==========================================
+  # Motor de base de datos
+  # ==========================================
   mysql-db:
     image: mysql:8.0
     container_name: rentar_mysql
@@ -16,6 +18,9 @@ services:
       RENTAL_DB_NAME: ${RENTAL_DB_NAME}
       RENTAL_DB_USER: ${RENTAL_DB_USER}
       RENTAL_DB_PASSWORD: ${RENTAL_DB_PASSWORD}
+      VERIFICACION_DB_NAME: ${VERIFICACION_DB_NAME}
+      VERIFICACION_DB_USER: ${VERIFICACION_DB_USER}
+      VERIFICACION_DB_PASSWORD: ${VERIFICACION_DB_PASSWORD}
     volumes:
       - mysql_data:/var/lib/mysql
       - ./mysql/init:/docker-entrypoint-initdb.d:ro   # crea esquemas + usuarios por servicio
@@ -30,7 +35,9 @@ services:
       retries: 10
       start_period: 60s
 
-  # ── Microservicios gRPC ──
+  # ==========================================
+  # Microservicio de Vehículos gRPC
+  # ==========================================
   vehicle-service:
     build:
       context: .
@@ -59,6 +66,9 @@ services:
       retries: 20
       start_period: 360s
 
+  # ==========================================
+  # Microservicio de Clientes gRPC
+  # ==========================================
   customer-service:
     build:
       context: .
@@ -89,6 +99,9 @@ services:
       retries: 20
       start_period: 360s
 
+  # ==========================================
+  # Microservicio de Alquileres gRPC
+  # ==========================================
   rental-service:
     build:
       context: .
@@ -116,8 +129,10 @@ services:
       timeout: 5s
       retries: 20
       start_period: 360s
-
-  # ── API Gateway (único con puerto publicado) ──
+  
+  # ==========================================
+  # API Gateway
+  # ==========================================
   gateway:
     build:
       context: .
@@ -147,6 +162,91 @@ services:
       timeout: 5s
       retries: 6
       start_period: 20s
+
+  # ==========================================
+  # Kafka Broker (modo KRaft, sin Zookeeper)
+  # ==========================================
+  kafka:
+    image: apache/kafka:3.7.0
+    container_name: rentar_kafka
+    init: true
+    ports:
+      - "29092:29092" # Acceso desde tu maquina local
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,EXTERNAL://:29092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_NUM_PARTITIONS: 1
+    networks:
+      - rentar-net
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 9092 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    
+  # ==========================================
+  # Interfaz Web para Kafka (Kafbat UI)
+  # ==========================================
+  kafka-ui:
+    image: ghcr.io/kafbat/kafka-ui:latest
+    container_name: rentar_kafka_ui
+    restart: unless-stopped
+    ports:
+      - "9000:8080"
+    environment:
+      JAVA_OPTS: "-Xmx128m"
+      KAFKA_CLUSTERS_0_NAME: rentar-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - rentar-net
+  
+  # ==========================================
+  # Microservicio de Verificación (Kafka)
+  # ==========================================
+  verificacion-service:
+    build:
+      context: .
+      dockerfile: verificacion-service/Dockerfile
+    container_name: rentar_verificacion
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xms64m -Xmx256m -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xss256k"
+      VERIFICACION_SERVER_PORT: 9094
+      DB_HOST: mysql-db
+      DB_PORT: 3306
+      VERIFICACION_DB_NAME: ${VERIFICACION_DB_NAME}
+      DB_USERNAME: ${VERIFICACION_DB_USER}
+      DB_PASSWORD: ${VERIFICACION_DB_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_CONSUMER_GROUP_ID: verificacion-service-group
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - rentar-net
+    ports:
+      - "9094:9094"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9094/api/verificaciones/salud"]
+      interval: 25s
+      timeout: 5s
+      retries: 20
+      start_period: 40s
 
 volumes:
   mysql_data:
