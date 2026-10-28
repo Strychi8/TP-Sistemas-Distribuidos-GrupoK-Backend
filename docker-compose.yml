@@ -3,7 +3,7 @@ services:
   mysql-db:
     image: mysql:8.0
     container_name: rentar_mysql
-    command: ["mysqld", "--performance-schema=OFF", "--innodb-buffer-pool-size=64M", "--max-connections=40"]
+    command: [ "mysqld", "--performance-schema=OFF", "--innodb-buffer-pool-size=64M", "--max-connections=40" ]
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       # Credenciales por servicio: las consume mysql/init/01-init.sh (nada hardcodeado en el SQL).
@@ -16,6 +16,9 @@ services:
       RENTAL_DB_NAME: ${RENTAL_DB_NAME}
       RENTAL_DB_USER: ${RENTAL_DB_USER}
       RENTAL_DB_PASSWORD: ${RENTAL_DB_PASSWORD}
+      MAINTENANCE_DB_NAME: ${MAINTENANCE_DB_NAME}
+      MAINTENANCE_DB_USER: ${MAINTENANCE_DB_USER}
+      MAINTENANCE_DB_PASSWORD: ${MAINTENANCE_DB_PASSWORD}
     volumes:
       - mysql_data:/var/lib/mysql
       - ./mysql/init:/docker-entrypoint-initdb.d:ro   # crea esquemas + usuarios por servicio
@@ -24,7 +27,7 @@ services:
     networks:
       - rentar-net
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}" ]
       interval: 20s
       timeout: 5s
       retries: 10
@@ -53,7 +56,7 @@ services:
     ports:
       - "9091:9091"
     healthcheck:
-      test: ["CMD", "grpcurl", "-plaintext", "localhost:9091", "list"]
+      test: [ "CMD", "grpcurl", "-plaintext", "localhost:9091", "list" ]
       interval: 25s
       timeout: 5s
       retries: 20
@@ -83,7 +86,7 @@ services:
     ports:
       - "9092:9092"
     healthcheck:
-      test: ["CMD", "grpcurl", "-plaintext", "localhost:9092", "list"]
+      test: [ "CMD", "grpcurl", "-plaintext", "localhost:9092", "list" ]
       interval: 25s
       timeout: 5s
       retries: 20
@@ -111,7 +114,7 @@ services:
     ports:
       - "9093:9093"
     healthcheck:
-      test: ["CMD", "grpcurl", "-plaintext", "localhost:9093", "list"]
+      test: [ "CMD", "grpcurl", "-plaintext", "localhost:9093", "list" ]
       interval: 25s
       timeout: 5s
       retries: 20
@@ -142,11 +145,47 @@ services:
     networks:
       - rentar-net
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O- http://localhost:3000/ || exit 1"]
+      test: [ "CMD-SHELL", "wget -q -O- http://localhost:3000/ || exit 1" ]
       interval: 25s
       timeout: 5s
       retries: 6
       start_period: 20s
+
+  # ==========================================
+  # Microservicio de Mantenimiento (Kafka)
+  # ==========================================
+  mantenimiento-service:
+    build:
+      context: .
+      dockerfile: mantenimiento-service/Dockerfile
+    container_name: rentar_mantenimiento
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xms64m -Xmx256m -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xss256k"
+      VERIFICACION_SERVER_PORT: 8085
+      DB_HOST: mysql-db
+      DB_PORT: 3306
+      MAINTENANCE_DB_NAME: ${MAINTENANCE_DB_NAME}
+      DB_USERNAME: ${MAINTENANCE_DB_USER}
+      DB_PASSWORD: ${MAINTENANCE_DB_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_CONSUMER_GROUP_ID: mantenimiento-service-group
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - rentar-net
+    ports:
+      - "8085:8085"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8085/api/mantenimiento/salud" ]
+      interval: 25s
+      timeout: 5s
+      retries: 20
+      start_period: 40s
+
 
 volumes:
   mysql_data:
