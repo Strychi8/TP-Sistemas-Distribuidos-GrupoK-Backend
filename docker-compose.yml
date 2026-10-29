@@ -29,7 +29,7 @@ services:
     networks:
       - rentar-net
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      test: ["CMD-SHELL", "mysql -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" -e 'SELECT 1'"]
       interval: 20s
       timeout: 5s
       retries: 10
@@ -52,6 +52,7 @@ services:
       DB_PASSWORD: ${VEHICLE_DB_PASSWORD}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       GRPC_VEHICLE_SERVER_PORT: 9091
+      VEHICLE_SERVER_PORT: ${VEHICLE_SERVER_PORT}
     depends_on:
       mysql-db:
         condition: service_healthy
@@ -83,6 +84,7 @@ services:
       DB_PASSWORD: ${CUSTOMER_DB_PASSWORD}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       GRPC_CUSTOMER_SERVER_PORT: 9092
+      CUSTOMER_SERVER_PORT: ${CUSTOMER_SERVER_PORT}
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRATION: ${JWT_EXPIRATION}
     depends_on:
@@ -116,6 +118,7 @@ services:
       DB_PASSWORD: ${RENTAL_DB_PASSWORD}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       GRPC_RENTAL_SERVER_PORT: 9093
+      RENTAL_SERVER_PORT: ${RENTAL_SERVER_PORT}
     depends_on:
       mysql-db:
         condition: service_healthy
@@ -149,11 +152,11 @@ services:
       RENTAL_SERVICE_URL: rental-service:9093
     depends_on:
       vehicle-service:
-        condition: service_started
+        condition: service_healthy
       customer-service:
-        condition: service_started
+        condition: service_healthy
       rental-service:
-        condition: service_started
+        condition: service_healthy
     networks:
       - rentar-net
     healthcheck:
