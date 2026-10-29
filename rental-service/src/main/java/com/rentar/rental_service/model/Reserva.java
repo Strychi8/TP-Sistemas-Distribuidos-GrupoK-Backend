@@ -43,6 +43,12 @@ public class Reserva {
     @Builder.Default
     private EstadoReserva estado = EstadoReserva.CONFIRMADA;
 
+    @Column(name = "resultado_mantenimiento", nullable = true, length = 100)
+    private String resultadoMantenimiento;
+
+    @Column(name = "fecha_resultado_mantenimiento")
+    private LocalDateTime fechaResultadoMantenimiento;
+
     // Campos de auditoría recomendados
     @CreationTimestamp
     @Column(name = "fecha_creacion", updatable = false)
