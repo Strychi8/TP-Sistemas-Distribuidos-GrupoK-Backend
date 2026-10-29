@@ -290,6 +290,40 @@ services:
       retries: 20
       start_period: 40s
 
+  # ==========================================
+  # Microservicio de Mantenimiento Preventivo (Kafka)
+  # ==========================================
+  mantenimiento-service:
+    build:
+      context: .
+      dockerfile: mantenimiento-service/Dockerfile
+    container_name: rentar_mantenimiento
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xms64m -Xmx256m -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xss256k"
+      MANTENIMIENTO_SERVER_PORT: ${MANTENIMIENTO_SERVER_PORT:-8084}
+      MANTENIMIENTO_DB_NAME: ${MANTENIMIENTO_DB_NAME}
+      MANTENIMIENTO_DB_USER: ${MANTENIMIENTO_DB_USER}
+      MANTENIMIENTO_DB_PASSWORD: ${MANTENIMIENTO_DB_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      KAFKA_CONSUMER_GROUP_ID: ${KAFKA_MANTENIMIENTO_CONSUMER_GROUP_ID:-mantenimiento-group}
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    networks:
+      - rentar-net
+    ports:
+      - "8084:8084"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/api/mantenimientos/salud"]
+      interval: 25s
+      timeout: 5s
+      retries: 20
+      start_period: 40s
+
 volumes:
   mysql_data:
   kafka_data:
