@@ -161,7 +161,7 @@ services:
     container_name: rentar_mantenimiento
     environment:
       JAVA_TOOL_OPTIONS: "-Xms64m -Xmx256m -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xss256k"
-      VERIFICACION_SERVER_PORT: 8085
+      MANTENIMIENTO_SERVER_PORT: 9095
       DB_HOST: mysql-db
       DB_PORT: 3306
       MAINTENANCE_DB_NAME: ${MAINTENANCE_DB_NAME}
@@ -178,9 +178,9 @@ services:
     networks:
       - rentar-net
     ports:
-      - "8085:8085"
+      - "9095:9095"
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8085/api/mantenimiento/salud" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:9095/api/mantenimiento/salud" ]
       interval: 25s
       timeout: 5s
       retries: 20
