@@ -99,7 +99,7 @@ public class VehiculoServiceImpl implements IVehiculoService {
     @Override
     @Transactional(readOnly = true)
     public List<VehiculoResponseDTO> listarVehiculosActivos() {
-        return vehiculoRepository.findByActivoTrue()
+        return vehiculoRepository.findByActivoTrueAndInhabilitadoFalse()
                 .stream()
                 .map(vehiculoMapper::toDTO)
                 .collect(Collectors.toList());
