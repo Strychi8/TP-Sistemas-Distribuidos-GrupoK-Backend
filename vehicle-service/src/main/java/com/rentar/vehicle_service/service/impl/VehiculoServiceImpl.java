@@ -8,11 +8,13 @@ import com.rentar.vehicle_service.enums.EstadoVehiculo;
 import com.rentar.vehicle_service.exception.custom.BadRequestException;
 import com.rentar.vehicle_service.exception.custom.ConflictException;
 import com.rentar.vehicle_service.exception.custom.ResourceNotFoundException;
+import com.rentar.vehicle_service.kafka.event.VerificacionVehiculoEvent;
 import com.rentar.vehicle_service.mapper.VehiculoMapper;
 import com.rentar.vehicle_service.model.Vehiculo;
 import com.rentar.vehicle_service.repository.IVehiculoRepository;
 import com.rentar.vehicle_service.service.IVehiculoService;
 import com.rentar.vehicle_service.validation.PatenteNormalizer;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,10 +26,12 @@ import java.util.stream.Collectors;
 public class VehiculoServiceImpl implements IVehiculoService {
     private final IVehiculoRepository vehiculoRepository;
     private final VehiculoMapper vehiculoMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public VehiculoServiceImpl(IVehiculoRepository vehiculoRepository, VehiculoMapper vehiculoMapper) {
+    public VehiculoServiceImpl(IVehiculoRepository vehiculoRepository, VehiculoMapper vehiculoMapper, ApplicationEventPublisher eventPublisher) {
         this.vehiculoRepository = vehiculoRepository;
         this.vehiculoMapper = vehiculoMapper;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -41,6 +45,10 @@ public class VehiculoServiceImpl implements IVehiculoService {
 
         try {
             Vehiculo guardado = vehiculoRepository.save(vehiculo);
+            eventPublisher.publishEvent(VerificacionVehiculoEvent.builder()
+                    .vehiculoId(guardado.getIdVehiculo())
+                    .patente(guardado.getPatente())
+                    .build());  
             return vehiculoMapper.toDTO(guardado);
         } catch (DataIntegrityViolationException ex) {
             // Capturamos el error de restricción UNIQUE (patente duplicada) para lanzar un 409 Conflict.
