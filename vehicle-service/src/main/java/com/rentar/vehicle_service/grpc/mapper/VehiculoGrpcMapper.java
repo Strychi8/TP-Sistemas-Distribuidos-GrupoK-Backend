@@ -63,6 +63,7 @@ public class VehiculoGrpcMapper {
                 .setPrecioDiario(dto.getPrecioDiario().doubleValue())
                 .setEstado(mapEstadoToProto(dto.getEstado()))
                 .setActivo(Boolean.TRUE.equals(dto.getActivo()))
+                .setInhabilitado(Boolean.TRUE.equals(dto.getInhabilitado()))
                 .build();
     }
 

@@ -25,6 +25,7 @@ public class VehiculoMapper {
                 .precioDiario(dto.getPrecioDiario())
                 .estado(EstadoVehiculo.DISPONIBLE) // Estado inicial por defecto según enunciado
                 .activo(true)
+                .inhabilitado(false)
                 .build();
     }
 
@@ -44,6 +45,7 @@ public class VehiculoMapper {
                 .precioDiario(entity.getPrecioDiario())
                 .estado(entity.getEstado())
                 .activo(entity.getActivo())
+                .inhabilitado((entity.getInhabilitado()))
                 .build();
     }
 

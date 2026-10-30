@@ -1,6 +1,7 @@
 package com.rentar.vehicle_service.dto.request;
 
 import com.rentar.vehicle_service.enums.TipoVehiculo;
+import com.rentar.vehicle_service.validation.Patente;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -19,6 +20,7 @@ import java.math.BigDecimal;
 public class VehiculoRequestDTO {
 
     @NotBlank(message = "La patente es obligatoria")
+    @Patente
     private String patente;
 
     @NotBlank(message = "La marca es obligatoria")
