@@ -23,6 +23,7 @@ message Reservation {
   double importeTotal = 6;
   double precioDiario = 7;
   EstadoReserva estado = 8;
+  string resultadoMantenimiento = 9;
 }
 
 message ReservationList {
