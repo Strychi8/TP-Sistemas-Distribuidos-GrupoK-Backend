@@ -19,5 +19,5 @@ RUN apt-get update \
 WORKDIR /app
 COPY --from=build /build/mantenimiento-service/target/*.jar app.jar
 
-EXPOSE 8085
+EXPOSE 9095
 ENTRYPOINT["java", "-jar", "app.jar"]
