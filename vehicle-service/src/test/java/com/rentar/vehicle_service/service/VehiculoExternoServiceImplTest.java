@@ -6,7 +6,6 @@ import com.rentar.vehicle_service.enums.TipoVehiculo;
 import com.rentar.vehicle_service.exception.custom.BadRequestException;
 import com.rentar.vehicle_service.exception.custom.ConflictException;
 import com.rentar.vehicle_service.kafka.event.ValidacionPatenteEvent;
-import com.rentar.vehicle_service.kafka.event.ValidacionTitularidadEvent;
 import com.rentar.vehicle_service.kafka.event.VehiculoExternoCompletadaEvent;
 import com.rentar.vehicle_service.kafka.event.VehiculoExternoRegistradoEvent;
 import com.rentar.vehicle_service.mapper.VehiculoExternoMapper;
@@ -18,19 +17,21 @@ import com.rentar.vehicle_service.service.impl.VehiculoExternoServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class VehiculoExternoServiceImplTest {
 
     @Mock

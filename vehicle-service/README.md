@@ -173,6 +173,10 @@ Al arrancar, Hibernate crea/actualiza el esquema y `data.sql` carga vehículos d
    - `VehiculoVerificacionConsumer` procesa el resultado:
      - Si el resultado es `ROBADO`, se actualiza de manera atómica el campo `inhabilitado` a `true`.
      - Si el resultado es `VALIDADO`, se asegura que `inhabilitado` sea `false`.
+3. **Incorporación Asincrónica de Vehículos Externos**:
+   - Al registrar un vehículo externo (`RegistrarVehiculoExterno`), se publica `vehiculos.externos.registrados`.
+     - `verificacion-service` valida en paralelo la patente (`vehiculos.externos.validacion.patente`) y la titularidad (`vehiculos.externos.validacion.titularidad`).
+     - `vehicle-service` correlaciona de forma atómica y completa la incorporación al recibir o emitir `vehiculos.externos.validacion.completada`.
 
 ---
 
@@ -191,6 +195,8 @@ Servicio `rentar.vehicle.VehicleService`:
 | `GetVehiculoById` | `GetVehiculoByIdRequest` → `Vehicle` | `CLIENTE`, `ADMINISTRADOR` |
 | `GetVehiculoByPatente` | `GetVehiculoByPatenteRequest` → `Vehicle` | `ADMINISTRADOR` |
 | `ConsultarDisponibilidad` | `FiltroDisponibilidad` → `VehicleList` | Cualquier identidad autenticada |
+| `RegistrarVehiculoExterno` | `RegistrarVehiculoExternoRequest` → `VehiculoExternoResponse` | `CLIENTE`, `ADMINISTRADOR` |
+| `GetVehiculosExternosByCliente` | `GetVehiculosExternosByClienteRequest` → `VehiculoExternoList` | `CLIENTE`, `ADMINISTRADOR` |
 
 Tipos relevantes:
 - **`Vehicle`**: `idVehiculo`, `patente`, `marca`, `modelo`, `anio`, `color`, `tipoVehiculo`, `precioDiario`, `estado`, `activo`, `inhabilitado`.
@@ -238,6 +244,7 @@ El servicio incluye una suite completa de pruebas unitarias e de integración ub
 - Pruebas de repositorio JPA (`VehiculoRepositoryTest`).
 - Pruebas de lógica de negocio y servicios (`VehiculoServiceImplTest`).
 - Pruebas de consumidores/productores de Kafka (`VehiculoVerificacionConsumerTest`).
+- Pruebas de lógica de negocio, servicio, validaciones y correlación (`VehiculoExternoServiceImplTest`)
 
 Para ejecutar los tests:
 ```bash
