@@ -35,6 +35,7 @@ message Vehicle {
   double precioDiario = 8;
   EstadoVehiculo estado = 9;
   bool activo = 10; // Necesario para que el Gateway distinga entre 404 (no existe) y 400 (inactivo)
+  bool inhabilitado = 11;
 }
 
 message VehicleList {
