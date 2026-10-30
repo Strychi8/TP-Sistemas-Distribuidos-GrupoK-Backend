@@ -87,6 +87,10 @@ public class ReservaGrpcMapper {
                 .setImporteTotal(dto.importeTotal().doubleValue())
                 .setPrecioDiario(dto.precioDiario().doubleValue())
                 .setEstado(toProtoEstado(dto.estadoReserva()))
+                .setResultadoMantenimiento(
+                        dto.resultadoMantenimiento() != null
+                                ? dto.resultadoMantenimiento()
+                                : "")
                 .build();
     }
 
