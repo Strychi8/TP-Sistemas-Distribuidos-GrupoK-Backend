@@ -12,6 +12,7 @@ public record ReservaResponseDTO(
         LocalDateTime fechaFin,
         BigDecimal precioDiario,
         BigDecimal importeTotal,
-        EstadoReserva estadoReserva
+        EstadoReserva estadoReserva,
+        String resultadoMantenimiento
 ) {
 }

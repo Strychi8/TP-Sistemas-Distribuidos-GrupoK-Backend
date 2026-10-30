@@ -20,4 +20,5 @@ public class ReservaGraphQLDTO {
     private BigDecimal importeTotal;
     private BigDecimal precioDiario;
     private EstadoReserva estado;
+    private String resultadoMantenimiento;
 }
