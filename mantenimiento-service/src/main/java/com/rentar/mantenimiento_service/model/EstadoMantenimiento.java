@@ -1,7 +1,7 @@
 package com.rentar.mantenimiento_service.model;
 
 public enum EstadoMantenimiento {
-    PENDIENE,
+    PENDIENTE,
     REALIZADO,
     NO_REALIZADO
 }
