@@ -196,8 +196,8 @@ services:
       test: ["CMD-SHELL", "nc -z localhost 9092 || exit 1"]
       interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 15s
+      retries: 10
+      start_period: 30s
     
   # ==========================================
   # Interfaz Web para Kafka (Kafbat UI)

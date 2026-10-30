@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -16,6 +17,7 @@ import java.util.Optional;
 public class VehiculoVerificacionConsumer {
     private final IVehiculoRepository vehiculoRepository;
 
+    @Transactional
     @KafkaListener(topics = "vehiculos.verificacion.resultado")
     public void onVerificacionResultado(VerificacionResultadoEvent event) {
         log.info("Resultado de verificación recibido: vehiculoId={}, patente={}, resultado={}", event.getVehiculoId(), event.getPatente(), event.getResultado());
