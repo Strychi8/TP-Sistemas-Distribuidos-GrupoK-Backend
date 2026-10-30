@@ -4,13 +4,13 @@ import com.rentar.mantenimiento_service.config.KafkaConfig;
 import com.rentar.mantenimiento_service.dto.ReservaConfirmadaEvent;
 import com.rentar.mantenimiento_service.service.MantenimientoService;
 import com.rentar.mantenimiento_service.service.MantenimientoSimuladorService;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
 @Component
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class ReservaConfirmadaConsumer {
 
     private final MantenimientoService mantenimientoService;

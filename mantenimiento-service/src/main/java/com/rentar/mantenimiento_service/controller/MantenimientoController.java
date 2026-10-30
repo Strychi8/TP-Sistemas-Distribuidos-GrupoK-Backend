@@ -10,7 +10,7 @@ import java.util.Map;
 
 
 @RestController
-@RequestMapping("/api/mantenimientos")
+@RequestMapping("/api/mantenimiento")
 public class MantenimientoController {
 
     @GetMapping("/salud")

@@ -6,14 +6,14 @@ import com.rentar.mantenimiento_service.model.EstadoMantenimiento;
 import com.rentar.mantenimiento_service.model.SolicitudMantenimiento;
 import com.rentar.mantenimiento_service.repository.SolicitudMantenimientoRepository;
 import jakarta.transaction.Transactional;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class MantenimientoService {
 
     private final SolicitudMantenimientoRepository repository;
@@ -45,7 +45,7 @@ public class MantenimientoService {
      */
     @Transactional
     public void completarMantenimiento(Long solicitudId, EstadoMantenimiento resultado) {
-        SolicitudMantenimiento solicitud = repository.findById(solicitudId)
+        SolicitudMantenimiento solicitud = repository.findByReservaId(solicitudId)
                 .orElseThrow(() -> new IllegalArgumentException("No se encontró la solicutud ID: " + solicitudId));
 
         solicitud.setEstado(resultado);

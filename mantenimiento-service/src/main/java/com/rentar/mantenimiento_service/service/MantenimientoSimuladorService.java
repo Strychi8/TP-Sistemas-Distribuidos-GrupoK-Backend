@@ -1,12 +1,12 @@
 package com.rentar.mantenimiento_service.service;
 
 import com.rentar.mantenimiento_service.model.EstadoMantenimiento;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class MantenimientoSimuladorService {
 
     private final MantenimientoService service;
