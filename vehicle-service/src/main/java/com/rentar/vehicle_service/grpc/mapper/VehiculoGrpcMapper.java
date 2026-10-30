@@ -2,8 +2,10 @@ package com.rentar.vehicle_service.grpc.mapper;
 
 import com.rentar.vehicle.grpc.*;
 import com.rentar.vehicle_service.dto.request.FiltroDisponibilidadDTO;
+import com.rentar.vehicle_service.dto.request.VehiculoExternoRequestDTO;
 import com.rentar.vehicle_service.dto.request.VehiculoRequestDTO;
 import com.rentar.vehicle_service.dto.request.VehiculoUpdateRequestDTO;
+import com.rentar.vehicle_service.dto.response.VehiculoExternoResponseDTO;
 import com.rentar.vehicle_service.dto.response.VehiculoResponseDTO;
 import com.rentar.vehicle_service.enums.EstadoVehiculo;
 import com.rentar.vehicle_service.enums.TipoVehiculo;
@@ -103,5 +105,43 @@ public class VehiculoGrpcMapper {
             return com.rentar.vehicle.grpc.EstadoVehiculo.ESTADO_VEHICULO_UNSPECIFIED;
         }
         return com.rentar.vehicle.grpc.EstadoVehiculo.valueOf(domain.name());
+    }
+
+    public VehiculoExternoRequestDTO toRequestDTO(RegistrarVehiculoExternoRequest req) {
+        return VehiculoExternoRequestDTO.builder()
+                .patente(req.getPatente())
+                .marca(req.getMarca())
+                .modelo(req.getModelo())
+                .anio(req.getAnio())
+                .color(req.getColor())
+                .tipoVehiculo(mapTipo(req.getTipoVehiculo()))
+                .precioDiario(BigDecimal.valueOf(req.getPrecioDiario()))
+                .documento(req.getDocumento())
+                .clienteId(req.getClienteId())
+                .build();
+    }
+
+    public VehiculoExternoResponse toProto(VehiculoExternoResponseDTO dto) {
+        return VehiculoExternoResponse.newBuilder()
+                .setIdVehiculoExterno(dto.getIdVehiculoExterno() != null ? dto.getIdVehiculoExterno() : 0L)
+                .setClienteId(dto.getClienteId() != null ? dto.getClienteId() : 0L)
+                .setPatente(dto.getPatente() == null ? "" : dto.getPatente())
+                .setMarca(dto.getMarca() == null ? "" : dto.getMarca())
+                .setModelo(dto.getModelo() == null ? "" : dto.getModelo())
+                .setAnio(dto.getAnio() != null ? dto.getAnio() : 0)
+                .setColor(dto.getColor() == null ? "" : dto.getColor())
+                .setTipoVehiculo(mapTipoToProto(dto.getTipoVehiculo()))
+                .setEstado(dto.getEstado() == null ? "" : dto.getEstado())
+                .setValidacionPatente(dto.getValidacionPatente() == null ? "" : dto.getValidacionPatente())
+                .setValidacionTitularidad(dto.getValidacionTitularidad() == null ? "" : dto.getValidacionTitularidad())
+                .setVehiculoId(dto.getVehiculoId() != null ? dto.getVehiculoId() : 0L)
+                .setPrecioDiario(dto.getPrecioDiario() != null ? dto.getPrecioDiario().doubleValue() : 0.0)
+                .build();
+    }
+
+    public VehiculoExternoList toProtoListExternos(List<VehiculoExternoResponseDTO> dtos) {
+        VehiculoExternoList.Builder builder = VehiculoExternoList.newBuilder();
+        dtos.forEach(dto -> builder.addVehiculosExternos(toProto(dto)));
+        return builder.build();
     }
 }
