@@ -4,7 +4,7 @@
 
 ## 1. Descripción general
 
-El servicio es un backend gRPC puro: su única interfaz de integración es gRPC. Sus principales funcionalidades son:
+El servicio es un backend cuya interfaz de comunicación entre servicios es gRPC y que utiliza Apache Kafka para la comunicación asincrónica mediante eventos. Sus principales funcionalidades son:
 
 - Crear reservas de alquiler.
 - Consultar reservas aplicando filtros.
@@ -23,6 +23,8 @@ El microservicio utiliza una arquitectura por capas:
 - **Capa de dominio y DTOs:** la entidad `Reserva`, los DTOs de entrada (`dto/request`) y de salida (`dto/response`).
 - **Manejo de errores:** `exception/GrpcExceptionAdvice` traduce las excepciones de dominio a estados gRPC.
 - **Seguridad:** `config/GrpcSecurityConfig` autoriza cada RPC según los roles propagados en la metadata.
+- **Integración con Kafka:** `kafka/producer/ReservaConfirmadaProducer` publica eventos de reservas confirmadas y `kafka/consumer/MantenimientoResultadoConsumer` consume los resultados de mantenimiento.
+- **Configuración de Kafka:** `config/KafkaProducerConfig` y `config/KafkaConsumerConfig` definen la configuración del productor y del consumidor.
 
 El servicio gRPC no captura las excepciones de negocio con bloques `try/catch`: las excepciones se lanzan en la capa de servicios y suben hasta `GrpcExceptionAdvice`, que las convierte en estados gRPC.
 
@@ -38,6 +40,8 @@ El servicio gRPC no captura las excepciones de negocio con bloques `try/catch`: 
 - **Bean Validation** (`spring-boot-starter-validation`) — validación de entrada
 - **Lombok** — reducción de boilerplate
 - **spring-dotenv** — carga de variables de entorno desde `.env`
+- **Apache Kafka** — mensajería asincrónica mediante eventos.
+- **Spring for Apache Kafka** — integración de Kafka con Spring Boot.
 
 ## 4. Estructura del proyecto
 
@@ -50,7 +54,11 @@ rental-service/
 │   │   ├── java/
 │   │   │   └── com/rentar/rental_service/
 │   │   │       ├── RentalServiceApplication.java
-│   │   │       ├── config/            # GrpcSecurityConfig
+│   │   │       ├── config/            # GrpcSecurityConfig, KafkaConsumerConfig, KafkaProducerConfig
+│   │   │       ├── kafka/
+│   │   │       │   ├── consumer/      # MantenimientoResultadoConsumer
+│   │   │       │   ├── event/         # MantenimientoResultadoEvent, ReservaConfirmadaEvent
+│   │   │       │   └── producer/      # ReservaConfirmadaProducer
 │   │   │       ├── dto/
 │   │   │       │   ├── request/       # ReservaRequestDTO, FiltroReservaDTO
 │   │   │       │   └── response/      # ReservaResponseDTO
@@ -97,6 +105,7 @@ Variables identificadas en la configuración:
 | `DB_USERNAME` | Usuario de MySQL. | `root` |
 | `DB_PASSWORD` | Contraseña de MySQL. | `root` |
 | `SPRING_JPA_HIBERNATE_DDL_AUTO` | Estrategia de Hibernate (`update`, `create`, etc.). | `update` |
+| `KAFKA_BOOTSTRAP_SERVERS` | Dirección de conexión a Kafka. | `localhost:9092` |
 
 Configuración relevante (`application.properties`):
 
@@ -104,6 +113,7 @@ Configuración relevante (`application.properties`):
 - `spring.sql.init.mode=always` junto con `spring.jpa.defer-datasource-initialization=true` — ejecuta `data.sql` en cada arranque para cargar los datos de ejemplo.
 - `spring.jpa.show-sql=true` y `hibernate.format_sql=true` — muestra el SQL formateado en los registros.
 - `spring.jpa.database-platform=org.hibernate.dialect.MySQLDialect` — dialecto de MySQL.
+- `spring.kafka.*` — configura los serializadores JSON, los deserializadores, el grupo de consumidores y el tipo de evento esperado. En Docker Compose, el servicio utiliza `kafka:9092`; para ejecución local, el valor predeterminado es `localhost:9092`.
 
 Las variables deben definirse en el archivo `.env` correspondiente al entorno de ejecución. Si se utiliza Docker Compose, hay que verificar qué variables corresponden al contenedor y cuáles consume directamente Spring Boot.
 
@@ -418,9 +428,91 @@ Respuesta esperada:
 | Precio diario menor o igual a cero | `CrearReserva` (`CLIENTE`) | `INVALID_ARGUMENT` — `El precio diario debe ser mayor que cero` |
 | RPC sin `roles` o con rol insuficiente | Cualquier RPC | Rechazada por la autorización (`denyAll`) |
 
-## 12. Decisiones técnicas
+## 12. Integración con Apache Kafka
 
-- **gRPC como única interfaz:** el servicio expone exclusivamente el contrato gRPC; no publica API REST.
+El microservicio utiliza Apache Kafka para publicar eventos relacionados con las reservas y procesar los resultados de mantenimiento de los vehículos.
+
+### 12.1. Publicación de reservas confirmadas
+
+La clase `ReservaConfirmadaProducer` publica mensajes en el tópico `reserva.confirmada` cuando la transacción de creación de la reserva se confirma correctamente.
+
+La publicación utiliza `@TransactionalEventListener` con la fase `AFTER_COMMIT`. El mensaje incluye los siguientes campos:
+
+- `reservaId`: identificador de la reserva.
+- `vehiculoId`: identificador del vehículo.
+- `fechaInicio`: fecha y hora de inicio.
+- `fechaFin`: fecha y hora de finalización.
+
+Las fechas se serializan en formato ISO-8601 y el identificador de la reserva se utiliza como clave del mensaje. La cancelación de una reserva no publica un nuevo evento en este tópico.
+
+### 12.2. Consumo de resultados de mantenimiento
+
+La clase `MantenimientoResultadoConsumer` consume mensajes del tópico `mantenimiento.resultado`, utilizando el grupo de consumidores `rental-service`.
+
+Los mensajes se deserializan en objetos `MantenimientoResultadoEvent` y contienen los campos `reservaId`, `vehiculoId` y `resultado`.
+
+Los resultados admitidos son `REALIZADO` y `NO_REALIZADO`. Al recibir un evento válido, el consumidor busca la reserva correspondiente y actualiza los campos `resultadoMantenimiento` y `fechaResultadoMantenimiento`.
+
+El resultado de mantenimiento también se expone en `ReservaResponseDTO` y en el mensaje `Reservation` definido en `proto/rental.proto`, mediante el campo `resultadoMantenimiento`.
+
+### 12.3. Validaciones del consumidor
+
+El consumidor valida los datos obligatorios y el resultado recibido. Si la reserva no existe, registra una advertencia y finaliza el procesamiento del evento.
+
+Si el resultado recibido coincide con el que ya está registrado, no vuelve a actualizar el resultado ni su fecha. Si la reserva está cancelada, puede actualizarse el resultado del mantenimiento sin modificar el estado de cancelación.
+
+### 12.4. Tópicos utilizados
+
+| Tópico | Operación | Descripción |
+|---|---|---|
+| `reserva.confirmada` | Publicación | Informa que una reserva fue confirmada. |
+| `mantenimiento.resultado` | Consumo | Recibe el resultado del mantenimiento asociado a una reserva. |
+
+## 13. Pruebas automatizadas
+
+El módulo incluye pruebas automatizadas para verificar el comportamiento de las reservas y la integración con Apache Kafka.
+
+Los escenarios cubiertos son:
+
+- **Creación de reservas:** verifica que se devuelve la respuesta de la reserva y se publica el evento de confirmación.
+- **Actualización del mantenimiento:** verifica que el consumidor actualiza el resultado y la fecha del resultado de mantenimiento de la reserva.
+- **Serialización de valores nulos:** comprueba que el evento `MantenimientoResultadoEvent` puede serializarse y deserializarse cuando `resultado` es `null`.
+- **Procesamiento de resultados repetidos:** verifica que recibir dos mensajes con el mismo resultado no provoca guardados duplicados.
+- **Cancelación de reservas:** verifica que cancelar una reserva no publica eventos y no modifica los datos de mantenimiento existentes.
+
+Las pruebas unitarias utilizan JUnit y Mockito. La prueba de procesamiento de mensajes utiliza un broker Kafka embebido para comprobar el comportamiento del consumidor.
+
+Para ejecutar las pruebas anteriores desde el directorio `rental-service/`, ejecutar:
+
+**Windows (PowerShell):**
+
+```powershell
+.\mvnw.cmd "-Dtest=MantenimientoResultadoConsumerTest,MantenimientoResultadoRedeliveryTest,MantenimientoResultadoEventTest,ReservaServiceImplTest" test
+```
+
+**Linux o macOS:**
+
+```bash
+./mvnw "-Dtest=MantenimientoResultadoConsumerTest,MantenimientoResultadoRedeliveryTest,MantenimientoResultadoEventTest,ReservaServiceImplTest" test
+```
+
+Para ejecutar todas las pruebas del módulo:
+
+**Windows (PowerShell):**
+
+```powershell
+.\mvnw.cmd test
+```
+
+**Linux o macOS:**
+
+```bash
+./mvnw test
+```
+
+## 14. Decisiones técnicas
+
+- **gRPC como interfaz de comunicación entre servicios:** las operaciones del servicio se exponen mediante el contrato gRPC; Kafka se utiliza para la comunicación asincrónica mediante eventos.
 - **Mapeo explícito proto ↔ dominio:** `ReservaGrpcMapper` traduce request y response entre los mensajes protobuf y los DTOs del dominio, incluyendo timestamps y enums.
 - **Recálculo del importe:** el `importeTotal` de la request se ignora; el servicio lo calcula como `precioDiario * cantidad de días`.
 - **Errores centralizados:** las excepciones de dominio se lanzan en la capa de servicios y se traducen en `GrpcExceptionAdvice`; el servicio gRPC no usa `try/catch`.

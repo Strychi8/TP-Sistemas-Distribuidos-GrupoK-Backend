@@ -3,11 +3,14 @@ package com.rentar.vehicle_service.grpc;
 import com.google.protobuf.Empty;
 import com.rentar.vehicle.grpc.*;
 import com.rentar.vehicle_service.dto.request.FiltroDisponibilidadDTO;
+import com.rentar.vehicle_service.dto.request.VehiculoExternoRequestDTO;
 import com.rentar.vehicle_service.dto.request.VehiculoRequestDTO;
 import com.rentar.vehicle_service.dto.request.VehiculoUpdateRequestDTO;
+import com.rentar.vehicle_service.dto.response.VehiculoExternoResponseDTO;
 import com.rentar.vehicle_service.dto.response.VehiculoResponseDTO;
 import com.rentar.vehicle_service.grpc.mapper.VehiculoGrpcMapper;
 import com.rentar.vehicle_service.grpc.validation.RequestValidator;
+import com.rentar.vehicle_service.service.IVehiculoExternoService;
 import com.rentar.vehicle_service.service.IVehiculoService;
 import io.grpc.stub.StreamObserver;
 import org.springframework.grpc.server.service.GrpcService;
@@ -18,11 +21,13 @@ import java.util.List;
 @GrpcService
 public class VehicleGrpcServiceImpl extends VehicleServiceGrpc.VehicleServiceImplBase {
     private final IVehiculoService vehiculoService;
+    private final IVehiculoExternoService vehiculoExternoService;
     private final VehiculoGrpcMapper mapper;
     private final RequestValidator validator;
 
-    public VehicleGrpcServiceImpl(IVehiculoService vehiculoService, VehiculoGrpcMapper mapper, RequestValidator validator) {
+    public VehicleGrpcServiceImpl(IVehiculoService vehiculoService, IVehiculoExternoService vehiculoExternoService, VehiculoGrpcMapper mapper, RequestValidator validator) {
         this.vehiculoService = vehiculoService;
+        this.vehiculoExternoService = vehiculoExternoService;
         this.mapper = mapper;
         this.validator = validator;
     }
@@ -94,6 +99,22 @@ public class VehicleGrpcServiceImpl extends VehicleServiceGrpc.VehicleServiceImp
         FiltroDisponibilidadDTO filtro = mapper.toFiltroDTO(request);
         List<VehiculoResponseDTO> vehiculos = vehiculoService.consultarDisponibilidad(filtro);
         responseObserver.onNext(mapper.toProtoList(vehiculos));
+        responseObserver.onCompleted();
+    }
+
+    @Override
+    public void registrarVehiculoExterno(RegistrarVehiculoExternoRequest request, StreamObserver<VehiculoExternoResponse> responseObserver) {
+        VehiculoExternoRequestDTO dto = mapper.toRequestDTO(request);
+        validator.validate(dto);
+        VehiculoExternoResponseDTO creado = vehiculoExternoService.registrarVehiculoExterno(dto);
+        responseObserver.onNext(mapper.toProto(creado));
+        responseObserver.onCompleted();
+    }
+
+    @Override
+    public void getVehiculosExternosByCliente(GetVehiculosExternosByClienteRequest request, StreamObserver<VehiculoExternoList> responseObserver) {
+        List<VehiculoExternoResponseDTO> externos = vehiculoExternoService.listarVehiculosExternosPorCliente(request.getClienteId());
+        responseObserver.onNext(mapper.toProtoListExternos(externos));
         responseObserver.onCompleted();
     }
 }

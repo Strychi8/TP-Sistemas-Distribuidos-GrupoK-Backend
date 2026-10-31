@@ -15,7 +15,8 @@ public class ReservaMapper {
                 r.getFechaFin(),
                 r.getPrecioDiario(),
                 r.getImporteTotal(),
-                r.getEstado()
+                r.getEstado(),
+                r.getResultadoMantenimiento()
         );
     }
 }

@@ -368,6 +368,145 @@
                 }
               },
               "response": []
+            },
+            {
+              "name": "Registrar Vehiculo Externo (Hito 3)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Generar patente Mercosur dinamica para evitar colisiones",
+                      "const num = Math.floor(100 + Math.random() * 900);",
+                      "const letra = () => String.fromCharCode(65 + Math.floor(Math.random() * 26));",
+                      "const patente = `${letra()}${letra()}${num}${letra()}${letra()}`;",
+                      "pm.environment.set(\"patente_externo_runner\", patente);",
+                      "",
+                      "const loginRequest = {",
+                      "    url: pm.environment.get(\"baseUrl\") + \"/api/auth/login\",",
+                      "    method: \"POST\",",
+                      "    header: { \"Content-Type\": \"application/json\" },",
+                      "    body: {",
+                      "        mode: \"raw\",",
+                      "        raw: JSON.stringify({ email: \"maria.gomez@gmail.com\", password: \"123456\" })",
+                      "    }",
+                      "};",
+                      "",
+                      "pm.sendRequest(loginRequest, function (err, res) {",
+                      "    if (!err && res.code === 200) {",
+                      "        pm.environment.set(\"token_cliente\", res.json().token);",
+                      "    }",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code es 201 Created\", function () {",
+                      "    pm.expect([200, 201]).to.include(pm.response.code);",
+                      "});",
+                      "",
+                      "const data = pm.response.json();",
+                      "",
+                      "pm.test(\"Vehículo externo inicia en estado PENDIENTE\", function () {",
+                      "    pm.expect(data.estado).to.eql(\"PENDIENTE\");",
+                      "});",
+                      "",
+                      "pm.test(\"Respuesta contiene ID del vehiculo externo\", function () {",
+                      "    const id = data.idVehiculoExterno || data.id;",
+                      "    pm.expect(id).to.exist;",
+                      "    pm.environment.set(\"idVehiculoExterno\", id);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token_cliente}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"patente\": \"{{patente_externo_runner}}\",\r\n  \"marca\": \"Toyota\",\r\n  \"modelo\": \"Yaris\",\r\n  \"anio\": 2023,\r\n  \"color\": \"Blanco Perlado\",\r\n  \"tipoVehiculo\": \"HATCHBACK\",\r\n  \"precioDiario\": 42000.0\r\n}\r\n",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/vehiculos/externos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "vehiculos",
+                    "externos"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Listar Mis Vehiculos Externos (Hito 3)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code es 200 OK\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "const data = pm.response.json();",
+                      "pm.test(\"Respuesta es un array de vehiculos externos\", function () {",
+                      "    pm.expect(data).to.be.an(\"array\");",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token_cliente}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/vehiculos/externos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "vehiculos",
+                    "externos"
+                  ]
+                }
+              },
+              "response": []
             }
           ]
         },
@@ -1263,6 +1402,340 @@
                 }
               },
               "response": []
+            },
+            {
+              "name": "Obtener Reserva por ID (con Mantenimiento)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const loginRequest = {",
+                      "    url: pm.environment.get(\"baseUrl\") + \"/api/auth/login\",",
+                      "    method: \"POST\",",
+                      "    header: { \"Content-Type\": \"application/json\" },",
+                      "    body: {",
+                      "        mode: \"raw\",",
+                      "        raw: JSON.stringify({ email: \"maria.gomez@gmail.com\", password: \"123456\" })",
+                      "    }",
+                      "};",
+                      "pm.sendRequest(loginRequest, function (err, res) {",
+                      "    if (!err && res.code === 200) {",
+                      "        pm.environment.set(\"token_cliente\", res.json().token);",
+                      "    }",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code es 200 OK\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "const data = pm.response.json();",
+                      "pm.test(\"Respuesta contiene idReserva\", function () {",
+                      "    pm.expect(data.idReserva || data.id).to.exist;",
+                      "});",
+                      "",
+                      "pm.test(\"Expone campo resultadoMantenimiento de Hito 3\", function () {",
+                      "    pm.expect(data).to.have.property(\"resultadoMantenimiento\");",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token_cliente}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/reservas/{{idReserva}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "reservas",
+                    "{{idReserva}}"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Microservicios Asincronos (Hito 3 - Kafka)",
+          "item": [
+            {
+              "name": "Verificacion Service - Health Check",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code es 200 OK\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "const data = pm.response.json();",
+                      "pm.test(\"Microservicio de verificacion está UP\", function () {",
+                      "    pm.expect(data.status).to.eql(\"UP\");",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{verificacionUrl}}/api/verificaciones/salud",
+                  "host": [
+                    "{{verificacionUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "verificaciones",
+                    "salud"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Verificacion Service - Listar Patentes Robadas",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code es 200 OK\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "pm.test(\"Respuesta es un array\", function () {",
+                      "    pm.expect(pm.response.json()).to.be.an(\"array\");",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{verificacionUrl}}/api/verificaciones/patentes-robadas",
+                  "host": [
+                    "{{verificacionUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "verificaciones",
+                    "patentes-robadas"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Verificacion Service - Verificar Patente Policial (Simulado)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code es 200 OK\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "const data = pm.response.json();",
+                      "pm.test(\"Respuesta contiene resultado de verificacion\", function () {",
+                      "    pm.expect(data).to.have.property(\"resultado\");",
+                      "    pm.expect([\"VALIDADO\", \"ROBADO\"]).to.include(data.resultado);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{verificacionUrl}}/api/verificaciones/patentes-robadas/verificar/DEF456",
+                  "host": [
+                    "{{verificacionUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "verificaciones",
+                    "patentes-robadas",
+                    "verificar",
+                    "DEF456"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Verificacion Service - Listar Titularidades",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code es 200 OK\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "pm.test(\"Respuesta es un array\", function () {",
+                      "    pm.expect(pm.response.json()).to.be.an(\"array\");",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{verificacionUrl}}/api/verificaciones/titularidades",
+                  "host": [
+                    "{{verificacionUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "verificaciones",
+                    "titularidades"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Mantenimiento Service - Health Check",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code es 200 OK\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "const data = pm.response.json();",
+                      "pm.test(\"Microservicio de mantenimiento está UP\", function () {",
+                      "    pm.expect(data.status).to.eql(\"UP\");",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{mantenimientoUrl}}/api/mantenimiento/salud",
+                  "host": [
+                    "{{mantenimientoUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "mantenimiento",
+                    "salud"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Mantenimiento Service - Listar Solicitudes",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code es 200 OK\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "pm.test(\"Respuesta es un array de solicitudes\", function () {",
+                      "    pm.expect(pm.response.json()).to.be.an(\"array\");",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{mantenimientoUrl}}/api/mantenimiento/solicitudes",
+                  "host": [
+                    "{{mantenimientoUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "mantenimiento",
+                    "solicitudes"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Mantenimiento Service - Consultar por Reserva ID",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code es 200 o 404\", function () {",
+                      "    pm.expect([200, 404]).to.include(pm.response.code);",
+                      "});",
+                      "if (pm.response.code === 200) {",
+                      "    const data = pm.response.json();",
+                      "    pm.test(\"Solicitud tiene resultado de mantenimiento\", function () {",
+                      "        pm.expect(data).to.have.property(\"resultado\");",
+                      "    });",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{mantenimientoUrl}}/api/mantenimiento/solicitudes/reserva/{{idReserva}}",
+                  "host": [
+                    "{{mantenimientoUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "mantenimiento",
+                    "solicitudes",
+                    "reserva",
+                    "{{idReserva}}"
+                  ]
+                }
+              },
+              "response": []
             }
           ]
         }
@@ -1404,7 +1877,7 @@
                 "body": {
                   "mode": "graphql",
                   "graphql": {
-                    "query": "query {\r\n  reservas {\r\n    idReserva\r\n    cliente {\r\n      idCliente\r\n      nombre\r\n      apellido\r\n      email\r\n    }\r\n    vehiculo {\r\n      idVehiculo\r\n      patente\r\n      marca\r\n      modelo\r\n    }\r\n    fechaInicio\r\n    fechaFin\r\n    importeTotal\r\n    estado\r\n  }\r\n}\r\n",
+                    "query": "query {\r\n  reservas {\r\n    idReserva\r\n    cliente {\r\n      idCliente\r\n      nombre\r\n      apellido\r\n      email\r\n    }\r\n    vehiculo {\r\n      idVehiculo\r\n      patente\r\n      marca\r\n      modelo\r\n    }\r\n    fechaInicio\r\n    fechaFin\r\n    importeTotal\r\n    estado\r\n    resultadoMantenimiento\r\n  }\r\n}\r\n",
                     "variables": ""
                   }
                 },
@@ -1438,7 +1911,7 @@
                 "body": {
                   "mode": "graphql",
                   "graphql": {
-                    "query": "query ReservasFiltradas($filtro: FiltroReserva) {\r\n  reservas(filtro: $filtro) {\r\n    idReserva\r\n    estado\r\n    cliente {\r\n      nombre\r\n      apellido\r\n    }\r\n    vehiculo {\r\n      marca\r\n      modelo\r\n      patente\r\n    }\r\n    importeTotal\r\n  }\r\n}\r\n",
+                    "query": "query ReservasFiltradas($filtro: FiltroReserva) {\r\n  reservas(filtro: $filtro) {\r\n    idReserva\r\n    estado\r\n    resultadoMantenimiento\r\n    cliente {\r\n      nombre\r\n      apellido\r\n    }\r\n    vehiculo {\r\n      marca\r\n      modelo\r\n      patente\r\n    }\r\n    importeTotal\r\n  }\r\n}\r\n",
                     "variables": "{\r\n  \"filtro\": {\r\n    \"estado\": \"CANCELADA\"\r\n  }\r\n}\r\n"
                   }
                 },

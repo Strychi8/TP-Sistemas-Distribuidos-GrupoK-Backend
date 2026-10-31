@@ -13,7 +13,9 @@ import com.rentar.rental_service.mapper.ReservaMapper;
 import com.rentar.rental_service.model.Reserva;
 import com.rentar.rental_service.repository.IReservaRepository;
 import com.rentar.rental_service.service.IReservaService;
+import com.rentar.rental_service.kafka.event.ReservaConfirmadaEvent;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import lombok.AllArgsConstructor;
@@ -32,6 +34,7 @@ public class ReservaServiceImpl implements IReservaService {
 
     private final IReservaRepository reservaRepository;
     private final ReservaMapper reservaMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
     private long calcularDias(LocalDateTime inicio, LocalDateTime fin) {
         long horas = Duration.between(inicio, fin).toHours();
@@ -78,7 +81,16 @@ public class ReservaServiceImpl implements IReservaService {
                 .estado(EstadoReserva.CONFIRMADA)
                 .build();
 
-        return reservaMapper.mapToResponseDTO(reservaRepository.save(reserva));
+        Reserva reservaGuardada = reservaRepository.save(reserva);
+
+        eventPublisher.publishEvent(new ReservaConfirmadaEvent(
+                reservaGuardada.getIdReserva(),
+                reservaGuardada.getIdVehiculo(),
+                reservaGuardada.getFechaInicio(),
+                reservaGuardada.getFechaFin()
+        ));
+
+        return reservaMapper.mapToResponseDTO(reservaGuardada);
     }
 
     private void validarFechas(LocalDateTime inicio, LocalDateTime fin) {
@@ -195,6 +207,7 @@ public class ReservaServiceImpl implements IReservaService {
                 .importeTotal(r.getImporteTotal())
                 .precioDiario(r.getPrecioDiario())
                 .estado(r.getEstado())
+                .resultadoMantenimiento(r.getResultadoMantenimiento())
                 .build();
     }
 }
