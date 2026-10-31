@@ -2,7 +2,7 @@ import express from 'express';
 import { rentalClient, customerClient, vehicleClient } from '../clients/grpc.js';
 import { authMiddleware } from '../middleware/auth.middleware.js';
 import { createGrpcMetadata } from '../utils/grpcMetadata.js';
-import { parseDateToGrpcTimestamp } from '../utils/mappers.js';
+import { parseDateToGrpcTimestamp, mapEstadoVehiculo, formatGrpcTimestamp, mapEstadoReserva } from '../utils/mappers.js';
 
 const router = express.Router();
 
@@ -55,6 +55,21 @@ router.post('/', async (req, res, next) => {
 
     if (!vehiculo.activo) {
       return res.status(400).json({ error: 'El vehículo se encuentra inactivo', message: 'El vehículo se encuentra inactivo' });
+    }
+
+    if (vehiculo.inhabilitado) {
+      return res.status(400).json({ error: 'El vehículo se encuentra inhabilitado', message: 'El vehículo se encuentra inhabilitado' });
+    }
+
+    const estadoVehiculo = vehiculo.estado !== undefined && vehiculo.estado !== null
+      ? mapEstadoVehiculo(vehiculo.estado)
+      : 'DISPONIBLE';
+
+    if (estadoVehiculo !== 'DISPONIBLE') {
+      return res.status(400).json({ 
+        error: 'El vehículo no se encuentra disponible', 
+        message: 'El vehículo no se encuentra disponible' 
+      });
     }
 
     // 4. RentalService.VerificarSolapamientoVehiculo
@@ -122,8 +137,6 @@ router.post('/', async (req, res, next) => {
     }
 
     // Mapeo explicito gRPC -> ReservaResponseDTO (Contrato Hito 1 UI)
-    const { formatGrpcTimestamp, mapEstadoReserva } = await import('../utils/mappers.js');
-    
     const responseDTO = {
       idReserva: reserva.idReserva,
       idCliente: reserva.idCliente,

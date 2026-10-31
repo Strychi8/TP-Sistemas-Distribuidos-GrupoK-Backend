@@ -1,11 +1,74 @@
 import express from 'express';
-import { vehicleClient } from '../clients/grpc.js';
+import { vehicleClient, customerClient } from '../clients/grpc.js';
 import { authMiddleware } from '../middleware/auth.middleware.js';
 import { createGrpcMetadata } from '../utils/grpcMetadata.js';
 
 const router = express.Router();
 
 router.use(authMiddleware);
+
+// Alta de vehículo externo (incorporación de vehículo propio del cliente)
+router.post('/externos', async (req, res, next) => {
+  const meta = createGrpcMetadata(req);
+  const { patente, marca, modelo, anio, color, tipoVehiculo, precioDiario } = req.body;
+
+  try {
+    const cliente = await new Promise((resolve, reject) => {
+      customerClient.GetMiPerfil({ email: req.user.sub }, meta, (err, response) => {
+        if (err) return reject(err);
+        resolve(response);
+      });
+    });
+
+    if (!cliente.activo) {
+      return res.status(400).json({ error: 'El cliente se encuentra inactivo', message: 'El cliente se encuentra inactivo' });
+    }
+
+    const payload = {
+      patente,
+      marca,
+      modelo,
+      anio: Number(anio),
+      color,
+      tipoVehiculo,
+      precioDiario: Number(precioDiario),
+      documento: cliente.dni,
+      clienteId: cliente.idCliente,
+    };
+
+    vehicleClient.RegistrarVehiculoExterno(payload, meta, (err, response) => {
+      if (err) return next(err);
+      res.status(201).json(response);
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Listar solicitudes de vehículos externos del cliente autenticado
+router.get('/externos', async (req, res, next) => {
+  const meta = createGrpcMetadata(req);
+
+  try {
+    const cliente = await new Promise((resolve, reject) => {
+      customerClient.GetMiPerfil({ email: req.user.sub }, meta, (err, response) => {
+        if (err) return reject(err);
+        resolve(response);
+      });
+    });
+
+    if (!cliente.activo) {
+      return res.status(400).json({ error: 'El cliente se encuentra inactivo', message: 'El cliente se encuentra inactivo' });
+    }
+
+    vehicleClient.GetVehiculosExternosByCliente({ clienteId: cliente.idCliente }, meta, (err, response) => {
+      if (err) return next(err);
+      res.json(response?.vehiculosExternos || (Array.isArray(response) ? response : []));
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
 // Alta
 router.post('/', (req, res, next) => {
