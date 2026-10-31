@@ -5,7 +5,7 @@ services:
   mysql-db:
     image: mysql:8.0
     container_name: rentar_mysql
-    command: ["mysqld", "--performance-schema=OFF", "--innodb-buffer-pool-size=64M", "--max-connections=40"]
+    command: ["mysqld", "--performance-schema=OFF", "--innodb-buffer-pool-size=64M", "--max-connections=80"]
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       # Credenciales por servicio: las consume mysql/init/01-init.sh (nada hardcodeado en el SQL).
@@ -21,6 +21,9 @@ services:
       VERIFICACION_DB_NAME: ${VERIFICACION_DB_NAME}
       VERIFICACION_DB_USER: ${VERIFICACION_DB_USER}
       VERIFICACION_DB_PASSWORD: ${VERIFICACION_DB_PASSWORD}
+      MANTENIMIENTO_DB_NAME: ${MANTENIMIENTO_DB_NAME}
+      MANTENIMIENTO_DB_USER: ${MANTENIMIENTO_DB_USER}
+      MANTENIMIENTO_DB_PASSWORD: ${MANTENIMIENTO_DB_PASSWORD}
     volumes:
       - mysql_data:/var/lib/mysql
       - ./mysql/init:/docker-entrypoint-initdb.d:ro   # crea esquemas + usuarios por servicio
@@ -29,7 +32,7 @@ services:
     networks:
       - rentar-net
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      test: ["CMD-SHELL", "mysql -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" -e 'SELECT 1'"]
       interval: 20s
       timeout: 5s
       retries: 10
@@ -52,9 +55,10 @@ services:
       DB_PASSWORD: ${VEHICLE_DB_PASSWORD}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       GRPC_VEHICLE_SERVER_PORT: 9091
-      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
-      KAFKA_VERIFICACION_GROUP_ID: ${KAFKA_VERIFICACION_GROUP_ID}
-      KAFKA_EXTERNOS_GROUP_ID: ${KAFKA_EXTERNOS_GROUP_ID}
+      VEHICLE_SERVER_PORT: ${VEHICLE_SERVER_PORT}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      KAFKA_VERIFICACION_GROUP_ID: ${KAFKA_VERIFICACION_GROUP_ID:-vehicle-verificacion-group}
+      KAFKA_EXTERNOS_GROUP_ID: ${KAFKA_EXTERNOS_GROUP_ID:-vehicle-externos-group}
     depends_on:
       mysql-db:
         condition: service_healthy
@@ -88,6 +92,7 @@ services:
       DB_PASSWORD: ${CUSTOMER_DB_PASSWORD}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       GRPC_CUSTOMER_SERVER_PORT: 9092
+      CUSTOMER_SERVER_PORT: ${CUSTOMER_SERVER_PORT}
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRATION: ${JWT_EXPIRATION}
     depends_on:
@@ -121,12 +126,14 @@ services:
       DB_PASSWORD: ${RENTAL_DB_PASSWORD}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       GRPC_RENTAL_SERVER_PORT: 9093
-      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      RENTAL_SERVER_PORT: ${RENTAL_SERVER_PORT}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      KAFKA_CONSUMER_GROUP_ID: ${KAFKA_RENTAL_CONSUMER_GROUP_ID:-rental-group}
     depends_on:
       mysql-db:
         condition: service_healthy
       kafka:
-        condition: service_started
+        condition: service_healthy
     networks:
       - rentar-net
     ports:
@@ -157,11 +164,11 @@ services:
       RENTAL_SERVICE_URL: rental-service:9093
     depends_on:
       vehicle-service:
-        condition: service_started
+        condition: service_healthy
       customer-service:
-        condition: service_started
+        condition: service_healthy
       rental-service:
-        condition: service_started
+        condition: service_healthy
     networks:
       - rentar-net
     healthcheck:
@@ -178,14 +185,19 @@ services:
     image: apache/kafka:3.7.0
     container_name: rentar_kafka
     init: true
+    restart: unless-stopped
     ports:
       - "29092:29092" # Acceso desde tu maquina local
     environment:
+      CLUSTER_ID: ${KAFKA_CLUSTER_ID:-MkU3OEVBNTcwNTJENDM2Qk}
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_HEAP_OPTS: "-Xmx384m -Xms256m"
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
       KAFKA_LISTENERS: PLAINTEXT://:9092,EXTERNAL://:29092,CONTROLLER://:9093
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:29092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
@@ -193,14 +205,34 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_NUM_PARTITIONS: 1
+    volumes:
+      - kafka_data:/var/lib/kafka/data
     networks:
       - rentar-net
     healthcheck:
-      test: ["CMD-SHELL", "nc -z localhost 9092 || exit 1"]
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"]
       interval: 10s
-      timeout: 5s
+      timeout: 10s
       retries: 10
       start_period: 30s
+
+  # ==========================================
+  # Inicializacion de topics requeridos (Hito 3)
+  # ==========================================
+  kafka-init:
+    image: apache/kafka:3.7.0
+    container_name: rentar_kafka_init
+    restart: "no"
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    volumes:
+      - ./kafka/init-topics.sh:/init-topics.sh:ro
+    entrypoint: ["/bin/bash", "/init-topics.sh"]
+    networks:
+      - rentar-net
     
   # ==========================================
   # Interfaz Web para Kafka (Kafbat UI)
@@ -231,12 +263,12 @@ services:
     container_name: rentar_verificacion
     environment:
       JAVA_TOOL_OPTIONS: "-Xms64m -Xmx256m -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xss256k"
-      VERIFICACION_SERVER_PORT: 9094
+      VERIFICACION_SERVER_PORT: ${VERIFICACION_SERVER_PORT:-9094}
       DB_HOST: mysql-db
       DB_PORT: 3306
       VERIFICACION_DB_NAME: ${VERIFICACION_DB_NAME}
-      DB_USERNAME: ${VERIFICACION_DB_USER}
-      DB_PASSWORD: ${VERIFICACION_DB_PASSWORD}
+      VERIFICACION_DB_USER: ${VERIFICACION_DB_USER}
+      VERIFICACION_DB_PASSWORD: ${VERIFICACION_DB_PASSWORD}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       KAFKA_CONSUMER_GROUP_ID: verificacion-service-group
@@ -245,6 +277,8 @@ services:
         condition: service_healthy
       kafka:
         condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
     networks:
       - rentar-net
     ports:
@@ -256,8 +290,43 @@ services:
       retries: 20
       start_period: 40s
 
+  # ==========================================
+  # Microservicio de Mantenimiento Preventivo (Kafka)
+  # ==========================================
+  mantenimiento-service:
+    build:
+      context: .
+      dockerfile: mantenimiento-service/Dockerfile
+    container_name: rentar_mantenimiento
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xms64m -Xmx256m -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xss256k"
+      MANTENIMIENTO_SERVER_PORT: ${MANTENIMIENTO_SERVER_PORT:-8084}
+      MANTENIMIENTO_DB_NAME: ${MANTENIMIENTO_DB_NAME}
+      MANTENIMIENTO_DB_USER: ${MANTENIMIENTO_DB_USER}
+      MANTENIMIENTO_DB_PASSWORD: ${MANTENIMIENTO_DB_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      KAFKA_CONSUMER_GROUP_ID: ${KAFKA_MANTENIMIENTO_CONSUMER_GROUP_ID:-mantenimiento-group}
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    networks:
+      - rentar-net
+    ports:
+      - "8084:8084"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/api/mantenimientos/salud"]
+      interval: 25s
+      timeout: 5s
+      retries: 20
+      start_period: 40s
+
 volumes:
   mysql_data:
+  kafka_data:
 
 networks:
   rentar-net:
