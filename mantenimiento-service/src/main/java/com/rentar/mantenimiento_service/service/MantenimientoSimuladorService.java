@@ -6,6 +6,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+/**
+ * Simula el trabajo asincrónico del mantenimiento preventivo.
+ *
+ * <p>Permite que la confirmación de una reserva continúe sin esperar el
+ * resultado del mantenimiento y luego delega su cierre al servicio
+ * transaccional.</p>
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j

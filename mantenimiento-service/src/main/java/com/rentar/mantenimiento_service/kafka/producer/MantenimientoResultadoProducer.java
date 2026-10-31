@@ -3,19 +3,26 @@ package com.rentar.mantenimiento_service.kafka.producer;
 import com.rentar.mantenimiento_service.config.KafkaConfig;
 import com.rentar.mantenimiento_service.kafka.event.MantenimientoCompletadoInternalEvent;
 import com.rentar.mantenimiento_service.kafka.event.MantenimientoResultadoEvent;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+/**
+ * Publica en Kafka el resultado de un mantenimiento confirmado.
+ *
+ * <p>Escucha el evento interno únicamente después del commit de la
+ * transacción para evitar comunicar resultados de solicitudes que no hayan
+ * quedado persistidas.</p>
+ */
 @Component
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Slf4j
 public class MantenimientoResultadoProducer {
 
-    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final KafkaTemplate<String, MantenimientoResultadoEvent> kafkaTemplate;
 
     /**
      * GARANTÍA DE PUBLICACIÓN (Transactional Outbox Pattern):

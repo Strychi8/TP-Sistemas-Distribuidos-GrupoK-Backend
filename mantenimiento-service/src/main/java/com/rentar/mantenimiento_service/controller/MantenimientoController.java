@@ -12,6 +12,12 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Expone consultas HTTP sobre las solicitudes de mantenimiento preventivo.
+ *
+ * <p>Permite verificar la disponibilidad del microservicio y consultar las
+ * solicitudes registradas o la solicitud asociada a una reserva.</p>
+ */
 @RestController
 @RequestMapping("/api/mantenimiento")
 @RequiredArgsConstructor

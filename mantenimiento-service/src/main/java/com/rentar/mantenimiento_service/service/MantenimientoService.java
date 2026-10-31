@@ -13,6 +13,13 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
+/**
+ * Coordina el ciclo de vida de las solicitudes de mantenimiento preventivo.
+ *
+ * <p>Registra la solicitud asociada a una reserva, aplica la idempotencia
+ * mediante la reserva única y actualiza el resultado final dentro de
+ * transacciones de persistencia.</p>
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j

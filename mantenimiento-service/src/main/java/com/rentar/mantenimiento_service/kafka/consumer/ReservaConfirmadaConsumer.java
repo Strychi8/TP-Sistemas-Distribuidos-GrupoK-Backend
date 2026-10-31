@@ -10,6 +10,14 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
+/**
+ * Consume confirmaciones de reservas para iniciar su mantenimiento
+ * preventivo asociado.
+ *
+ * <p>Transforma el evento de reserva en una solicitud persistida y delega la
+ * simulación asincrónica, ignorando reentregas que violen la unicidad de la
+ * reserva.</p>
+ */
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -18,10 +26,7 @@ public class ReservaConfirmadaConsumer {
     private final MantenimientoService mantenimientoService;
     private final MantenimientoSimuladorService simuladorService;
 
-    @KafkaListener(topics = KafkaConfig.TOPIC_RESERVA_CONFIRMADA,
-            properties = {
-                    "spring.json.value.default.type=com.rentar.mantenimiento_service.dto.ReservaConfirmadaEvent"
-            })
+    @KafkaListener(topics = KafkaConfig.TOPIC_RESERVA_CONFIRMADA)
     public void consumirReservaConfirmada(ReservaConfirmadaEvent event) {
         if (event == null || event.getReservaId() == null || event.getVehiculoId() == null) {
             log.error("[KAFKA CONSUMER] Evento reserva.confirmada nulo o con datos obligatorios faltantes.");

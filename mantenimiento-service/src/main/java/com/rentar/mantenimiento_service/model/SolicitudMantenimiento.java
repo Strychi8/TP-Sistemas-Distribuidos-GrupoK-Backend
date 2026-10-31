@@ -8,6 +8,14 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+/**
+ * Representa la solicitud de mantenimiento preventivo generada para una
+ * reserva confirmada.
+ *
+ * <p>La reserva identifica de forma única la solicitud, mientras que el
+ * vehículo, el período reservado y el estado permiten registrar y consultar
+ * el ciclo completo del mantenimiento.</p>
+ */
 @Entity
 @Table(name = "solicitud_mantenimiento")
 @Data
