@@ -8,7 +8,6 @@ import com.rentar.mantenimiento_service.model.SolicitudMantenimiento;
 import com.rentar.mantenimiento_service.repository.SolicitudMantenimientoRepository;
 import com.rentar.mantenimiento_service.service.MantenimientoService;
 import org.apache.kafka.clients.consumer.Consumer;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -17,24 +16,22 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Primary;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.ProducerFactory;
-import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
-import org.springframework.kafka.test.EmbeddedKafkaBroker;
-import org.springframework.kafka.test.context.EmbeddedKafka;
-import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.support.serializer.JacksonJsonDeserializer;
 import org.springframework.kafka.support.serializer.JacksonJsonSerializer;
+import org.springframework.kafka.test.EmbeddedKafkaBroker;
+import org.springframework.kafka.test.context.EmbeddedKafka;
+import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.Duration;
@@ -51,8 +48,7 @@ import static org.awaitility.Awaitility.await;
 
 @SpringBootTest(properties = {
         "spring.kafka.consumer.group-id=mantenimiento-service-integration-test",
-        "server.port=0",
-        "spring.main.allow-bean-definition-overriding=true"
+        "server.port=0"
 })
 @EmbeddedKafka(
         partitions = 1,
@@ -63,18 +59,15 @@ import static org.awaitility.Awaitility.await;
 class MantenimientoServiceIntegrationTest {
 
     @TestConfiguration
-    static class KafkaTestProducerConfiguration {
+    static class KafkaTestConfiguration {
 
         @Bean
-        @Primary
-        KafkaTemplate<String, Object> kafkaTestTemplate(
+        KafkaTemplate<String, ReservaConfirmadaEvent> reservaConfirmadaTestTemplate(
                 @Value("${spring.kafka.bootstrap-servers}") String bootstrapServers) {
             Map<String, Object> properties = new HashMap<>();
             properties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-            properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-            properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JacksonJsonSerializer.class);
 
-            ProducerFactory<String, Object> producerFactory =
+            ProducerFactory<String, ReservaConfirmadaEvent> producerFactory =
                     new DefaultKafkaProducerFactory<>(
                             properties,
                             new StringSerializer(),
@@ -82,36 +75,11 @@ class MantenimientoServiceIntegrationTest {
                     );
             return new KafkaTemplate<>(producerFactory);
         }
-
-        @Bean(name = "kafkaListenerContainerFactory")
-        ConcurrentKafkaListenerContainerFactory<String, ReservaConfirmadaEvent> kafkaTestListenerContainerFactory(
-                @Value("${spring.kafka.bootstrap-servers}") String bootstrapServers,
-                @Value("${spring.kafka.consumer.group-id}") String groupId) {
-            Map<String, Object> properties = new HashMap<>();
-            properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-            properties.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
-            properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-
-            ConsumerFactory<String, ReservaConfirmadaEvent> consumerFactory =
-                    new DefaultKafkaConsumerFactory<>(
-                            properties,
-                            new ErrorHandlingDeserializer<>(new StringDeserializer()),
-                            new ErrorHandlingDeserializer<>(
-                                    new JacksonJsonDeserializer<>(
-                                            ReservaConfirmadaEvent.class, false
-                                    )
-                            )
-                    );
-
-            ConcurrentKafkaListenerContainerFactory<String, ReservaConfirmadaEvent> factory =
-                    new ConcurrentKafkaListenerContainerFactory<>();
-            factory.setConsumerFactory(consumerFactory);
-            return factory;
-        }
     }
 
     @Autowired
-    private KafkaTemplate<String, Object> kafkaTemplate;
+    @Qualifier("reservaConfirmadaTestTemplate")
+    private KafkaTemplate<String, ReservaConfirmadaEvent> reservaConfirmadaTestTemplate;
 
     @Autowired
     private MantenimientoService mantenimientoService;
@@ -136,7 +104,7 @@ class MantenimientoServiceIntegrationTest {
         );
 
         // Publicamos el evento al tópico de kafka embebido
-        kafkaTemplate.send(KafkaConfig.TOPIC_RESERVA_CONFIRMADA, event);
+        reservaConfirmadaTestTemplate.send(KafkaConfig.TOPIC_RESERVA_CONFIRMADA, event);
 
         // Awaitility: Espera asíncrona a que el @KafkaListener procese el mensaje
         await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
@@ -155,8 +123,8 @@ class MantenimientoServiceIntegrationTest {
         );
 
         // Se envía el mismo evento dos veces a kafka
-        kafkaTemplate.send(KafkaConfig.TOPIC_RESERVA_CONFIRMADA, event);
-        kafkaTemplate.send(KafkaConfig.TOPIC_RESERVA_CONFIRMADA, event);
+        reservaConfirmadaTestTemplate.send(KafkaConfig.TOPIC_RESERVA_CONFIRMADA, event);
+        reservaConfirmadaTestTemplate.send(KafkaConfig.TOPIC_RESERVA_CONFIRMADA, event);
 
         // Verificamos que solo exista un registro en la base de datos
         await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
@@ -172,7 +140,7 @@ class MantenimientoServiceIntegrationTest {
         ReservaConfirmadaEvent event = new ReservaConfirmadaEvent(
                 103L, 25L, LocalDateTime.now(), LocalDateTime.now().plusDays(1)
         );
-        kafkaTemplate.send(KafkaConfig.TOPIC_RESERVA_CONFIRMADA, event);
+        reservaConfirmadaTestTemplate.send(KafkaConfig.TOPIC_RESERVA_CONFIRMADA, event);
 
         // Esperamos la ejecución asíncrona (@Async)
         await().atMost(Duration.ofSeconds(6)).untilAsserted(() -> {
@@ -243,8 +211,11 @@ class MantenimientoServiceIntegrationTest {
 
     // Método para crear un consumidor escucha en los tests
     private Consumer<String, Object> crearConsumidorPrueba(String topic) {
+
         Map<String, Object> props = KafkaTestUtils.consumerProps(
-                "grupo-test-" + System.nanoTime(), "true", embeddedKafkaBroker
+                embeddedKafkaBroker,
+                "grupo-test-" + System.nanoTime(),
+                true
         );
         DefaultKafkaConsumerFactory<String, Object> consumerFactory =
                 new DefaultKafkaConsumerFactory<>(
