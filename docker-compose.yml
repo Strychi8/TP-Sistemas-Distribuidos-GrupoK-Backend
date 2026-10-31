@@ -5,7 +5,7 @@ services:
   mysql-db:
     image: mysql:8.0
     container_name: rentar_mysql
-    command: ["mysqld", "--performance-schema=OFF", "--innodb-buffer-pool-size=64M", "--max-connections=80"]
+    command: [ "mysqld", "--performance-schema=OFF", "--innodb-buffer-pool-size=64M", "--max-connections=80" ]
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       # Credenciales por servicio: las consume mysql/init/01-init.sh (nada hardcodeado en el SQL).
@@ -32,7 +32,7 @@ services:
     networks:
       - rentar-net
     healthcheck:
-      test: ["CMD-SHELL", "mysql -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" -e 'SELECT 1'"]
+      test: [ "CMD-SHELL", "mysql -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" -e 'SELECT 1'" ]
       interval: 20s
       timeout: 5s
       retries: 10
@@ -69,7 +69,7 @@ services:
     ports:
       - "9091:9091"
     healthcheck:
-      test: ["CMD", "grpcurl", "-plaintext", "localhost:9091", "list"]
+      test: [ "CMD", "grpcurl", "-plaintext", "localhost:9091", "list" ]
       interval: 25s
       timeout: 5s
       retries: 20
@@ -103,7 +103,7 @@ services:
     ports:
       - "9092:9092"
     healthcheck:
-      test: ["CMD", "grpcurl", "-plaintext", "localhost:9092", "list"]
+      test: [ "CMD", "grpcurl", "-plaintext", "localhost:9092", "list" ]
       interval: 25s
       timeout: 5s
       retries: 20
@@ -139,7 +139,7 @@ services:
     ports:
       - "9093:9093"
     healthcheck:
-      test: ["CMD", "grpcurl", "-plaintext", "localhost:9093", "list"]
+      test: [ "CMD", "grpcurl", "-plaintext", "localhost:9093", "list" ]
       interval: 25s
       timeout: 5s
       retries: 20
@@ -172,7 +172,7 @@ services:
     networks:
       - rentar-net
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O- http://localhost:3000/ || exit 1"]
+      test: [ "CMD-SHELL", "wget -q -O- http://localhost:3000/ || exit 1" ]
       interval: 25s
       timeout: 5s
       retries: 6
@@ -210,7 +210,7 @@ services:
     networks:
       - rentar-net
     healthcheck:
-      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"]
+      test: [ "CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1" ]
       interval: 10s
       timeout: 10s
       retries: 10
@@ -230,10 +230,10 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     volumes:
       - ./kafka/init-topics.sh:/init-topics.sh:ro
-    entrypoint: ["/bin/bash", "/init-topics.sh"]
+    entrypoint: [ "/bin/bash", "/init-topics.sh" ]
     networks:
       - rentar-net
-    
+
   # ==========================================
   # Interfaz Web para Kafka (Kafbat UI)
   # ==========================================
@@ -284,7 +284,7 @@ services:
     ports:
       - "9094:9094"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9094/api/verificaciones/salud"]
+      test: [ "CMD", "curl", "-f", "http://localhost:9094/api/verificaciones/salud" ]
       interval: 25s
       timeout: 5s
       retries: 20
@@ -308,7 +308,7 @@ services:
       MANTENIMIENTO_DB_USER: ${MANTENIMIENTO_DB_USER}
       MANTENIMIENTO_DB_PASSWORD: ${MANTENIMIENTO_DB_PASSWORD}
       KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
-      KAFKA_CONSUMER_GROUP_ID: ${KAFKA_MANTENIMIENTO_GROUP_ID:-mantenimiento-group}
+      KAFKA_MANTENIMIENTO_GROUP_ID: ${KAFKA_MANTENIMIENTO_GROUP_ID:-mantenimiento-group}
     depends_on:
       mysql-db:
         condition: service_healthy
@@ -319,9 +319,9 @@ services:
     networks:
       - rentar-net
     ports:
-      - "8084:8084"
+      - "9095:9095"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8084/api/mantenimientos/salud"]
+      test: [ "CMD", "curl", "-f", "http://localhost:9095/api/mantenimiento/salud" ]
       interval: 25s
       timeout: 5s
       retries: 20
