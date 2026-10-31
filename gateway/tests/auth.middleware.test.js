@@ -85,13 +85,18 @@ describe('Auth Middleware', () => {
       cb(null, { sub: 'user1', roles: 'CLIENTE' });
     });
 
-    customerClient.VerificarTokenBlacklist.mockImplementation(({ token }, cb) => {
-      cb(null, { revocado: true });
+    customerClient.VerificarTokenBlacklist.mockImplementation((payload, meta, cb) => {
+      const callback = typeof meta === 'function' ? meta : cb;
+      callback(null, { revocado: true });
     });
 
     authMiddleware(req, res, next);
 
-    expect(customerClient.VerificarTokenBlacklist).toHaveBeenCalledWith({ token: 'token_valido_revocado' }, expect.any(Function));
+    expect(customerClient.VerificarTokenBlacklist).toHaveBeenCalledWith(
+      { token: 'token_valido_revocado' },
+      expect.anything(),
+      expect.any(Function)
+    );
     expect(res.status).toHaveBeenCalledWith(401);
     expect(res.json).toHaveBeenCalledWith({ message: 'El token ha sido revocado (sesión cerrada).' });
     expect(next).not.toHaveBeenCalled();
@@ -103,8 +108,9 @@ describe('Auth Middleware', () => {
       cb(null, { sub: 'user1', roles: 'CLIENTE' });
     });
 
-    customerClient.VerificarTokenBlacklist.mockImplementation(({ token }, cb) => {
-      cb(new Error('gRPC error'), null);
+    customerClient.VerificarTokenBlacklist.mockImplementation((payload, meta, cb) => {
+      const callback = typeof meta === 'function' ? meta : cb;
+      callback(new Error('gRPC error'), null);
     });
 
     authMiddleware(req, res, next);
@@ -120,8 +126,9 @@ describe('Auth Middleware', () => {
       cb(null, { sub: 'user1', roles: 'CLIENTE,ADMINISTRADOR' });
     });
 
-    customerClient.VerificarTokenBlacklist.mockImplementation(({ token }, cb) => {
-      cb(null, { revocado: false });
+    customerClient.VerificarTokenBlacklist.mockImplementation((payload, meta, cb) => {
+      const callback = typeof meta === 'function' ? meta : cb;
+      callback(null, { revocado: false });
     });
 
     authMiddleware(req, res, next);

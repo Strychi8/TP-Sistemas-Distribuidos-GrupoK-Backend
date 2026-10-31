@@ -11,6 +11,7 @@ jest.unstable_mockModule('../clients/grpc.js', () => ({
   },
   customerClient: {
     GetClienteById: jest.fn(),
+    GetMiPerfil: jest.fn(),
   },
   vehicleClient: {
     GetVehiculoById: jest.fn(),
@@ -23,7 +24,7 @@ jest.unstable_mockModule('../clients/grpc.js', () => ({
 // - authMiddleware verifica si token no está en blacklist llamando a customerClient.VerificarTokenBlacklist
 jest.unstable_mockModule('../middleware/auth.middleware.js', () => ({
   authMiddleware: (req, res, next) => {
-    req.user = { sub: '10', roles: 'USER' };
+    req.user = { sub: 'cliente@test.com', roles: 'USER' };
     next();
   }
 }));
@@ -50,6 +51,10 @@ describe('POST /api/reservas', () => {
       fechaInicio: inicio.toISOString(),
       fechaFin: fin.toISOString()
     };
+
+    customerClient.GetMiPerfil.mockImplementation((req, meta, cb) => {
+      cb(null, { idCliente: 10, dni: '35123456', email: 'cliente@test.com', activo: true });
+    });
   });
 
   it('Debe rechazar si la fecha de inicio no es futura (fail-fast local)', async () => {
@@ -65,18 +70,18 @@ describe('POST /api/reservas', () => {
     expect(response.status).toBe(400);
     expect(response.body.message).toBe('La fecha de inicio de la reserva debe ser futura');
     // Verificamos que no se llamó a gRPC
-    expect(customerClient.GetClienteById).not.toHaveBeenCalled();
+    expect(customerClient.GetMiPerfil).not.toHaveBeenCalled();
   });
 
   it('Debe orquestar la reserva exitosamente y retornar HTTP 201 (Verificar orden y formatos)', async () => {
     // Mock 1: Cliente existe y está activo
-    customerClient.GetClienteById.mockImplementation((req, meta, cb) => {
-      cb(null, { idCliente: 10, activo: true });
+    customerClient.GetMiPerfil.mockImplementation((req, meta, cb) => {
+      cb(null, { idCliente: 10, dni: '35123456', email: 'cliente@test.com', activo: true });
     });
 
     // Mock 2: Vehículo existe, está activo y obtenemos su precio
     vehicleClient.GetVehiculoById.mockImplementation((req, meta, cb) => {
-      cb(null, { idVehiculo: 5, activo: true, precioDiario: 5000 });
+      cb(null, { idVehiculo: 5, activo: true, inhabilitado: false, estado: 'DISPONIBLE', precioDiario: 5000 });
     });
 
     // Mock 3: No hay solapamiento
@@ -116,7 +121,7 @@ describe('POST /api/reservas', () => {
     expect(response.body.fechaInicio).toContain('T'); // ISO String format
 
     // Validar orden de llamadas
-    expect(customerClient.GetClienteById).toHaveBeenCalled();
+    expect(customerClient.GetMiPerfil).toHaveBeenCalled();
     expect(vehicleClient.GetVehiculoById).toHaveBeenCalled();
     expect(rentalClient.VerificarSolapamientoVehiculo).toHaveBeenCalled();
     expect(rentalClient.CrearReserva).toHaveBeenCalled();
@@ -127,9 +132,9 @@ describe('POST /api/reservas', () => {
     );
   });
 
-  it('Debe devolver 400 si hay solapamiento de fechas', async () => {
-    customerClient.GetClienteById.mockImplementation((req, meta, cb) => cb(null, { idCliente: 10, activo: true }));
-    vehicleClient.GetVehiculoById.mockImplementation((req, meta, cb) => cb(null, { idVehiculo: 5, activo: true, precioDiario: 5000 }));
+  it('Debe devolver 409 si hay solapamiento de fechas', async () => {
+    customerClient.GetMiPerfil.mockImplementation((req, meta, cb) => cb(null, { idCliente: 10, dni: '35123456', activo: true }));
+    vehicleClient.GetVehiculoById.mockImplementation((req, meta, cb) => cb(null, { idVehiculo: 5, activo: true, inhabilitado: false, estado: 'DISPONIBLE', precioDiario: 5000 }));
     
     // Mock: Hay solapamiento
     rentalClient.VerificarSolapamientoVehiculo.mockImplementation((req, meta, cb) => {
@@ -147,10 +152,38 @@ describe('POST /api/reservas', () => {
     expect(rentalClient.CrearReserva).not.toHaveBeenCalled();
     expect(vehicleClient.ActualizarEstadoVehiculo).not.toHaveBeenCalled();
   });
+
+  it('Debe rechazar con 400 si el vehículo está inhabilitado', async () => {
+    customerClient.GetMiPerfil.mockImplementation((req, meta, cb) => cb(null, { idCliente: 10, dni: '35123456', activo: true }));
+    vehicleClient.GetVehiculoById.mockImplementation((req, meta, cb) => cb(null, { idVehiculo: 5, activo: true, inhabilitado: true, estado: 'DISPONIBLE', precioDiario: 5000 }));
+
+    const response = await request(app)
+      .post('/api/reservas')
+      .send(validPayload);
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toContain('inhabilitado');
+    expect(rentalClient.VerificarSolapamientoVehiculo).not.toHaveBeenCalled();
+  });
+
+  it('Debe rechazar con 400 si el vehículo no está en estado DISPONIBLE (ej: RESERVADO o numérico)', async () => {
+    customerClient.GetMiPerfil.mockImplementation((req, meta, cb) => cb(null, { idCliente: 10, dni: '35123456', activo: true }));
+    // Testeamos con número 2 (RESERVADO en proto)
+    vehicleClient.GetVehiculoById.mockImplementation((req, meta, cb) => cb(null, { idVehiculo: 5, activo: true, inhabilitado: false, estado: 2, precioDiario: 5000 }));
+
+    const response = await request(app)
+      .post('/api/reservas')
+      .send(validPayload);
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toContain('disponible');
+    expect(rentalClient.VerificarSolapamientoVehiculo).not.toHaveBeenCalled();
+  });
+
   it('Debe ejecutar rollback (cancelar reserva) si falla la actualización de estado del vehículo', async () => {
     // 1 y 2. Cliente y Vehículo OK
-    customerClient.GetClienteById.mockImplementation((req, meta, cb) => cb(null, { idCliente: 10, activo: true }));
-    vehicleClient.GetVehiculoById.mockImplementation((req, meta, cb) => cb(null, { idVehiculo: 5, activo: true, precioDiario: 5000 }));
+    customerClient.GetMiPerfil.mockImplementation((req, meta, cb) => cb(null, { idCliente: 10, dni: '35123456', activo: true }));
+    vehicleClient.GetVehiculoById.mockImplementation((req, meta, cb) => cb(null, { idVehiculo: 5, activo: true, inhabilitado: false, estado: 'DISPONIBLE', precioDiario: 5000 }));
     
     // 3. No hay solapamiento
     rentalClient.VerificarSolapamientoVehiculo.mockImplementation((req, meta, cb) => cb(null, { solapado: false }));
