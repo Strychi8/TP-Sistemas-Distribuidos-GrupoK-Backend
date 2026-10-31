@@ -77,8 +77,10 @@ export const resolvers = {
           });
         });
         
-        // 3. Conservar solo los vehículos sin solapamiento
-        if (!solapado) {
+        // 3. Conservar solo los vehículos sin solapamiento, activos, no inhabilitados y disponibles
+        const noInhabilitado = !vehiculo.inhabilitado;
+        const disponible = vehiculo.estado === 'DISPONIBLE' || vehiculo.estado === 1 || vehiculo.estado === undefined;
+        if (!solapado && noInhabilitado && disponible) {
           disponibles.push(vehiculo);
         }
       }

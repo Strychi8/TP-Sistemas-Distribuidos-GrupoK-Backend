@@ -97,7 +97,7 @@ router.delete('/:id', (req, res, next) => {
   const meta = createGrpcMetadata(req);
   vehicleClient.EliminarVehiculo({ idVehiculo: req.params.id }, meta, (err, response) => {
     if (err) return next(err);
-    res.json({ message: 'Vehículo inhabilitado correctamente', ...response });
+    res.json({ message: 'Vehículo dado de baja correctamente', ...response });
   });
 });
 
@@ -115,7 +115,11 @@ router.get('/activos', (req, res, next) => {
   const meta = createGrpcMetadata(req);
   vehicleClient.GetVehiculosActivos({}, meta, (err, response) => {
     if (err) return next(err);
-    res.json(response?.vehicles || response || []);
+    const list = response?.vehicles || response || [];
+    const filtrados = Array.isArray(list)
+      ? list.filter(v => !v.inhabilitado && (v.estado === 'DISPONIBLE' || v.estado === 1))
+      : list;
+    res.json(filtrados);
   });
 });
 
