@@ -144,7 +144,7 @@ services:
       timeout: 5s
       retries: 20
       start_period: 360s
-  
+
   # ==========================================
   # API Gateway
   # ==========================================
@@ -252,7 +252,7 @@ services:
         condition: service_healthy
     networks:
       - rentar-net
-  
+
   # ==========================================
   # Microservicio de Verificación (Kafka)
   # ==========================================
@@ -270,8 +270,8 @@ services:
       VERIFICACION_DB_USER: ${VERIFICACION_DB_USER}
       VERIFICACION_DB_PASSWORD: ${VERIFICACION_DB_PASSWORD}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      KAFKA_CONSUMER_GROUP_ID: verificacion-service-group
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      KAFKA_CONSUMER_GROUP_ID: ${KAFKA_VERIFICACION_GROUP_ID:-verificacion-service-group}
     depends_on:
       mysql-db:
         condition: service_healthy
@@ -291,7 +291,7 @@ services:
       start_period: 40s
 
   # ==========================================
-  # Microservicio de Mantenimiento Preventivo (Kafka)
+  # Microservicio de Mantenimiento (Kafka)
   # ==========================================
   mantenimiento-service:
     build:
@@ -300,12 +300,15 @@ services:
     container_name: rentar_mantenimiento
     environment:
       JAVA_TOOL_OPTIONS: "-Xms64m -Xmx256m -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xss256k"
+      DB_HOST: mysql-db
+      DB_PORT: 3306
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
       MANTENIMIENTO_SERVER_PORT: ${MANTENIMIENTO_SERVER_PORT:-8084}
       MANTENIMIENTO_DB_NAME: ${MANTENIMIENTO_DB_NAME}
       MANTENIMIENTO_DB_USER: ${MANTENIMIENTO_DB_USER}
       MANTENIMIENTO_DB_PASSWORD: ${MANTENIMIENTO_DB_PASSWORD}
       KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
-      KAFKA_CONSUMER_GROUP_ID: ${KAFKA_MANTENIMIENTO_CONSUMER_GROUP_ID:-mantenimiento-group}
+      KAFKA_CONSUMER_GROUP_ID: ${KAFKA_MANTENIMIENTO_GROUP_ID:-mantenimiento-group}
     depends_on:
       mysql-db:
         condition: service_healthy
