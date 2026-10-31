@@ -24,4 +24,5 @@ public class VehiculoResponseDTO {
     private BigDecimal precioDiario;
     private EstadoVehiculo estado;
     private Boolean activo;
+    private Boolean inhabilitado;
 }

@@ -8,10 +8,13 @@ import com.rentar.vehicle_service.enums.EstadoVehiculo;
 import com.rentar.vehicle_service.exception.custom.BadRequestException;
 import com.rentar.vehicle_service.exception.custom.ConflictException;
 import com.rentar.vehicle_service.exception.custom.ResourceNotFoundException;
+import com.rentar.vehicle_service.kafka.event.VerificacionVehiculoEvent;
 import com.rentar.vehicle_service.mapper.VehiculoMapper;
 import com.rentar.vehicle_service.model.Vehiculo;
 import com.rentar.vehicle_service.repository.IVehiculoRepository;
 import com.rentar.vehicle_service.service.IVehiculoService;
+import com.rentar.vehicle_service.validation.PatenteNormalizer;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,16 +26,18 @@ import java.util.stream.Collectors;
 public class VehiculoServiceImpl implements IVehiculoService {
     private final IVehiculoRepository vehiculoRepository;
     private final VehiculoMapper vehiculoMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public VehiculoServiceImpl(IVehiculoRepository vehiculoRepository, VehiculoMapper vehiculoMapper) {
+    public VehiculoServiceImpl(IVehiculoRepository vehiculoRepository, VehiculoMapper vehiculoMapper, ApplicationEventPublisher eventPublisher) {
         this.vehiculoRepository = vehiculoRepository;
         this.vehiculoMapper = vehiculoMapper;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
     @Transactional
     public VehiculoResponseDTO crearVehiculo(VehiculoRequestDTO dto) {
-        validarPatente(dto.getPatente());
+        dto.setPatente(PatenteNormalizer.normalizar(dto.getPatente()));
 
         // Evitamos validar previamente con existsByPatente() para prevenir condiciones de carrera.
         // Se inserta directamente confiando en la restricción UNIQUE de la base de datos.
@@ -40,17 +45,14 @@ public class VehiculoServiceImpl implements IVehiculoService {
 
         try {
             Vehiculo guardado = vehiculoRepository.save(vehiculo);
+            eventPublisher.publishEvent(VerificacionVehiculoEvent.builder()
+                    .vehiculoId(guardado.getIdVehiculo())
+                    .patente(guardado.getPatente())
+                    .build());  
             return vehiculoMapper.toDTO(guardado);
         } catch (DataIntegrityViolationException ex) {
             // Capturamos el error de restricción UNIQUE (patente duplicada) para lanzar un 409 Conflict.
             throw new ConflictException("Ya existe un vehículo con la patente: " + dto.getPatente());
-        }
-    }
-
-    private void validarPatente(String patente) {
-        // Validación para patente con formato Mercosur: dos letras, tres números y dos letras
-        if (patente == null || !patente.matches("^[A-Z]{2}[0-9]{3}[A-Z]{2}$")) {
-            throw new BadRequestException("La patente debe tener el formato Mercosur (ej. AB123CD)");
         }
     }
 
@@ -87,7 +89,8 @@ public class VehiculoServiceImpl implements IVehiculoService {
     @Override
     @Transactional(readOnly = true)
     public VehiculoResponseDTO obtenerVehiculoPorPatente(String patente) {
-        Vehiculo vehiculo = vehiculoRepository.findByPatente(patente)
+        String patenteNormalizada = PatenteNormalizer.normalizar(patente);
+        Vehiculo vehiculo = vehiculoRepository.findByPatente(patenteNormalizada)
                 .orElseThrow(() -> new ResourceNotFoundException("Vehículo no encontrado con patente: " + patente));
         return vehiculoMapper.toDTO(vehiculo);
     }
@@ -104,7 +107,7 @@ public class VehiculoServiceImpl implements IVehiculoService {
     @Override
     @Transactional(readOnly = true)
     public List<VehiculoResponseDTO> listarVehiculosActivos() {
-        return vehiculoRepository.findByActivoTrue()
+        return vehiculoRepository.findByActivoTrueAndInhabilitadoFalse()
                 .stream()
                 .map(vehiculoMapper::toDTO)
                 .collect(Collectors.toList());

@@ -52,4 +52,8 @@ public class Vehiculo {
     @Column(name = "activo", nullable = false)
     @Builder.Default
     private Boolean activo = true;
+
+    @Column(name = "inhabilitado", nullable = false)
+    @Builder.Default()
+    private Boolean inhabilitado = false;
 }
