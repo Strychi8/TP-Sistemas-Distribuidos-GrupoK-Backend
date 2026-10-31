@@ -271,7 +271,10 @@ services:
       VERIFICACION_DB_PASSWORD: ${VERIFICACION_DB_PASSWORD}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
-      KAFKA_CONSUMER_GROUP_ID: ${KAFKA_VERIFICACION_GROUP_ID:-verificacion-service-group}
+      # Se conserva el grupo historico de verificacion-service (mismo valor que usa
+      # vehicle-service) para no perder los offsets ya commiteados y evitar un replay
+      # completo de vehiculos.verificacion.solicitada / vehiculos.externos.registrados.
+      KAFKA_VERIFICACION_GROUP_ID: ${KAFKA_VERIFICACION_GROUP_ID:-vehicle-verificacion-group}
     depends_on:
       mysql-db:
         condition: service_healthy

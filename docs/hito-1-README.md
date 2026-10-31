@@ -21,14 +21,14 @@ Este hito constituye la base del backend del sistema de alquiler de vehículos. 
 ### 1. Requisitos previos
 - **Java 21** o superior.
 - **Maven** (o utilizar el wrapper `./mvnw` incluido en el proyecto).
-- **MySQL** corriendo localmente en el puerto `3306` (o vía Docker).
+- **MySQL** corriendo localmente en el puerto `3306`, o bien el contenedor `mysql-db` del `docker-compose` (publicado en el host en el puerto `3307`).
 
 ### 2. Configuración de Variables de Entorno
 El proyecto utiliza un archivo `.env` o configuraciones en `application.properties`. Asegúrate de configurar las siguientes variables de entorno (puedes crear un archivo `.env` en la raíz de `web_services`):
 
 ```env
 DB_HOST=localhost
-DB_PORT=3306
+DB_PORT=3306   # 3307 si se reutiliza el contenedor mysql-db del docker-compose
 DB_NAME=rentar
 DB_USERNAME=tu_usuario
 DB_PASSWORD=tu_contraseña

@@ -63,7 +63,7 @@ Desde la raíz del repositorio Backend:
 docker compose up --build -d
 ```
 Este comando construirá y levantará:
-- **`mysql-db`:** Base de datos con los tres esquemas inicializados (`3306`).
+- **`mysql-db`:** Base de datos con los tres esquemas inicializados (puerto interno `3306`, publicado en el host en `3307`).
 - **`vehicle-service`:** Microservicio de vehículos en gRPC (`9091`).
 - **`customer-service`:** Microservicio de clientes y autenticación en gRPC (`9092`).
 - **`rental-service`:** Microservicio de alquileres y reservas en gRPC (`9093`).
@@ -99,7 +99,7 @@ La aplicación web quedará accesible en: [http://localhost:5173](http://localho
 Si prefieres ejecutar cada componente en consolas separadas:
 
 #### 1. Base de Datos MySQL Local
-Asegúrate de tener un servicio MySQL local en el puerto `3306` y crea las bases de datos requeridas:
+Asegúrate de tener un servicio MySQL local en el puerto `3306` (o reutilizar el contenedor `mysql-db` del compose, publicado en el host en el puerto `3307`) y crea las bases de datos requeridas:
 ```sql
 CREATE DATABASE IF NOT EXISTS rentar_customer_db;
 CREATE DATABASE IF NOT EXISTS rentar_vehicle_db;

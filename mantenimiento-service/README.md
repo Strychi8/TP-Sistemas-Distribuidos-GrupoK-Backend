@@ -65,7 +65,7 @@ El microservicio implementa una arquitectura en capas orientada a eventos (*Even
 | `kafka/producer/MantenimientoResultadoProducer` | Productor Kafka desacoplado con `@TransactionalEventListener(phase = AFTER_COMMIT)`. |
 | `controller/MantenimientoController` | Endpoints REST auxiliares (`/salud`, `/solicitudes`). |
 | `repository/SolicitudMantenimientoRepository` | Repositorio Spring Data JPA para la entidad `SolicitudMantenimiento`. |
-| `config/KafkaConfig` | Configuración de tópicos, productor desacoplado y consumidor con `StringJsonMessageConverter`. |
+| `config/KafkaConfig` | Configuración de tópicos, productor (`JacksonJsonSerializer` sin type headers) y consumidor con `StringJacksonJsonMessageConverter` (Jackson 3, soporte nativo de `LocalDateTime`). |
 
 ---
 
