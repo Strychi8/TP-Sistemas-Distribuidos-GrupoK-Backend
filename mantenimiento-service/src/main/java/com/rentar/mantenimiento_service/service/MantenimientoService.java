@@ -45,7 +45,7 @@ public class MantenimientoService {
      */
     @Transactional
     public void completarMantenimiento(Long solicitudId, EstadoMantenimiento resultado) {
-        SolicitudMantenimiento solicitud = repository.findByReservaId(solicitudId)
+        SolicitudMantenimiento solicitud = repository.findById(solicitudId)
                 .orElseThrow(() -> new IllegalArgumentException("No se encontró la solicutud ID: " + solicitudId));
 
         solicitud.setEstado(resultado);
@@ -58,5 +58,4 @@ public class MantenimientoService {
                 resultado.name() // Se pasa como String "REALIZADO"
         ));
     }
-
 }

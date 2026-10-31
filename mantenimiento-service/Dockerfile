@@ -4,7 +4,7 @@ FROM maven:3.9.9-eclipse-temurin-21 AS build
 WORKDIR /build
 
 COPY mantenimiento-service/pom.xml ./mantenimiento-service/pom.xml
-RUN --mount=type=cache,target=/root/.m2 mvn -f mantenimiento-service/pom.xml dependency:go-offline
+RUN --mount=type=cache,target=/root/.m2 mvn -B -f mantenimiento-service/pom.xml dependency:go-offline
 
 COPY mantenimiento-service/src ./mantenimiento-service/src
 RUN --mount=type=cache,target=/root/.m2 mvn -B -f mantenimiento-service/pom.xml clean package -DskipTests

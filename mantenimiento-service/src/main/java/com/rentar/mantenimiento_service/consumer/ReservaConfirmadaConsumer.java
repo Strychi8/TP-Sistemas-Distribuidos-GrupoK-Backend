@@ -16,7 +16,10 @@ public class ReservaConfirmadaConsumer {
     private final MantenimientoService mantenimientoService;
     private final MantenimientoSimuladorService simuladorService;
 
-    @KafkaListener(topics = KafkaConfig.TOPIC_RESERVA_CONFIRMADA)
+    @KafkaListener(topics = KafkaConfig.TOPIC_RESERVA_CONFIRMADA,
+            properties = {
+                    "spring.json.value.default.type=com.rentar.mantenimiento_service.dto.ReservaConfirmadaEvent"
+            })
     public void consumirReservaConfirmada(ReservaConfirmadaEvent event) {
         try {
             Long solicitudId = mantenimientoService.crearSolicitudMantenimiento(event);

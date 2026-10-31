@@ -11,7 +11,6 @@ public class MantenimientoSimuladorService {
 
     private final MantenimientoService service;
 
-
     /**
      * FASE 2: Simulación no bloqueante fuera de la transacción.
      */
@@ -31,5 +30,4 @@ public class MantenimientoSimuladorService {
             Thread.currentThread().interrupt();
         }
     }
-
 }
