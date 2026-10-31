@@ -1,4 +1,4 @@
-package com.rentar.mantenimiento_service.dto;
+package com.rentar.mantenimiento_service.kafka.event;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -11,5 +11,4 @@ public class MantenimientoResultadoEvent {
     private Long reservaId;
     private Long vehiculoId;
     private String resultado; // "REALIZADO" o "NO_REALIZADO"
-
 }
