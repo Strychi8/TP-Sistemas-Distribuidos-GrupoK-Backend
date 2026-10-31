@@ -20,7 +20,8 @@ const mapVehiculo = (v) => {
     tipoVehiculo: mapTipoVehiculo(v.tipoVehiculo),
     precioDiario: v.precioDiario || 0,
     estado: v.estado || 'DISPONIBLE',
-    activo: v.activo !== undefined ? v.activo : true
+    activo: v.activo !== undefined ? v.activo : true,
+    inhabilitado: v.inhabilitado !== undefined ? v.inhabilitado : false
   };
 };
 
@@ -103,9 +104,19 @@ export const resolvers = {
 
     // Hidratar vehiculo y patente consultando vehicleClient si vehiculo es ID numerico
     return Promise.all(historialList.map(async (h) => {
-      const idVehiculo = h.idVehiculo ?? h.vehiculo;
       let vehiculoDesc = '';
-      let patente = '';
+      let patente = h.patente || '';
+
+      const isNumeric = (val) => val !== null && val !== undefined && !isNaN(Number(val)) && String(val).trim() !== '';
+
+      let idVehiculo = null;
+      if (h.idVehiculo && isNumeric(h.idVehiculo)) {
+        idVehiculo = h.idVehiculo;
+      } else if (h.vehiculo && isNumeric(h.vehiculo)) {
+        idVehiculo = h.vehiculo;
+      } else if (h.vehiculo) {
+        vehiculoDesc = String(h.vehiculo);
+      }
 
       if (idVehiculo) {
         try  {
@@ -193,7 +204,8 @@ export const resolvers = {
             tipoVehiculo: 'SEDAN',
             precioDiario: r.precioDiario || 0,
             estado: 'DISPONIBLE',
-            activo: true
+            activo: true,
+            inhabilitado: false
           };
         }
       } else {
@@ -214,7 +226,8 @@ export const resolvers = {
         fechaFin: formatGrpcTimestamp(r.fechaFin),
         importeTotal: r.importeTotal,
         precioDiario: r.precioDiario,
-        estado: r.estado
+        estado: r.estado,
+        resultadoMantenimiento: r.resultadoMantenimiento || null
       };
     }));
   }

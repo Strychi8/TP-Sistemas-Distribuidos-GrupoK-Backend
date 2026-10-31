@@ -46,6 +46,8 @@ export const schema = buildSchema(`
     estado: EstadoVehiculo!
     """Indica si el vehículo se encuentra activo en el sistema."""
     activo: Boolean!
+    """Indica si el vehículo se encuentra inhabilitado."""
+    inhabilitado: Boolean
   }
 
   """Filtros opcionales para buscar vehículos disponibles."""
@@ -143,6 +145,8 @@ export const schema = buildSchema(`
     precioDiario: Float!
     """Estado actual de la reserva."""
     estado: EstadoReserva!
+    """Resultado del mantenimiento (APROBADO o RECHAZADO)."""
+    resultadoMantenimiento: String
   }
 
   """Filtros opcionales para buscar reservas."""

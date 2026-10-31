@@ -90,7 +90,57 @@ export const swaggerDocument = {
             enum: ['DISPONIBLE', 'RESERVADO', 'EN_ALQUILER'],
             example: 'DISPONIBLE'
           },
-          activo: { type: 'boolean', example: true }
+          activo: { type: 'boolean', example: true },
+          inhabilitado: { type: 'boolean', example: false }
+        }
+      },
+      VehiculoExterno: {
+        type: 'object',
+        properties: {
+          idVehiculoExterno: { type: 'integer', example: 1 },
+          clienteId: { type: 'integer', example: 10 },
+          patente: { type: 'string', example: 'AA123BB' },
+          marca: { type: 'string', example: 'Toyota' },
+          modelo: { type: 'string', example: 'Corolla' },
+          anio: { type: 'integer', example: 2023 },
+          color: { type: 'string', example: 'Blanco' },
+          tipoVehiculo: {
+            type: 'string',
+            enum: ['SEDAN', 'SUV', 'PICKUP', 'COUPE', 'HATCHBACK'],
+            example: 'SEDAN'
+          },
+          estado: {
+            type: 'string',
+            enum: ['PENDIENTE', 'APROBADO', 'RECHAZADO'],
+            example: 'PENDIENTE'
+          },
+          validacionPatente: {
+            type: 'string',
+            example: 'PENDIENTE'
+          },
+          validacionTitularidad: {
+            type: 'string',
+            example: 'PENDIENTE'
+          },
+          vehiculoId: { type: 'integer', example: 15 },
+          precioDiario: { type: 'number', example: 45000.0 }
+        }
+      },
+      VehiculoExternoCrearRequest: {
+        type: 'object',
+        required: ['patente', 'marca', 'modelo', 'anio', 'precioDiario', 'tipoVehiculo'],
+        properties: {
+          patente: { type: 'string', example: 'AA123BB' },
+          marca: { type: 'string', example: 'Toyota' },
+          modelo: { type: 'string', example: 'Corolla' },
+          anio: { type: 'integer', example: 2023 },
+          color: { type: 'string', example: 'Blanco' },
+          tipoVehiculo: {
+            type: 'string',
+            enum: ['SEDAN', 'SUV', 'PICKUP', 'COUPE', 'HATCHBACK'],
+            example: 'SEDAN'
+          },
+          precioDiario: { type: 'number', example: 45000.0 }
         }
       },
       VehiculoCrearRequest: {
@@ -156,7 +206,8 @@ export const swaggerDocument = {
           fechaFin: { type: 'string', example: '2026-11-05T10:00:00.000Z' },
           precioDiario: { type: 'number', example: 45000.0 },
           importeTotal: { type: 'number', example: 180000.0 },
-          estadoReserva: { type: 'string', example: 'CONFIRMADA' }
+          estadoReserva: { type: 'string', example: 'CONFIRMADA' },
+          resultadoMantenimiento: { type: 'string', example: 'APROBADO', nullable: true }
         }
       },
       ErrorResponse: {
@@ -551,6 +602,55 @@ export const swaggerDocument = {
               }
             }
           }
+        }
+      }
+    },
+    '/api/vehiculos/externos': {
+      post: {
+        tags: ['Vehículos'],
+        summary: 'Registrar solicitud de vehículo propio (externo)',
+        description: 'Permite a un cliente autenticado solicitar la incorporación de su vehículo propio al catálogo de Rentar.',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/VehiculoExternoCrearRequest' }
+            }
+          }
+        },
+        responses: {
+          201: {
+            description: 'Solicitud de vehículo externo creada exitosamente',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/VehiculoExterno' }
+              }
+            }
+          },
+          400: { description: 'Datos inválidos o cliente inactivo' },
+          409: { description: 'Patente ya registrada en el sistema' }
+        }
+      },
+      get: {
+        tags: ['Vehículos'],
+        summary: 'Listar solicitudes de vehículos externos del cliente autenticado',
+        description: 'Devuelve la lista de solicitudes de vehículos propios realizadas por el cliente autenticado.',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: {
+            description: 'Lista de solicitudes de vehículos externos del cliente',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: { $ref: '#/components/schemas/VehiculoExterno' }
+                }
+              }
+            }
+          },
+          400: { description: 'Cliente inactivo' },
+          401: { description: 'No autenticado' }
         }
       }
     }
