@@ -9,7 +9,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 public class MantenimientoServiceApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(MantenimientoServiceApplication.class, args);
+      SpringApplication.run(MantenimientoServiceApplication.class, args);
     }
 
 }
