@@ -49,12 +49,20 @@ export const mapEstadoReserva = (estadoGrpc) => {
  */
 export const mapEstadoVehiculo = (estadoGrpc) => {
   const map = {
+    0: null,
+    1: 'DISPONIBLE',
+    2: 'RESERVADO',
+    3: 'EN_ALQUILER',
+    '0': null,
+    '1': 'DISPONIBLE',
+    '2': 'RESERVADO',
+    '3': 'EN_ALQUILER',
     'DISPONIBLE': 'DISPONIBLE',
     'RESERVADO': 'RESERVADO',
     'EN_ALQUILER': 'EN_ALQUILER',
     'ESTADO_VEHICULO_UNSPECIFIED': null
   };
-  return map[estadoGrpc] || estadoGrpc;
+  return map[estadoGrpc] !== undefined ? map[estadoGrpc] : estadoGrpc;
 };
 
 /**

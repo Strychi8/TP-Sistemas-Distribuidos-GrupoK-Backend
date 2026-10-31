@@ -24,6 +24,13 @@ enum EstadoVehiculo {
   EN_ALQUILER = 3;
 }
 
+enum EstadoVehiculoExterno {
+  ESTADO_EXTERNO_UNSPECIFIED = 0;
+  PENDIENTE = 1;
+  APROBADO = 2;
+  RECHAZADO = 3;
+}
+
 message Vehicle {
   int64 idVehiculo = 1;
   string patente = 2;

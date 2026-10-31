@@ -86,13 +86,21 @@ GRPC_ALQUILERES_URL=localhost:9092
 
 ### REST
 - Base URL sugerida: `/api`
-- Ejemplo: `POST /api/reservas` (Orquesta la creación de una reserva y la actualización del estado del vehículo).
+- `POST /api/auth/login` y `POST /api/auth/logout`: Gestión de sesión y JWT con verificación de lista negra.
+- `POST /api/reservas`: Orquesta la creación de reserva, validación de fechas futuras, no solapamiento, verificación de que el vehículo esté activo, no inhabilitado y en estado `DISPONIBLE`, con rollback de compensación automático si falla la actualización del vehículo.
+- `GET /api/reservas/:id`, `PUT /api/reservas/:id/cancelar`: Consulta y cancelación de reservas.
+- `POST /api/vehiculos/externos` *(Hito 3)*: Registro de solicitud de vehículo propio para clientes autenticados. Resuelve `clienteId` y `documento` (DNI) desde el perfil autenticado (`GetMiPerfil`), ignorando cualquier suplantación en el payload.
+- `GET /api/vehiculos/externos` *(Hito 3)*: Listado de solicitudes de incorporación de vehículos propios del cliente autenticado.
+- `GET /api/vehiculos`, `GET /api/vehiculos/activos`, `GET /api/vehiculos/patente/:patente`, `GET /api/vehiculos/:id`: Consulta de vehículos.
 
 ### GraphQL
-- Endpoint: `/graphql` (generalmente accesible vía método `POST` o `GET` para la interfaz GraphiQL si está habilitada en desarrollo).
-- Consultas principales: `vehiculos`, `reservas`, `historialAlquileres`.
+- Endpoint: `/graphql` (Swagger en `/api-docs`).
+- Consultas principales:
+  - `vehiculos`: Consulta general de flota, incluye campo `inhabilitado: Boolean`.
+  - `vehiculosDisponibles`: Filtro avanzado por tipo, marca, modelo, precio y fechas con chequeo de solapamiento.
+  - `reservas`: Consulta con filtros y detalle hidratado de cliente, vehículo y `resultadoMantenimiento: String`.
+  - `historialAlquileres`: Consulta de historial de alquileres finalizados/cancelados por cliente con resolución de vehículos y patentes.
 
-*(La especificación exacta de payloads y esquemas se define en los contratos expuestos por estas rutas).*
 
 ## 🔒 Seguridad y Autenticación
 

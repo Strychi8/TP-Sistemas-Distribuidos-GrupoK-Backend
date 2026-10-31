@@ -14,6 +14,12 @@ enum EstadoReserva {
   FINALIZADA = 3;
 }
 
+enum ResultadoMantenimiento {
+  RESULTADO_MANTENIMIENTO_UNSPECIFIED = 0;
+  MANTENIMIENTO_APROBADO = 1;
+  MANTENIMIENTO_RECHAZADO = 2;
+}
+
 message Reservation {
   int64 idReserva = 1;
   int64 idCliente = 2; 
