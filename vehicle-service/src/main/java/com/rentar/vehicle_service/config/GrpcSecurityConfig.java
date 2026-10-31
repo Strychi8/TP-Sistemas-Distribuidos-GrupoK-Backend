@@ -65,7 +65,9 @@ public class GrpcSecurityConfig {
                     requests.methods(
                             "rentar.vehicle.VehicleService/GetVehiculos",
                                     "rentar.vehicle.VehicleService/GetVehiculoById",
-                                    "rentar.vehicle.VehicleService/ActualizarEstadoVehiculo")
+                                    "rentar.vehicle.VehicleService/ActualizarEstadoVehiculo",
+                                    "rentar.vehicle.VehicleService/RegistrarVehiculoExterno",
+                                    "rentar.vehicle.VehicleService/GetVehiculosExternosByCliente")
                             .hasAnyAuthority("CLIENTE", "ADMINISTRADOR");
 
                     // RPC interno del Gateway: identidad presente, rol irrelevante.

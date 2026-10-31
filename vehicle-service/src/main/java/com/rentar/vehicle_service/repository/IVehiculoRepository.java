@@ -3,9 +3,11 @@ package com.rentar.vehicle_service.repository;
 import com.rentar.vehicle_service.enums.TipoVehiculo;
 import com.rentar.vehicle_service.model.Vehiculo;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -17,13 +19,14 @@ public interface IVehiculoRepository extends JpaRepository<Vehiculo, Long> {
 
     Optional<Vehiculo> findByPatente(String patente);
 
-    List<Vehiculo> findByActivoTrue();
+    List<Vehiculo> findByActivoTrueAndInhabilitadoFalse();
 
-    List<Vehiculo> findByActivoTrueAndTipoVehiculo(TipoVehiculo tipoVehiculo);
+    List<Vehiculo> findByActivoTrueAndTipoVehiculoAndInhabilitadoFalse(TipoVehiculo tipoVehiculo);
 
     @Query("""
             SELECT v FROM Vehiculo v
             WHERE v.activo = true
+              AND v.inhabilitado = false
               AND (:tipoVehiculo IS NULL OR v.tipoVehiculo = :tipoVehiculo)
               AND (:marca IS NULL OR LOWER(v.marca) LIKE LOWER(CONCAT('%', :marca, '%')))
               AND (:modelo IS NULL OR LOWER(v.modelo) LIKE LOWER(CONCAT('%', :modelo, '%')))
@@ -36,4 +39,15 @@ public interface IVehiculoRepository extends JpaRepository<Vehiculo, Long> {
                                     @Param("precioMin") Double precioMin,
                                     @Param("precioMax") Double precioMax);
 
+    @Transactional
+    @Modifying
+    @Query("""
+            UPDATE Vehiculo v
+            SET v.inhabilitado = :inhabilitado
+            WHERE v.idVehiculo = :idVehiculo
+                AND v.inhabilitado = :currentInhabilitado
+            """)
+    int updateInhabilitado(@Param("idVehiculo") Long idVehiculo,
+                           @Param("inhabilitado") Boolean inhabilitado,
+                           @Param("currentInhabilitado") Boolean currentInhabilitado);
 }
