@@ -24,11 +24,12 @@ public class RegistroTitularidadServiceImpl implements IRegistroTitularidadServi
     private final Map<String, TitularidadVehiculo> titularidadesMemoria = new ConcurrentHashMap<>();
 
     {
-        // Datos simulados iniciales (incluyendo el caso del enunciado oficial Hito 3)
-        // Ejemplo del enunciado: clienteId=89, documento=30123456, patente=DEF456
+        // Datos simulados iniciales (incluyendo clientes de la app con patentes externas y el caso del enunciado oficial Hito 3)
         agregarMemoria(89L, "30123456", "DEF456", "Ana Martinez");
-        agregarMemoria(1L, "11111111", "EXT100", "Juan Perez");
-        agregarMemoria(2L, "22222222", "EXT200", "Maria Gomez");
+        agregarMemoria(1L, "40111222", "EXT100", "Juan Perez");
+        agregarMemoria(2L, "41222333", "EXT200", "Maria Gomez");
+        agregarMemoria(3L, "42333444", "EXT300", "Lucas Fernandez");
+        agregarMemoria(4L, "43444555", "EXT400", "Ana Martinez");
     }
 
     private void agregarMemoria(Long clienteId, String documento, String patente, String titular) {

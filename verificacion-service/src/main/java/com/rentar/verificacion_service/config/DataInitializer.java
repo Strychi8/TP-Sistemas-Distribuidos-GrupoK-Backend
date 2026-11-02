@@ -45,6 +45,16 @@ public class DataInitializer implements CommandLineRunner {
                                 .patente("ROB123")
                                 .motivo("Denuncia policial activa por sustraccion")
                                 .fechaDenuncia(LocalDateTime.now().minusDays(2))
+                                .build(),
+                        PatenteRobada.builder()
+                                .patente("STOLEN1")
+                                .motivo("Vehiculo retenido por orden judicial")
+                                .fechaDenuncia(LocalDateTime.now().minusDays(15))
+                                .build(),
+                        PatenteRobada.builder()
+                                .patente("EXT200")
+                                .motivo("Pedido de secuestro activo (Vehiculo particular - Maria Gomez)")
+                                .fechaDenuncia(LocalDateTime.now().minusDays(3))
                                 .build()
                 ));
                 log.info("[DATA INIT] Patentes robadas sembradas exitosamente.");
@@ -67,15 +77,27 @@ public class DataInitializer implements CommandLineRunner {
                                 .build(),
                         TitularidadVehiculo.builder()
                                 .clienteId(1L)
-                                .documento("11111111")
+                                .documento("40111222")
                                 .patente("EXT100")
                                 .nombreTitular("Juan Perez")
                                 .build(),
                         TitularidadVehiculo.builder()
                                 .clienteId(2L)
-                                .documento("22222222")
+                                .documento("41222333")
                                 .patente("EXT200")
                                 .nombreTitular("Maria Gomez")
+                                .build(),
+                        TitularidadVehiculo.builder()
+                                .clienteId(3L)
+                                .documento("42333444")
+                                .patente("EXT300")
+                                .nombreTitular("Lucas Fernandez")
+                                .build(),
+                        TitularidadVehiculo.builder()
+                                .clienteId(4L)
+                                .documento("43444555")
+                                .patente("EXT400")
+                                .nombreTitular("Ana Martinez")
                                 .build()
                 ));
                 log.info("[DATA INIT] Titularidades sembradas exitosamente.");
