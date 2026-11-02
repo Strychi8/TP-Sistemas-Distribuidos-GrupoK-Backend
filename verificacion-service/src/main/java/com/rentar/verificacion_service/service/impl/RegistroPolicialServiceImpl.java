@@ -24,11 +24,12 @@ public class RegistroPolicialServiceImpl implements IRegistroPolicialService {
     private final Set<String> patentesRobadasMemoria = ConcurrentHashMap.newKeySet();
 
     {
-        // Patentes simuladas predefinidas
+        // Patentes simuladas predefinidas (incluyendo vehículos robados y vehículos propios con pedido de secuestro)
         patentesRobadasMemoria.add("AA111BB");
         patentesRobadasMemoria.add("ZZ999ZZ");
         patentesRobadasMemoria.add("ROB123");
         patentesRobadasMemoria.add("STOLEN1");
+        patentesRobadasMemoria.add("AF456XY"); // Vehículo de Maria Gomez marcado como robado para pruebas de rechazo
     }
 
     @Override
