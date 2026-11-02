@@ -52,8 +52,8 @@ public class DataInitializer implements CommandLineRunner {
                                 .fechaDenuncia(LocalDateTime.now().minusDays(15))
                                 .build(),
                         PatenteRobada.builder()
-                                .patente("AF456XY")
-                                .motivo("Pedido de secuestro activo (Ford Ranger - Maria Gomez)")
+                                .patente("EXT200")
+                                .motivo("Pedido de secuestro activo (Vehiculo particular - Maria Gomez)")
                                 .fechaDenuncia(LocalDateTime.now().minusDays(3))
                                 .build()
                 ));
@@ -78,25 +78,25 @@ public class DataInitializer implements CommandLineRunner {
                         TitularidadVehiculo.builder()
                                 .clienteId(1L)
                                 .documento("40111222")
-                                .patente("AD123ZZ")
+                                .patente("EXT100")
                                 .nombreTitular("Juan Perez")
                                 .build(),
                         TitularidadVehiculo.builder()
                                 .clienteId(2L)
                                 .documento("41222333")
-                                .patente("AF456XY")
+                                .patente("EXT200")
                                 .nombreTitular("Maria Gomez")
                                 .build(),
                         TitularidadVehiculo.builder()
                                 .clienteId(3L)
                                 .documento("42333444")
-                                .patente("AF123CC")
+                                .patente("EXT300")
                                 .nombreTitular("Lucas Fernandez")
                                 .build(),
                         TitularidadVehiculo.builder()
                                 .clienteId(4L)
                                 .documento("43444555")
-                                .patente("AG789WX")
+                                .patente("EXT400")
                                 .nombreTitular("Ana Martinez")
                                 .build()
                 ));
