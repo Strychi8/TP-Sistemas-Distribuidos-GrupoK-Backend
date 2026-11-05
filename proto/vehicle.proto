@@ -5,151 +5,391 @@ package rentar.vehicle;
 option java_package = "com.rentar.vehicle.grpc";
 option java_multiple_files = true;
 
-import "google/protobuf/timestamp.proto";
-import "google/protobuf/empty.proto";
+// ============================================================================
+// Enums del Dominio de Vehículos (Buf Lint: Prefijo del enum en cada valor)
+// ============================================================================
 
+// Categorías o tipos de vehículos admitidos por la flota de Rentar.
 enum TipoVehiculo {
+  // Valor por defecto no especificado según convención de Protocol Buffers.
   TIPO_VEHICULO_UNSPECIFIED = 0;
-  SEDAN = 1;
-  SUV = 2;
-  PICKUP = 3;
-  COUPE = 4;
-  HATCHBACK = 5;
+
+  // Vehículo tipo Sedán (automóvil de 4 o 5 puertas con baúl separado).
+  TIPO_VEHICULO_SEDAN = 1;
+
+  // Vehículo utilitario deportivo (SUV / Sport Utility Vehicle).
+  TIPO_VEHICULO_SUV = 2;
+
+  // Camioneta tipo Pickup con caja de carga abierta.
+  TIPO_VEHICULO_PICKUP = 3;
+
+  // Automóvil cupé deportivo de 2 o 3 puertas.
+  TIPO_VEHICULO_COUPE = 4;
+
+  // Automóvil con portón trasero vidriado integrado al habitáculo (Hatchback).
+  TIPO_VEHICULO_HATCHBACK = 5;
 }
 
+// Estados operativos posibles para un vehículo de la flota.
 enum EstadoVehiculo {
+  // Estado no especificado.
   ESTADO_VEHICULO_UNSPECIFIED = 0;
-  DISPONIBLE = 1;
-  RESERVADO = 2;
-  EN_ALQUILER = 3;
+
+  // El vehículo se encuentra disponible para ser reservado o alquilado.
+  ESTADO_VEHICULO_DISPONIBLE = 1;
+
+  // El vehículo tiene una reserva confirmada asociada para una fecha próxima.
+  ESTADO_VEHICULO_RESERVADO = 2;
+
+  // El vehículo se encuentra actualmente en curso de alquiler por un cliente.
+  ESTADO_VEHICULO_EN_ALQUILER = 3;
 }
 
+// Estados del flujo de aprobación de vehículos externos ofrecidos por clientes.
 enum EstadoVehiculoExterno {
-  ESTADO_EXTERNO_UNSPECIFIED = 0;
-  PENDIENTE = 1;
-  APROBADO = 2;
-  RECHAZADO = 3;
+  // Estado de vehículo externo no especificado.
+  ESTADO_VEHICULO_EXTERNO_UNSPECIFIED = 0;
+
+  // Solicitud pendiente de verificación policial y de titularidad.
+  ESTADO_VEHICULO_EXTERNO_PENDIENTE = 1;
+
+  // Solicitud aprobada e incorporada a la flota activa.
+  ESTADO_VEHICULO_EXTERNO_APROBADO = 2;
+
+  // Solicitud rechazada por inconsistencias o antecedentes.
+  ESTADO_VEHICULO_EXTERNO_RECHAZADO = 3;
 }
 
+// ============================================================================
+// Mensajes del Dominio
+// ============================================================================
+
+// Representa un vehículo de la flota Rentar.
 message Vehicle {
-  int64 idVehiculo = 1;
+  // Identificador único del vehículo en base de datos.
+  int64 id_vehiculo = 1;
+
+  // Dominio / Patente oficial del vehículo (inmutable una vez registrado).
   string patente = 2;
+
+  // Marca del fabricante (ej. Toyota, Ford).
   string marca = 3;
+
+  // Modelo comercial del vehículo (ej. Corolla, Focus).
   string modelo = 4;
+
+  // Año de fabricación del rodado.
   int32 anio = 5;
+
+  // Color de la carrocería.
   string color = 6;
-  TipoVehiculo tipoVehiculo = 7;
-  double precioDiario = 8;
+
+  // Tipo o segmento vehicular.
+  TipoVehiculo tipo_vehiculo = 7;
+
+  // Tarifa diaria de alquiler expresada en moneda local.
+  double precio_diario = 8;
+
+  // Estado operativo actual del rodado (DISPONIBLE, RESERVADO, EN_ALQUILER).
   EstadoVehiculo estado = 9;
-  bool activo = 10; // Necesario para que el Gateway distinga entre 404 (no existe) y 400 (inactivo)
+
+  // Indica si el vehículo está activo para el sistema (baja lógica).
+  bool activo = 10;
+
+  // Indica si el vehículo se encuentra inhabilitado por mantenimiento o inspección.
   bool inhabilitado = 11;
 }
 
-message VehicleList {
-  repeated Vehicle vehicles = 1;
+// Representa una solicitud de registro de vehículo externo aportado por un cliente.
+message VehiculoExterno {
+  // Identificador único de la solicitud externa.
+  int64 id_vehiculo_externo = 1;
+
+  // Identificador único del cliente titular del rodado.
+  int64 id_cliente = 2;
+
+  // Dominio / Patente del rodado externo.
+  string patente = 3;
+
+  // Marca del rodado.
+  string marca = 4;
+
+  // Modelo del rodado.
+  string modelo = 5;
+
+  // Año de fabricación.
+  int32 anio = 6;
+
+  // Color de la carrocería.
+  string color = 7;
+
+  // Tipo de vehículo.
+  TipoVehiculo tipo_vehiculo = 8;
+
+  // Estado actual del trámite de incorporación externa.
+  string estado = 9;
+
+  // Resultado de la validación ante el registro policial.
+  string validacion_patente = 10;
+
+  // Resultado de la validación de titularidad de dominio.
+  string validacion_titularidad = 11;
+
+  // Identificador del vehículo creado en la flota principal una vez aprobado (0 si pendiente).
+  int64 id_vehiculo = 12;
+
+  // Tarifa diaria pretendida para el alquiler del rodado.
+  double precio_diario = 13;
 }
 
-message FiltroDisponibilidad {
-  optional TipoVehiculo tipoVehiculo = 1;
-  optional string marca = 2;
-  optional string modelo = 3;
-  optional double precioMin = 4;
-  optional double precioMax = 5;
-}
+// ============================================================================
+// Mensajes de Solicitud y Respuesta para VehicleService (RPC_REQUEST_RESPONSE_UNIQUE)
+// ============================================================================
 
-message RangoFechas {
-  google.protobuf.Timestamp fechaInicio = 1;
-  google.protobuf.Timestamp fechaFin = 2;
-}
-
-message ActualizarEstadoRequest {
-  int64 idVehiculo = 1;
-  EstadoVehiculo estado = 2;
-}
-
-message GetVehiculoByIdRequest {
-  int64 idVehiculo = 1;
-}
-
+// Solicitud de alta de un nuevo vehículo en la flota de Rentar.
 message CrearVehiculoRequest {
+  // Patente única del nuevo vehículo.
   string patente = 1;
+
+  // Marca del vehículo.
   string marca = 2;
+
+  // Modelo del vehículo.
   string modelo = 3;
+
+  // Año de fabricación.
   int32 anio = 4;
+
+  // Color del vehículo.
   string color = 5;
-  TipoVehiculo tipoVehiculo = 6;
-  double precioDiario = 7;
+
+  // Segmento o tipo de vehículo.
+  TipoVehiculo tipo_vehiculo = 6;
+
+  // Precio diario de alquiler.
+  double precio_diario = 7;
 }
 
+// Respuesta a la creación de un nuevo vehículo.
+message CrearVehiculoResponse {
+  // Datos del vehículo creado.
+  Vehicle vehicle = 1;
+}
+
+// Solicitud para modificar atributos de un vehículo existente.
 message ActualizarVehiculoRequest {
-  int64 idVehiculo = 1;
+  // Identificador único del vehículo a modificar.
+  int64 id_vehiculo = 1;
+
+  // Marca actualizada.
   string marca = 2;
+
+  // Modelo actualizado.
   string modelo = 3;
+
+  // Año de fabricación actualizado.
   int32 anio = 4;
+
+  // Color actualizado.
   string color = 5;
-  TipoVehiculo tipoVehiculo = 6;
-  double precioDiario = 7;
+
+  // Tipo de vehículo actualizado.
+  TipoVehiculo tipo_vehiculo = 6;
+
+  // Precio diario actualizado.
+  double precio_diario = 7;
+
+  // Estado operativo actualizado.
   EstadoVehiculo estado = 8;
 }
 
-message EliminarVehiculoRequest {
-  int64 idVehiculo = 1;
+// Respuesta a la actualización de un vehículo.
+message ActualizarVehiculoResponse {
+  // Datos del vehículo modificado.
+  Vehicle vehicle = 1;
 }
 
+// Solicitud para actualizar el estado operativo de un vehículo (ej. tras confirmar reserva).
+message ActualizarEstadoVehiculoRequest {
+  // Identificador del vehículo.
+  int64 id_vehiculo = 1;
+
+  // Nuevo estado a asignar (DISPONIBLE, RESERVADO, EN_ALQUILER).
+  EstadoVehiculo estado = 2;
+}
+
+// Respuesta a la actualización de estado de un vehículo.
+message ActualizarEstadoVehiculoResponse {
+  // Datos del vehículo con su nuevo estado asignado.
+  Vehicle vehicle = 1;
+}
+
+// Solicitud para realizar la baja lógica de un vehículo.
+message EliminarVehiculoRequest {
+  // Identificador único del vehículo a dar de baja.
+  int64 id_vehiculo = 1;
+}
+
+// Respuesta a la baja lógica de un vehículo.
 message EliminarVehiculoResponse {
+  // true si la baja lógica fue aplicada exitosamente.
   bool success = 1;
 }
 
+// Solicitud para listar todos los vehículos registrados (Uso administrativo ABM).
+message GetVehiculosRequest {
+}
+
+// Respuesta con la lista de todos los vehículos de la flota.
+message GetVehiculosResponse {
+  // Colección de vehículos registrados.
+  repeated Vehicle vehicles = 1;
+}
+
+// Solicitud para listar vehículos activos y disponibles para clientes y catálogo.
+message GetVehiculosActivosRequest {
+}
+
+// Respuesta con la lista de vehículos activos.
+message GetVehiculosActivosResponse {
+  // Colección de vehículos activos no inhabilitados.
+  repeated Vehicle vehicles = 1;
+}
+
+// Solicitud para consultar un vehículo por su identificador primario.
+message GetVehiculoByIdRequest {
+  // Identificador único del vehículo.
+  int64 id_vehiculo = 1;
+}
+
+// Respuesta con el vehículo obtenido por su ID.
+message GetVehiculoByIdResponse {
+  // Datos del vehículo encontrado.
+  Vehicle vehicle = 1;
+}
+
+// Solicitud para consultar un vehículo por su patente o dominio.
 message GetVehiculoByPatenteRequest {
+  // Patente del vehículo buscado.
   string patente = 1;
 }
 
+// Respuesta con el vehículo obtenido por su patente.
+message GetVehiculoByPatenteResponse {
+  // Datos del vehículo coincidente con la patente.
+  Vehicle vehicle = 1;
+}
+
+// Solicitud de consulta de vehículos disponibles aplicando filtros opcionales de catálogo.
+message ConsultarDisponibilidadRequest {
+  // Filtro opcional por tipo o segmento de vehículo.
+  optional TipoVehiculo tipo_vehiculo = 1;
+
+  // Filtro opcional por marca del vehículo.
+  optional string marca = 2;
+
+  // Filtro opcional por modelo del rodado.
+  optional string modelo = 3;
+
+  // Filtro opcional por precio diario mínimo.
+  optional double precio_min = 4;
+
+  // Filtro opcional por precio diario máximo.
+  optional double precio_max = 5;
+}
+
+// Respuesta a la consulta de disponibilidad con los vehículos que cumplen el criterio.
+message ConsultarDisponibilidadResponse {
+  // Vehículos que cumplen los filtros aplicados.
+  repeated Vehicle vehicles = 1;
+}
+
+// Solicitud de un cliente para registrar un vehículo propio en el programa de Rentar.
 message RegistrarVehiculoExternoRequest {
+  // Patente del rodado externo.
   string patente = 1;
+
+  // Marca del vehículo.
   string marca = 2;
+
+  // Modelo del vehículo.
   string modelo = 3;
+
+  // Año de fabricación.
   int32 anio = 4;
+
+  // Color de la carrocería.
   string color = 5;
-  TipoVehiculo tipoVehiculo = 6;
-  double precioDiario = 7;
+
+  // Segmento vehicular.
+  TipoVehiculo tipo_vehiculo = 6;
+
+  // Tarifa diaria solicitada.
+  double precio_diario = 7;
+
+  // Documento de identidad del titular solicitante.
   string documento = 8;
-  int64 clienteId = 9;
+
+  // Identificador único del cliente autenticado.
+  int64 id_cliente = 9;
 }
 
-message VehiculoExternoResponse {
-  int64 idVehiculoExterno = 1;
-  int64 clienteId = 2;
-  string patente = 3;
-  string marca = 4;
-  string modelo = 5;
-  int32 anio = 6;
-  string color = 7;
-  TipoVehiculo tipoVehiculo = 8;
-  string estado = 9;
-  string validacionPatente = 10;
-  string validacionTitularidad = 11;
-  int64 vehiculoId = 12;
-  double precioDiario = 13;
+// Respuesta al registro de un vehículo externo.
+message RegistrarVehiculoExternoResponse {
+  // Datos de la solicitud externa creada.
+  VehiculoExterno vehiculo_externo = 1;
 }
 
+// Solicitud para consultar los vehículos externos solicitados por un cliente.
 message GetVehiculosExternosByClienteRequest {
-  int64 clienteId = 1;
+  // Identificador único del cliente.
+  int64 id_cliente = 1;
 }
 
-message VehiculoExternoList {
-  repeated VehiculoExternoResponse vehiculosExternos = 1;
+// Respuesta con el listado de vehículos externos de un cliente.
+message GetVehiculosExternosByClienteResponse {
+  // Lista de vehículos externos asociados al cliente.
+  repeated VehiculoExterno vehiculos_externos = 1;
 }
 
+// ============================================================================
+// Definición del Servicio gRPC VehicleService
+// ============================================================================
+
+// Servicio gRPC de catálogo, disponibilidad y administración de vehículos.
+// Encapsula las reglas de negocio de vehículos: unicidad e inmutabilidad de patente,
+// actualización de estados y validación de disponibilidad para reservas.
 service VehicleService {
-  rpc CrearVehiculo (CrearVehiculoRequest) returns (Vehicle);
-  rpc ActualizarVehiculo (ActualizarVehiculoRequest) returns (Vehicle);
-  rpc ActualizarEstadoVehiculo (ActualizarEstadoRequest) returns (Vehicle);
+  // Da de alta un nuevo vehículo en la flota.
+  rpc CrearVehiculo (CrearVehiculoRequest) returns (CrearVehiculoResponse);
+
+  // Actualiza las características de un vehículo existente.
+  rpc ActualizarVehiculo (ActualizarVehiculoRequest) returns (ActualizarVehiculoResponse);
+
+  // Actualiza el estado operativo del vehículo (DISPONIBLE, RESERVADO, EN_ALQUILER).
+  rpc ActualizarEstadoVehiculo (ActualizarEstadoVehiculoRequest) returns (ActualizarEstadoVehiculoResponse);
+
+  // Da de baja lógica a un vehículo impidiendo nuevos alquileres.
   rpc EliminarVehiculo (EliminarVehiculoRequest) returns (EliminarVehiculoResponse);
-  rpc GetVehiculos (google.protobuf.Empty) returns (VehicleList);
-  rpc GetVehiculosActivos (google.protobuf.Empty) returns (VehicleList);
-  rpc GetVehiculoById (GetVehiculoByIdRequest) returns (Vehicle);
-  rpc GetVehiculoByPatente (GetVehiculoByPatenteRequest) returns (Vehicle);
-  rpc ConsultarDisponibilidad(FiltroDisponibilidad) returns (VehicleList);
-  rpc RegistrarVehiculoExterno (RegistrarVehiculoExternoRequest) returns (VehiculoExternoResponse);
-  rpc GetVehiculosExternosByCliente (GetVehiculosExternosByClienteRequest) returns (VehiculoExternoList);
+
+  // Consulta el catálogo general de vehículos (ABM administrador).
+  rpc GetVehiculos (GetVehiculosRequest) returns (GetVehiculosResponse);
+
+  // Consulta los vehículos activos disponibles para visualización de clientes.
+  rpc GetVehiculosActivos (GetVehiculosActivosRequest) returns (GetVehiculosActivosResponse);
+
+  // Consulta un vehículo específico por su identificador primario.
+  rpc GetVehiculoById (GetVehiculoByIdRequest) returns (GetVehiculoByIdResponse);
+
+  // Consulta un vehículo a partir de su dominio / patente.
+  rpc GetVehiculoByPatente (GetVehiculoByPatenteRequest) returns (GetVehiculoByPatenteResponse);
+
+  // Consulta vehículos disponibles filtrando por tipo, marca, modelo y rango de precio.
+  rpc ConsultarDisponibilidad (ConsultarDisponibilidadRequest) returns (ConsultarDisponibilidadResponse);
+
+  // Registra un vehículo externo presentado por un cliente para su incorporación.
+  rpc RegistrarVehiculoExterno (RegistrarVehiculoExternoRequest) returns (RegistrarVehiculoExternoResponse);
+
+  // Lista las solicitudes de vehículos externos pertenecientes a un cliente.
+  rpc GetVehiculosExternosByCliente (GetVehiculosExternosByClienteRequest) returns (GetVehiculosExternosByClienteResponse);
 }
