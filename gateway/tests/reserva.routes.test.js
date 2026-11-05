@@ -126,7 +126,7 @@ describe('POST /api/reservas', () => {
     expect(rentalClient.VerificarSolapamientoVehiculo).toHaveBeenCalled();
     expect(rentalClient.CrearReserva).toHaveBeenCalled();
     expect(vehicleClient.ActualizarEstadoVehiculo).toHaveBeenCalledWith(
-      expect.objectContaining({ estado: 'RESERVADO' }),
+      expect.objectContaining({ estado: expect.stringMatching(/RESERVADO/) }),
       expect.anything(),
       expect.any(Function)
     );

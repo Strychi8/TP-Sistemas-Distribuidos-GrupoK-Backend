@@ -1,16 +1,6 @@
 package com.rentar.rental_service.grpc;
 
-import com.rentar.rental.grpc.CancelarReservaRequest;
-import com.rentar.rental.grpc.ConsultarHistorialRequest;
-import com.rentar.rental.grpc.CrearReservaRequest;
-import com.rentar.rental.grpc.FiltroReserva;
-import com.rentar.rental.grpc.GetReservaByIdRequest;
-import com.rentar.rental.grpc.RentalHistoryList;
-import com.rentar.rental.grpc.RentalServiceGrpc;
-import com.rentar.rental.grpc.Reservation;
-import com.rentar.rental.grpc.ReservationList;
-import com.rentar.rental.grpc.SolapamientoRequest;
-import com.rentar.rental.grpc.SolapamientoResponse;
+import com.rentar.rental.grpc.*;
 import com.rentar.rental_service.grpc.mapper.ReservaGrpcMapper;
 import com.rentar.rental_service.service.IReservaService;
 import io.grpc.stub.StreamObserver;
@@ -28,14 +18,18 @@ public class RentalGrpcServiceImpl extends RentalServiceGrpc.RentalServiceImplBa
     }
 
     @Override
-    public void crearReserva(CrearReservaRequest request, StreamObserver<Reservation> observer) {
-        observer.onNext(mapper.toProto(reservaService.crearReserva(mapper.toCrearReservaDTO(request))));
+    public void crearReserva(CrearReservaRequest request, StreamObserver<CrearReservaResponse> observer) {
+        var reservaCreada = reservaService.crearReserva(mapper.toCrearReservaDTO(request));
+        CrearReservaResponse response = CrearReservaResponse.newBuilder()
+                .setReservation(mapper.toProto(reservaCreada))
+                .build();
+        observer.onNext(response);
         observer.onCompleted();
     }
 
     @Override
-    public void consultarReservas(FiltroReserva request, StreamObserver<ReservationList> observer) {
-        ReservationList.Builder lista = ReservationList.newBuilder();
+    public void consultarReservas(ConsultarReservasRequest request, StreamObserver<ConsultarReservasResponse> observer) {
+        ConsultarReservasResponse.Builder lista = ConsultarReservasResponse.newBuilder();
         reservaService.consultarReservas(mapper.toFiltroDTO(request))
                 .forEach(r -> lista.addReservations(mapper.toProto(r)));
         observer.onNext(lista.build());
@@ -43,20 +37,26 @@ public class RentalGrpcServiceImpl extends RentalServiceGrpc.RentalServiceImplBa
     }
 
     @Override
-    public void getReservaById(GetReservaByIdRequest request, StreamObserver<Reservation> observer) {
-        observer.onNext(mapper.toProto(reservaService.obtenerPorId(request.getIdReserva())));
+    public void getReservaById(GetReservaByIdRequest request, StreamObserver<GetReservaByIdResponse> observer) {
+        GetReservaByIdResponse response = GetReservaByIdResponse.newBuilder()
+                .setReservation(mapper.toProto(reservaService.obtenerPorId(request.getIdReserva())))
+                .build();
+        observer.onNext(response);
         observer.onCompleted();
     }
 
     @Override
-    public void cancelarReserva(CancelarReservaRequest request, StreamObserver<Reservation> observer) {
-        observer.onNext(mapper.toProto(reservaService.cancelarReserva(request.getIdReserva())));
+    public void cancelarReserva(CancelarReservaRequest request, StreamObserver<CancelarReservaResponse> observer) {
+        CancelarReservaResponse response = CancelarReservaResponse.newBuilder()
+                .setReservation(mapper.toProto(reservaService.cancelarReserva(request.getIdReserva())))
+                .build();
+        observer.onNext(response);
         observer.onCompleted();
     }
 
     @Override
-    public void consultarHistorialAlquileres(ConsultarHistorialRequest request, StreamObserver<RentalHistoryList> observer) {
-        RentalHistoryList.Builder lista = RentalHistoryList.newBuilder();
+    public void consultarHistorialAlquileres(ConsultarHistorialAlquileresRequest request, StreamObserver<ConsultarHistorialAlquileresResponse> observer) {
+        ConsultarHistorialAlquileresResponse.Builder lista = ConsultarHistorialAlquileresResponse.newBuilder();
         reservaService.consultarHistorial(request.getIdCliente())
                 .forEach(r -> lista.addHistory(mapper.toHistory(r)));
         observer.onNext(lista.build());
@@ -64,12 +64,12 @@ public class RentalGrpcServiceImpl extends RentalServiceGrpc.RentalServiceImplBa
     }
 
     @Override
-    public void verificarSolapamientoVehiculo(SolapamientoRequest request, StreamObserver<SolapamientoResponse> observer) {
+    public void verificarSolapamientoVehiculo(VerificarSolapamientoVehiculoRequest request, StreamObserver<VerificarSolapamientoVehiculoResponse> observer) {
         boolean solapado = reservaService.verificarSolapamiento(
                 request.getIdVehiculo(),
                 mapper.toLocalDateTime(request.getFechaInicio()),
                 mapper.toLocalDateTime(request.getFechaFin()));
-        observer.onNext(SolapamientoResponse.newBuilder().setSolapado(solapado).build());
+        observer.onNext(VerificarSolapamientoVehiculoResponse.newBuilder().setSolapado(solapado).build());
         observer.onCompleted();
     }
 }

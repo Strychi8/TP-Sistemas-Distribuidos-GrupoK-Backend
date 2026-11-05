@@ -3,13 +3,13 @@ package com.rentar.customer_service.grpc;
 import com.rentar.customer.grpc.LoginRequest;
 import com.rentar.customer.grpc.LoginResponse;
 import com.rentar.customer.grpc.LogoutResponse;
-import com.rentar.customer.grpc.VerificarTokenResponse;
+import com.rentar.customer.grpc.VerificarTokenBlacklistResponse;
 import com.rentar.customer_service.dto.request.LoginRequestDTO;
 import com.rentar.customer_service.dto.response.AuthResponseDTO;
 
 /**
- * Traduce los DTOs de autenticación (Hito 1, IAuthService/JwtService) a los
- * mensajes protobuf de H2-4 (Login, Logout, VerificarTokenBlacklist).
+ * Traduce los DTOs de autenticación (IAuthService/JwtService) a los
+ * mensajes protobuf de Hito 2 (Login, Logout, VerificarTokenBlacklist).
  * Mapper puro: sin lógica de negocio ni acceso a repositorios.
  */
 public class AuthGrpcMapper {
@@ -36,8 +36,8 @@ public class AuthGrpcMapper {
                 .build();
     }
 
-    public static VerificarTokenResponse toVerificarTokenResponse(boolean revocado) {
-        return VerificarTokenResponse.newBuilder()
+    public static VerificarTokenBlacklistResponse toVerificarTokenBlacklistResponse(boolean revocado) {
+        return VerificarTokenBlacklistResponse.newBuilder()
                 .setRevocado(revocado)
                 .build();
     }

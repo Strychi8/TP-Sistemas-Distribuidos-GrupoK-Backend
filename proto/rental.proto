@@ -7,92 +7,224 @@ option java_multiple_files = true;
 
 import "google/protobuf/timestamp.proto";
 
+// ============================================================================
+// Enums del Dominio de Alquileres y Reservas (Buf Lint: Prefijo del enum)
+// ============================================================================
+
+// Estados del ciclo de vida de una reserva de vehículo.
 enum EstadoReserva {
+  // Estado de reserva no especificado por defecto.
   ESTADO_RESERVA_UNSPECIFIED = 0;
-  CONFIRMADA = 1;
-  CANCELADA = 2;
-  FINALIZADA = 3;
+
+  // Reserva confirmada exitosamente tras verificar cliente, vehículo y disponibilidad.
+  ESTADO_RESERVA_CONFIRMADA = 1;
+
+  // Reserva cancelada por el cliente antes del inicio del período de alquiler.
+  ESTADO_RESERVA_CANCELADA = 2;
+
+  // Reserva o alquiler completado y finalizado satisfactoriamente.
+  ESTADO_RESERVA_FINALIZADA = 3;
 }
 
+// Resultados posibles de la inspección o mantenimiento pos-alquiler del vehículo.
 enum ResultadoMantenimiento {
+  // Resultado de mantenimiento no especificado.
   RESULTADO_MANTENIMIENTO_UNSPECIFIED = 0;
-  MANTENIMIENTO_APROBADO = 1;
-  MANTENIMIENTO_RECHAZADO = 2;
+
+  // Mantenimiento completado y vehículo aprobado para reingresar a disponibilidad.
+  RESULTADO_MANTENIMIENTO_APROBADO = 1;
+
+  // Vehículo rechazado por desperfectos que impiden su disponibilidad inmediata.
+  RESULTADO_MANTENIMIENTO_RECHAZADO = 2;
 }
 
+// ============================================================================
+// Mensajes del Dominio
+// ============================================================================
+
+// Representa una reserva de vehículo en el sistema Rentar.
 message Reservation {
-  int64 idReserva = 1;
-  int64 idCliente = 2; 
-  int64 idVehiculo = 3; 
-  google.protobuf.Timestamp fechaInicio = 4;
-  google.protobuf.Timestamp fechaFin = 5;
-  double importeTotal = 6;
-  double precioDiario = 7;
+  // Identificador único de la reserva en base de datos.
+  int64 id_reserva = 1;
+
+  // Identificador único del cliente que reservó el rodado.
+  int64 id_cliente = 2;
+
+  // Identificador único del vehículo reservado.
+  int64 id_vehiculo = 3;
+
+  // Marca de tiempo que indica el inicio del período de reserva (UTC).
+  google.protobuf.Timestamp fecha_inicio = 4;
+
+  // Marca de tiempo que indica la finalización del período de reserva (UTC).
+  google.protobuf.Timestamp fecha_fin = 5;
+
+  // Importe total calculado (precio diario * cantidad de días).
+  double importe_total = 6;
+
+  // Precio diario vigente del vehículo al momento de la reserva.
+  double precio_diario = 7;
+
+  // Estado actual de la reserva (CONFIRMADA, CANCELADA, FINALIZADA).
   EstadoReserva estado = 8;
-  string resultadoMantenimiento = 9;
+
+  // Detalle o estado de la inspección de mantenimiento asociada.
+  string resultado_mantenimiento = 9;
 }
 
-message ReservationList {
-  repeated Reservation reservations = 1;
-}
-
-message FiltroReserva {
-  optional int64 idCliente = 1;
-  optional int64 idVehiculo = 2;
-  optional EstadoReserva estado = 3;
-  optional google.protobuf.Timestamp fechaDesde = 4;
-  optional google.protobuf.Timestamp fechaHasta = 5;
-}
-
+// Registro individual del historial de alquileres de un cliente.
 message RentalHistory {
-  int64 idVehiculo = 1;
-  google.protobuf.Timestamp fechaInicio = 2;
-  google.protobuf.Timestamp fechaFinalizacion = 3;
-  int32 cantidadDias = 4;
-  double importeTotal = 5;
+  // Identificador del vehículo alquilado.
+  int64 id_vehiculo = 1;
+
+  // Fecha y hora en que inició el alquiler.
+  google.protobuf.Timestamp fecha_inicio = 2;
+
+  // Fecha y hora en que finalizó o se canceló el alquiler.
+  google.protobuf.Timestamp fecha_finalizacion = 3;
+
+  // Duración total del alquiler en días.
+  int32 cantidad_dias = 4;
+
+  // Monto facturado total del alquiler.
+  double importe_total = 5;
+
+  // Estado final de la operación (FINALIZADA o CANCELADA).
   EstadoReserva estado = 6;
 }
 
-message RentalHistoryList {
+// ============================================================================
+// Mensajes de Solicitud y Respuesta para RentalService (RPC_REQUEST_RESPONSE_UNIQUE)
+// ============================================================================
+
+// Solicitud de creación de una nueva reserva de alquiler.
+message CrearReservaRequest {
+  // Identificador único del cliente solicitante.
+  int64 id_cliente = 1;
+
+  // Identificador único del vehículo a reservar.
+  int64 id_vehiculo = 2;
+
+  // Fecha y hora de inicio de la reserva (debe ser futura).
+  google.protobuf.Timestamp fecha_inicio = 3;
+
+  // Fecha y hora de finalización (debe ser posterior a fecha_inicio).
+  google.protobuf.Timestamp fecha_fin = 4;
+
+  // Precio diario pactado para el alquiler.
+  double precio_diario = 5;
+
+  // Importe total calculado para el período.
+  double importe_total = 6;
+}
+
+// Respuesta a la creación de una reserva.
+message CrearReservaResponse {
+  // Datos de la reserva confirmada.
+  Reservation reservation = 1;
+}
+
+// Solicitud de consulta de reservas aplicando filtros opcionales.
+message ConsultarReservasRequest {
+  // Filtro opcional por cliente.
+  optional int64 id_cliente = 1;
+
+  // Filtro opcional por vehículo.
+  optional int64 id_vehiculo = 2;
+
+  // Filtro opcional por estado de la reserva.
+  optional EstadoReserva estado = 3;
+
+  // Filtro opcional de rango: fecha mínima de inicio.
+  optional google.protobuf.Timestamp fecha_desde = 4;
+
+  // Filtro opcional de rango: fecha máxima de fin.
+  optional google.protobuf.Timestamp fecha_hasta = 5;
+}
+
+// Respuesta con la lista de reservas coincidentes con los filtros.
+message ConsultarReservasResponse {
+  // Colección de reservas encontradas.
+  repeated Reservation reservations = 1;
+}
+
+// Solicitud para consultar una reserva específica por su ID.
+message GetReservaByIdRequest {
+  // Identificador único de la reserva.
+  int64 id_reserva = 1;
+}
+
+// Respuesta con los datos de la reserva encontrada.
+message GetReservaByIdResponse {
+  // Datos de la reserva solicitada.
+  Reservation reservation = 1;
+}
+
+// Solicitud para cancelar una reserva existente antes de su fecha de inicio.
+message CancelarReservaRequest {
+  // Identificador único de la reserva a cancelar.
+  int64 id_reserva = 1;
+}
+
+// Respuesta a la cancelación de una reserva.
+message CancelarReservaResponse {
+  // Datos de la reserva tras aplicar el estado CANCELADA.
+  Reservation reservation = 1;
+}
+
+// Solicitud para consultar el historial de alquileres finalizados y cancelados de un cliente.
+message ConsultarHistorialAlquileresRequest {
+  // Identificador único del cliente.
+  int64 id_cliente = 1;
+}
+
+// Respuesta con el historial de alquileres del cliente.
+message ConsultarHistorialAlquileresResponse {
+  // Colección de registros históricos de alquiler.
   repeated RentalHistory history = 1;
 }
 
-message CrearReservaRequest {
-  int64 idCliente = 1;
-  int64 idVehiculo = 2;
-  google.protobuf.Timestamp fechaInicio = 3;
-  google.protobuf.Timestamp fechaFin = 4;
-  double precioDiario = 5;
-  double importeTotal = 6;
+// Solicitud para verificar si un vehículo presenta solapamiento de fechas con reservas activas.
+message VerificarSolapamientoVehiculoRequest {
+  // Identificador del vehículo a chequear.
+  int64 id_vehiculo = 1;
+
+  // Fecha y hora de inicio del intervalo pretendido.
+  google.protobuf.Timestamp fecha_inicio = 2;
+
+  // Fecha y hora de fin del intervalo pretendido.
+  google.protobuf.Timestamp fecha_fin = 3;
 }
 
-message SolapamientoRequest {
-  int64 idVehiculo = 1;
-  google.protobuf.Timestamp fechaInicio = 2;
-  google.protobuf.Timestamp fechaFin = 3;
-}
-
-message SolapamientoResponse {
+// Respuesta que indica si existe superposición o solapamiento temporal.
+message VerificarSolapamientoVehiculoResponse {
+  // true si el vehículo ya está reservado en ese intervalo; false si está libre.
   bool solapado = 1;
 }
 
-message GetReservaByIdRequest {
-  int64 idReserva = 1;
-}
+// ============================================================================
+// Definición del Servicio gRPC RentalService
+// ============================================================================
 
-message CancelarReservaRequest {
-  int64 idReserva = 1;
-}
-
-message ConsultarHistorialRequest {
-  int64 idCliente = 1;
-}
-
+// Servicio gRPC de gestión de reservas, solapamientos e historial de alquileres.
+// Aplica las reglas de negocio de alquiler: coherencia temporal (inicio futuro, fin posterior a inicio),
+// verificación de no-solapamiento y transición de estados (CONFIRMADA -> CANCELADA / FINALIZADA).
 service RentalService {
-  rpc CrearReserva (CrearReservaRequest) returns (Reservation);
-  rpc ConsultarReservas (FiltroReserva) returns (ReservationList);
-  rpc GetReservaById (GetReservaByIdRequest) returns (Reservation);
-  rpc CancelarReserva (CancelarReservaRequest) returns (Reservation);
-  rpc ConsultarHistorialAlquileres (ConsultarHistorialRequest) returns (RentalHistoryList);
-  rpc VerificarSolapamientoVehiculo (SolapamientoRequest) returns (SolapamientoResponse);
+  // Registra una nueva reserva confirmada en el sistema.
+  rpc CrearReserva (CrearReservaRequest) returns (CrearReservaResponse);
+
+  // Consulta reservas registradas aplicando filtros opcionales de cliente, vehículo o estado.
+  rpc ConsultarReservas (ConsultarReservasRequest) returns (ConsultarReservasResponse);
+
+  // Consulta una reserva puntual por su identificador único.
+  rpc GetReservaById (GetReservaByIdRequest) returns (GetReservaByIdResponse);
+
+  // Cancela una reserva antes de que inicie su período de alquiler.
+  rpc CancelarReserva (CancelarReservaRequest) returns (CancelarReservaResponse);
+
+  // Consulta el historial consolidado de alquileres (finalizados y cancelados) de un cliente.
+  rpc ConsultarHistorialAlquileres (ConsultarHistorialAlquileresRequest) returns (ConsultarHistorialAlquileresResponse);
+
+  // Verifica si un vehículo se encuentra comprometido en un rango de fechas determinado.
+  rpc VerificarSolapamientoVehiculo (VerificarSolapamientoVehiculoRequest) returns (VerificarSolapamientoVehiculoResponse);
 }

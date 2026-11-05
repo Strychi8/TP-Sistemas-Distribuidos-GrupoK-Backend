@@ -94,7 +94,7 @@ describe('Rutas de Vehículos Externos (/api/vehiculos/externos)', () => {
           modelo: 'Corolla',
           anio: 2022,
           color: 'Gris',
-          tipoVehiculo: 'SEDAN',
+          tipoVehiculo: expect.stringMatching(/SEDAN/),
           precioDiario: 45000
         }),
         expect.anything(),

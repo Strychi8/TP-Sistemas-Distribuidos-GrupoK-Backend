@@ -1,8 +1,8 @@
 package com.rentar.rental_service.grpc.mapper;
 
 import com.google.protobuf.Timestamp;
+import com.rentar.rental.grpc.ConsultarReservasRequest;
 import com.rentar.rental.grpc.CrearReservaRequest;
-import com.rentar.rental.grpc.FiltroReserva;
 import com.rentar.rental.grpc.RentalHistory;
 import com.rentar.rental.grpc.Reservation;
 import com.rentar.rental_service.dto.request.FiltroReservaDTO;
@@ -31,7 +31,7 @@ public class ReservaGrpcMapper {
                 BigDecimal.valueOf(request.getPrecioDiario()));
     }
 
-    public FiltroReservaDTO toFiltroDTO(FiltroReserva proto) {
+    public FiltroReservaDTO toFiltroDTO(ConsultarReservasRequest proto) {
         FiltroReservaDTO dto = new FiltroReservaDTO();
         if (proto.hasIdCliente()) {
             dto.setIdCliente(proto.getIdCliente());
@@ -60,11 +60,14 @@ public class ReservaGrpcMapper {
     }
 
     public EstadoReserva toEstado(com.rentar.rental.grpc.EstadoReserva proto) {
+        if (proto == null || proto == com.rentar.rental.grpc.EstadoReserva.ESTADO_RESERVA_UNSPECIFIED) {
+            return null;
+        }
         return switch (proto) {
-            case CONFIRMADA -> EstadoReserva.CONFIRMADA;
-            case CANCELADA -> EstadoReserva.CANCELADA;
-            case FINALIZADA -> EstadoReserva.FINALIZADA;
-            default -> null; // UNSPECIFIED / UNRECOGNIZED: sin contraparte de dominio
+            case ESTADO_RESERVA_CONFIRMADA -> EstadoReserva.CONFIRMADA;
+            case ESTADO_RESERVA_CANCELADA -> EstadoReserva.CANCELADA;
+            case ESTADO_RESERVA_FINALIZADA -> EstadoReserva.FINALIZADA;
+            default -> null;
         };
     }
 
@@ -126,10 +129,13 @@ public class ReservaGrpcMapper {
     }
 
     public com.rentar.rental.grpc.EstadoReserva toProtoEstado(EstadoReserva estado) {
+        if (estado == null) {
+            return com.rentar.rental.grpc.EstadoReserva.ESTADO_RESERVA_UNSPECIFIED;
+        }
         return switch (estado) {
-            case CONFIRMADA -> com.rentar.rental.grpc.EstadoReserva.CONFIRMADA;
-            case CANCELADA -> com.rentar.rental.grpc.EstadoReserva.CANCELADA;
-            case FINALIZADA -> com.rentar.rental.grpc.EstadoReserva.FINALIZADA;
+            case CONFIRMADA -> com.rentar.rental.grpc.EstadoReserva.ESTADO_RESERVA_CONFIRMADA;
+            case CANCELADA -> com.rentar.rental.grpc.EstadoReserva.ESTADO_RESERVA_CANCELADA;
+            case FINALIZADA -> com.rentar.rental.grpc.EstadoReserva.ESTADO_RESERVA_FINALIZADA;
         };
     }
 }
