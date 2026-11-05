@@ -3,7 +3,6 @@ package com.rentar.customer_service.grpc;
 import com.rentar.customer.grpc.ActualizarClienteRequest;
 import com.rentar.customer.grpc.CrearClienteRequest;
 import com.rentar.customer.grpc.Customer;
-import com.rentar.customer.grpc.CustomerList;
 import com.rentar.customer.grpc.EliminarClienteResponse;
 import com.rentar.customer.grpc.GetMiPerfilResponse;
 import com.rentar.customer_service.dto.request.ClienteRequestDTO;
@@ -12,10 +11,11 @@ import com.rentar.customer_service.dto.response.ClienteResponseDTO;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
- * Traduce los DTOs de la capa de servicio (Hito 1) a los mensajes protobuf del
- * contrato de H2-4 (proto/customer.proto). Mapper puro: sin lógica de negocio.
+ * Traduce los DTOs de la capa de servicio a los mensajes protobuf del
+ * contrato de proto/customer.proto. Mapper puro: sin lógica de negocio.
  */
 public class CustomerGrpcMapper {
 
@@ -24,14 +24,13 @@ public class CustomerGrpcMapper {
 
     public static Customer toCustomer(ClienteResponseDTO cliente) {
         Customer.Builder builder = Customer.newBuilder()
-                .setIdCliente(cliente.getIdCliente())
-                .setNombre(cliente.getNombre())
-                .setApellido(cliente.getApellido())
-                .setDni(cliente.getDni())
-                .setEmail(cliente.getEmail())
+                .setIdCliente(cliente.getIdCliente() != null ? cliente.getIdCliente() : 0L)
+                .setNombre(cliente.getNombre() != null ? cliente.getNombre() : "")
+                .setApellido(cliente.getApellido() != null ? cliente.getApellido() : "")
+                .setDni(cliente.getDni() != null ? cliente.getDni() : "")
+                .setEmail(cliente.getEmail() != null ? cliente.getEmail() : "")
                 .setActivo(Boolean.TRUE.equals(cliente.getActivo()))
                 .setTelefono(cliente.getTelefono() != null ? cliente.getTelefono() : "");
-
 
         if (cliente.getFechaNacimiento() != null) {
             builder.setFechaNacimiento(toGoogleDate(cliente.getFechaNacimiento()));
@@ -40,14 +39,10 @@ public class CustomerGrpcMapper {
         return builder.build();
     }
 
-    public static CustomerList toCustomerList(List<ClienteResponseDTO> clientes) {
-        CustomerList.Builder builder = CustomerList.newBuilder();
-
-        for (ClienteResponseDTO cliente : clientes) {
-            builder.addCustomers(toCustomer(cliente));
-        }
-
-        return builder.build();
+    public static List<Customer> toCustomerList(List<ClienteResponseDTO> clientes) {
+        return clientes.stream()
+                .map(CustomerGrpcMapper::toCustomer)
+                .collect(Collectors.toList());
     }
 
     public static ClienteRequestDTO toClienteRequestDTO(CrearClienteRequest req) {
@@ -58,7 +53,7 @@ public class CustomerGrpcMapper {
                 .nombre(req.getNombre())
                 .apellido(req.getApellido())
                 .telefono(req.getTelefono())
-                .fechaNacimiento(parseLocalDate(req.getFechaNacimiento()))
+                .fechaNacimiento(req.hasFechaNacimiento() ? toLocalDate(req.getFechaNacimiento()) : null)
                 .build();
     }
 
@@ -70,7 +65,7 @@ public class CustomerGrpcMapper {
                 .nombre(req.getNombre())
                 .apellido(req.getApellido())
                 .telefono(req.getTelefono())
-                .fechaNacimiento(parseLocalDate(req.getFechaNacimiento()))
+                .fechaNacimiento(req.hasFechaNacimiento() ? toLocalDate(req.getFechaNacimiento()) : null)
                 .build();
     }
 
@@ -98,15 +93,19 @@ public class CustomerGrpcMapper {
         return builder.build();
     }
 
-    private static LocalDate parseLocalDate(String str) {
-        if (str == null || str.isBlank()) {
+    // Helper (google.type.Date -> LocalDate)
+    public static LocalDate toLocalDate(com.google.type.Date date) {
+        if (date == null || date.getYear() == 0) {
             return null;
         }
-        return LocalDate.parse(str.trim());
+        return LocalDate.of(date.getYear(), date.getMonth(), date.getDay());
     }
 
-    // Helper reutilizable (LocalDate -> google.type.Date)
-    private static com.google.type.Date toGoogleDate(LocalDate fecha) {
+    // Helper (LocalDate -> google.type.Date)
+    public static com.google.type.Date toGoogleDate(LocalDate fecha) {
+        if (fecha == null) {
+            return com.google.type.Date.getDefaultInstance();
+        }
         return com.google.type.Date.newBuilder()
                 .setYear(fecha.getYear())
                 .setMonth(fecha.getMonthValue())
