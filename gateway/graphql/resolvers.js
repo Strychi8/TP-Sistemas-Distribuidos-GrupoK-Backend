@@ -1,6 +1,7 @@
 import { vehicleClient, rentalClient, customerClient } from '../clients/grpc.js';
 import { createGrpcMetadata } from '../utils/grpcMetadata.js';
-import { formatGrpcTimestamp, parseDateToGrpcTimestamp, mapTipoVehiculo, mapEstadoVehiculo, mapEstadoReserva, toProtoTipoVehiculo } from '../utils/mappers.js';
+import { formatGrpcTimestamp, parseDateToGrpcTimestamp, mapTipoVehiculo, mapEstadoVehiculo, mapEstadoReserva, toProtoTipoVehiculo, toProtoEstadoReserva } from '../utils/mappers.js';
+import { getVehiclesWithCurrentStatus } from '../utils/vehicleStatus.js';
 
 const mapVehiculo = (v) => {
   if (!v) return null;
@@ -20,14 +21,17 @@ const mapVehiculo = (v) => {
 };
 
 export const resolvers = {
-  vehiculos: (_, context) => {
-    return new Promise((resolve, reject) => {
-      const meta = createGrpcMetadata(context.req);
+  vehiculos: async (_, context) => {
+    const meta = createGrpcMetadata(context.req);
+    const vehicles = await new Promise((resolve, reject) => {
       vehicleClient.GetVehiculos({}, meta, (err, response) => {
         if (err) return reject(err);
-        resolve((response.vehicles || []).map(mapVehiculo));
+        resolve(response?.vehicles || response || []);
       });
     });
+
+    const vehiclesWithCurrentStatus = await getVehiclesWithCurrentStatus(vehicles, meta);
+    return vehiclesWithCurrentStatus.map(mapVehiculo);
   },
 
   vehiculosDisponibles: async (args, context) => {
@@ -85,11 +89,10 @@ export const resolvers = {
           });
         });
         
-        // 3. Conservar solo los vehículos sin solapamiento, activos, no inhabilitados y disponibles
+        // La disponibilidad depende del período consultado, no del estado operativo de este instante.
         const noInhabilitado = !vehiculo.inhabilitado;
-        const estadoNorm = mapEstadoVehiculo(vehiculo.estado);
-        const disponible = estadoNorm === 'DISPONIBLE' || vehiculo.estado === 1 || vehiculo.estado === undefined;
-        if (!solapado && noInhabilitado && disponible) {
+        const activo = vehiculo.activo !== false;
+        if (!solapado && noInhabilitado && activo) {
           disponibles.push(vehiculo);
         }
       }
@@ -177,7 +180,9 @@ export const resolvers = {
         req.id_vehiculo = args.filtro.idVehiculo;
         req.idVehiculo = args.filtro.idVehiculo;
       }
-      if (args.filtro.estado) req.estado = args.filtro.estado;
+      if (args.filtro.estado) {
+        req.estado = toProtoEstadoReserva(args.filtro.estado);
+      }
       if (args.filtro.fechaDesde) {
         const ts = parseDateToGrpcTimestamp(args.filtro.fechaDesde);
         req.fecha_desde = ts;
@@ -201,7 +206,7 @@ export const resolvers = {
     const reservasList = response.reservas || response.reservations || [];
 
     // Hidratar cliente y vehículo para cada reserva
-    return Promise.all(reservasList.map(async (r) => {
+    let resultado = await Promise.all(reservasList.map(async (r) => {
       const idCli = r.idCliente ?? r.id_cliente;
       const idVeh = r.idVehiculo ?? r.id_vehiculo;
 
@@ -273,5 +278,16 @@ export const resolvers = {
         resultadoMantenimiento: resMaint || null
       };
     }));
+
+    if (args.filtro) {
+      if (args.filtro.tipoVehiculo) {
+        resultado = resultado.filter((r) => r.vehiculo?.tipoVehiculo === args.filtro.tipoVehiculo);
+      }
+      if (args.filtro.estado) {
+        resultado = resultado.filter((r) => r.estado === args.filtro.estado);
+      }
+    }
+
+    return resultado;
   }
 };
