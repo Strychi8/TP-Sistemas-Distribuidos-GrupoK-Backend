@@ -123,3 +123,13 @@ export const toProtoTipoVehiculo = (tipo) => {
   if (tipo === 'AUTO') return 'TIPO_VEHICULO_SEDAN';
   return `TIPO_VEHICULO_${tipo}`;
 };
+
+/**
+ * Traduce un estado de reserva a la convención con prefijo del contrato gRPC.
+ */
+export const toProtoEstadoReserva = (estado) => {
+  if (!estado) return 'ESTADO_RESERVA_UNSPECIFIED';
+  if (String(estado).startsWith('ESTADO_RESERVA_')) return estado;
+  return `ESTADO_RESERVA_${estado}`;
+};
+

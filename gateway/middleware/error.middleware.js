@@ -44,13 +44,16 @@ export const errorMiddleware = (err, req, res, next) => {
 
     return res.status(httpStatus).json({ 
       error: errorMessage,
+      message: errorMessage,
       grpcCode: err.code // Opcional, útil para debug
     });
   }
 
   // Si no es un error de gRPC (ej: un error sintáctico de Node o Express)
   const status = err.status || 500;
+  const msg = err.message || 'Error interno del servidor en el API Gateway';
   res.status(status).json({ 
-    error: err.message || 'Error interno del servidor en el API Gateway' 
+    error: msg,
+    message: msg
   });
 };
