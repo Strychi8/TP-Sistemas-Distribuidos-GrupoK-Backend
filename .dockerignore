@@ -1,6 +1,46 @@
+# Dependencias y builds
 **/node_modules
 **/target
+**/dist
+**/.mvn
+
+# Git y CI
 **/.git
+**/.github
+.gitignore
+.gitattributes
+
+# Entornos y credenciales (evita leaks accidentales)
+**/.env*
+!**/.env.example
+
+# IDEs y editores
 **/.idea
 **/*.iml
-**/.env
+**/*.iws
+**/*.ipr
+**/.vscode
+**/.classpath
+**/.project
+**/.settings
+
+# Archivos de SO
+**/.DS_Store
+**/Thumbs.db
+
+# Logs
+**/*.log
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+
+# Documentación, imágenes y assets pesados
+/docs
+/images
+/assets
+*.md
+
+# Directorios de soporte que no componen el build de las apps
+/mysql
+/kafka
+/web_services
