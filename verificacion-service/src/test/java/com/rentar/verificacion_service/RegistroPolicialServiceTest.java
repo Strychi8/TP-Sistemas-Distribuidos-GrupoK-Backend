@@ -31,6 +31,8 @@ class RegistroPolicialServiceTest {
         assertTrue(service.esRobado("AA111BB"));
         assertTrue(service.esRobado("aa 111 bb")); // con espacios y minusculas
         assertTrue(service.esRobado("ROB123"));
+        assertTrue(service.esRobado("STO123"));
+        assertFalse(service.esRobado("STOLEN1"));
     }
 
     @Test

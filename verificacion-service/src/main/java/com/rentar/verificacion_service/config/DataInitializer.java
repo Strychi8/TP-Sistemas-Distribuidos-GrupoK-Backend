@@ -23,6 +23,7 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) {
         inicializarPatentesRobadas();
+        migrarPatenteRobadaInvalida();
         inicializarTitularidades();
     }
 
@@ -47,7 +48,7 @@ public class DataInitializer implements CommandLineRunner {
                                 .fechaDenuncia(LocalDateTime.now().minusDays(2))
                                 .build(),
                         PatenteRobada.builder()
-                                .patente("STOLEN1")
+                                .patente("STO123")
                                 .motivo("Vehiculo retenido por orden judicial")
                                 .fechaDenuncia(LocalDateTime.now().minusDays(15))
                                 .build(),
@@ -61,6 +62,23 @@ public class DataInitializer implements CommandLineRunner {
             }
         } catch (Exception e) {
             log.warn("[DATA INIT] No se pudo persistir semillas de patentes robadas en BD (se utilizara memoria): {}", e.getMessage());
+        }
+    }
+
+    private void migrarPatenteRobadaInvalida() {
+        try {
+            patenteRobadaRepository.findByPatenteIgnoreCase("STOLEN1")
+                    .ifPresent(patenteAntigua -> {
+                        if (patenteRobadaRepository.existsByPatenteIgnoreCase("STO123")) {
+                            patenteRobadaRepository.delete(patenteAntigua);
+                        } else {
+                            patenteAntigua.setPatente("STO123");
+                            patenteRobadaRepository.save(patenteAntigua);
+                        }
+                    });
+        } catch (Exception e) {
+            log.warn("[DATA INIT] No se pudo migrar la patente robada STOLEN1 a STO123: {}",
+                    e.getMessage());
         }
     }
 

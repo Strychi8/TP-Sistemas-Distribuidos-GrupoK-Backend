@@ -20,19 +20,23 @@ public class RegistroTitularidadServiceImpl implements IRegistroTitularidadServi
 
     private final ITitularidadVehiculoRepository titularidadRepository;
 
-    // Cache / Fallback en memoria de titularidades simuladas (clave: patente normalizada)
+    // Respaldo en memoria de titularidades simuladas, indexadas por patente normalizada.
     private final Map<String, TitularidadVehiculo> titularidadesMemoria = new ConcurrentHashMap<>();
 
     {
-        // Datos simulados iniciales (incluyendo clientes de la app con patentes externas y el caso del enunciado oficial Hito 3)
-        agregarMemoria(89L, "30123456", "DEF456", "Ana Martinez");
-        agregarMemoria(1L, "40111222", "EXT100", "Juan Perez");
-        agregarMemoria(2L, "41222333", "EXT200", "Maria Gomez");
-        agregarMemoria(3L, "42333444", "EXT300", "Lucas Fernandez");
-        agregarMemoria(4L, "43444555", "EXT400", "Ana Martinez");
+        // Titularidades de prueba para vehículos externos.
+        agregarTitularidadSimuladaEnMemoria(89L, "30123456", "DEF456", "Ana Martinez");
+        agregarTitularidadSimuladaEnMemoria(1L, "40111222", "EXT100", "Juan Perez");
+        agregarTitularidadSimuladaEnMemoria(2L, "41222333", "EXT200", "Maria Gomez");
+        agregarTitularidadSimuladaEnMemoria(3L, "42333444", "EXT300", "Lucas Fernandez");
+        agregarTitularidadSimuladaEnMemoria(4L, "43444555", "EXT400", "Ana Martinez");
     }
 
-    private void agregarMemoria(Long clienteId, String documento, String patente, String titular) {
+    private void agregarTitularidadSimuladaEnMemoria(
+            Long clienteId,
+            String documento,
+            String patente,
+            String titular) {
         String cleanPatente = normalizarPatente(patente);
         titularidadesMemoria.put(cleanPatente, TitularidadVehiculo.builder()
                 .clienteId(clienteId)
