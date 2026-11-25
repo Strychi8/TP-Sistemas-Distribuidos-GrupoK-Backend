@@ -17,6 +17,10 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
+/**
+ * Convierte mensajes gRPC a DTOs del servicio y DTOs de reservas a mensajes gRPC.
+ * Centraliza la conversión de fechas en UTC y de estados de reserva entre ambos modelos.
+ */
 @Component
 public class ReservaGrpcMapper {
     // ---------- proto -> dominio ----------
