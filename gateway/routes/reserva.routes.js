@@ -2,7 +2,7 @@ import express from 'express';
 import { rentalClient, customerClient, vehicleClient } from '../clients/grpc.js';
 import { authMiddleware } from '../middleware/auth.middleware.js';
 import { createGrpcMetadata } from '../utils/grpcMetadata.js';
-import { parseDateToGrpcTimestamp, mapEstadoVehiculo, formatGrpcTimestamp, mapEstadoReserva, toProtoEstadoVehiculo } from '../utils/mappers.js';
+import { parseDateToGrpcTimestamp, formatGrpcTimestamp, mapEstadoReserva, toProtoEstadoVehiculo } from '../utils/mappers.js';
 
 const router = express.Router();
 
@@ -61,20 +61,9 @@ router.post('/', async (req, res, next) => {
       return res.status(400).json({ error: 'El vehículo se encuentra inhabilitado', message: 'El vehículo se encuentra inhabilitado' });
     }
 
-    const estadoVehiculo = vehiculo.estado !== undefined && vehiculo.estado !== null
-      ? mapEstadoVehiculo(vehiculo.estado)
-      : 'DISPONIBLE';
-
-    if (estadoVehiculo !== 'DISPONIBLE') {
-      return res.status(400).json({ 
-        error: 'El vehículo no se encuentra disponible', 
-        message: 'El vehículo no se encuentra disponible' 
-      });
-    }
-
     const precioDiario = Number(vehiculo.precioDiario ?? vehiculo.precio_diario);
 
-    // 4. RentalService.VerificarSolapamientoVehiculo
+    // La disponibilidad se valida para el período solicitado, no por el estado actual persistido del vehículo.
     const solapamiento = await new Promise((resolve, reject) => {
       rentalClient.VerificarSolapamientoVehiculo({
         id_vehiculo: idVehiculo,
@@ -180,9 +169,26 @@ router.post('/', async (req, res, next) => {
 const cancelarHandler = (req, res, next) => {
   const meta = createGrpcMetadata(req);
   const idReserva = req.params.id;
-  rentalClient.CancelarReserva({ id_reserva: idReserva, idReserva }, meta, (err, response) => {
+  rentalClient.CancelarReserva({ id_reserva: idReserva, idReserva }, meta, async (err, response) => {
     if (err) return next(err);
     const reserva = response?.reservation || response;
+    const idVehiculo = reserva?.idVehiculo ?? reserva?.id_vehiculo;
+
+    // Al cancelar la reserva, restaurar el estado del vehículo en vehicle-service a DISPONIBLE
+    if (idVehiculo) {
+      try {
+        await new Promise((resolve) => {
+          vehicleClient.ActualizarEstadoVehiculo({
+            id_vehiculo: idVehiculo,
+            idVehiculo: idVehiculo,
+            estado: toProtoEstadoVehiculo('DISPONIBLE')
+          }, meta, () => resolve());
+        });
+      } catch (e) {
+        console.error('Error al restaurar estado de vehiculo a DISPONIBLE:', e);
+      }
+    }
+
     res.json({ message: 'Reserva cancelada correctamente', ...(reserva || {}) });
   });
 };

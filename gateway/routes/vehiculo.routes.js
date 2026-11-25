@@ -3,6 +3,7 @@ import { vehicleClient, customerClient } from '../clients/grpc.js';
 import { authMiddleware } from '../middleware/auth.middleware.js';
 import { createGrpcMetadata } from '../utils/grpcMetadata.js';
 import { mapEstadoVehiculo, mapTipoVehiculo, toProtoEstadoVehiculo, toProtoTipoVehiculo } from '../utils/mappers.js';
+import { getVehiclesWithCurrentStatus } from '../utils/vehicleStatus.js';
 
 const router = express.Router();
 
@@ -38,6 +39,10 @@ export function normalizeVehiculoExterno(ve) {
     precioDiario: ve.precioDiario ?? ve.precio_diario,
     precio_diario: ve.precioDiario ?? ve.precio_diario,
     tipoVehiculo: mapTipoVehiculo(ve.tipoVehiculo ?? ve.tipo_vehiculo),
+    validacionPatente: ve.validacionPatente ?? ve.validacion_patente,
+    validacion_patente: ve.validacionPatente ?? ve.validacion_patente,
+    validacionTitularidad: ve.validacionTitularidad ?? ve.validacion_titularidad,
+    validacion_titularidad: ve.validacionTitularidad ?? ve.validacion_titularidad,
   };
 }
 
@@ -173,48 +178,77 @@ router.delete('/:id', (req, res, next) => {
 });
 
 // Consulta de vehículos (ABM admin)
-router.get('/', (req, res, next) => {
+router.get('/', async (req, res, next) => {
   const meta = createGrpcMetadata(req);
-  vehicleClient.GetVehiculos({}, meta, (err, response) => {
-    if (err) return next(err);
-    const list = response?.vehicles || response || [];
-    res.json(Array.isArray(list) ? list.map(normalizeVehicle) : list);
-  });
+  try {
+    const vehicles = await new Promise((resolve, reject) => {
+      vehicleClient.GetVehiculos({}, meta, (err, response) => {
+        if (err) return reject(err);
+        resolve(response?.vehicles || response || []);
+      });
+    });
+    const vehiclesWithCurrentStatus = await getVehiclesWithCurrentStatus(vehicles, meta);
+    res.json(vehiclesWithCurrentStatus.map(normalizeVehicle));
+  } catch (err) {
+    next(err);
+  }
 });
 
 // Consulta de vehículos activos (para catálogo y clientes)
-router.get('/activos', (req, res, next) => {
+router.get('/activos', async (req, res, next) => {
   const meta = createGrpcMetadata(req);
-  vehicleClient.GetVehiculosActivos({}, meta, (err, response) => {
-    if (err) return next(err);
-    const list = response?.vehicles || response || [];
-    const normalized = Array.isArray(list) ? list.map(normalizeVehicle) : list;
-    const filtrados = Array.isArray(normalized)
-      ? normalized.filter(v => !v.inhabilitado && (v.estado === 'DISPONIBLE' || v.estado === 1))
-      : normalized;
-    res.json(filtrados);
-  });
+  try {
+    const response = await new Promise((resolve, reject) => {
+      vehicleClient.GetVehiculosActivos({}, meta, (err, result) => {
+        if (err) return reject(err);
+        resolve(result);
+      });
+    });
+    const vehicles = response?.vehicles || [];
+    const vehiclesWithCurrentStatus = await getVehiclesWithCurrentStatus(vehicles, meta);
+    res.json(vehiclesWithCurrentStatus
+      .map(normalizeVehicle)
+      .filter((vehicle) => !vehicle.inhabilitado && vehicle.estado === 'DISPONIBLE'));
+  } catch (err) {
+    next(err);
+  }
 });
 
 // Consulta vehículo por patente
-router.get('/patente/:patente', (req, res, next) => {
+router.get('/patente/:patente', async (req, res, next) => {
   const meta = createGrpcMetadata(req);
-  vehicleClient.GetVehiculoByPatente({ patente: req.params.patente }, meta, (err, response) => {
-    if (err) return next(err);
-    const vehiculo = response?.vehicle || response;
-    res.json(normalizeVehicle(vehiculo));
-  });
+  try {
+    const response = await new Promise((resolve, reject) => {
+      vehicleClient.GetVehiculoByPatente({ patente: req.params.patente }, meta, (err, result) => {
+        if (err) return reject(err);
+        resolve(result);
+      });
+    });
+    const vehicle = response?.vehicle || response;
+    const [vehicleWithCurrentStatus] = await getVehiclesWithCurrentStatus([vehicle], meta);
+    res.json(normalizeVehicle(vehicleWithCurrentStatus));
+  } catch (err) {
+    next(err);
+  }
 });
 
 // Consulta vehículo específico
-router.get('/:id', (req, res, next) => {
+router.get('/:id', async (req, res, next) => {
   const meta = createGrpcMetadata(req);
   const idVehiculo = req.params.id;
-  vehicleClient.GetVehiculoById({ id_vehiculo: idVehiculo, idVehiculo }, meta, (err, response) => {
-    if (err) return next(err);
-    const vehiculo = response?.vehicle || response;
-    res.json(normalizeVehicle(vehiculo));
-  });
+  try {
+    const response = await new Promise((resolve, reject) => {
+      vehicleClient.GetVehiculoById({ id_vehiculo: idVehiculo, idVehiculo }, meta, (err, result) => {
+        if (err) return reject(err);
+        resolve(result);
+      });
+    });
+    const vehicle = response?.vehicle || response;
+    const [vehicleWithCurrentStatus] = await getVehiclesWithCurrentStatus([vehicle], meta);
+    res.json(normalizeVehicle(vehicleWithCurrentStatus));
+  } catch (err) {
+    next(err);
+  }
 });
 
 export default router;
