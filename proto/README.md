@@ -1,129 +1,135 @@
-# Contratos gRPC (Protocol Buffers v3)
+# Contratos Protocol Buffers y gRPC
 
-Este directorio contiene las definiciones formales de contratos `.proto` que rigen la comunicación sincrónica interna del sistema distribuido **Rentar**. Estos esquemas actúan como la fuente única de verdad (*Single Source of Truth*) entre el **API Gateway** (desarrollado en Node.js / Express / Apollo Server) y los **microservicios de backend** (desarrollados en Java 21 / Spring Boot 4.1).
+Esta carpeta contiene los contratos que usan el API Gateway y los microservicios para comunicarse mediante gRPC. Los archivos `.proto` definen los servicios, sus métodos y los mensajes que intercambian.
 
----
+El Gateway carga estos contratos en tiempo de ejecución con `@grpc/proto-loader`. Los microservicios Java generan código a partir de ellos durante la compilación.
 
-## 📐 Estándares de Diseño y Convenciones (Buf Lint)
+## Estructura
 
-Los contratos han sido diseñados y adecuados rigurosamente bajo las directivas del **Google Protocol Buffers Style Guide** y las reglas de linting de **Buf Lint**:
-
-1. **Prefijos en valores de Enums (`ENUM_VALUE_PREFIX`):**
-   - Para evitar colisiones en lenguajes como C++ o Go y respetar el estándar de Buf, todos los valores de enumeraciones llevan como prefijo el nombre del propio enum en mayúsculas:
-     - `TipoVehiculo`: `TIPO_VEHICULO_UNSPECIFIED`, `TIPO_VEHICULO_SEDAN`, `TIPO_VEHICULO_SUV`, etc.
-     - `EstadoVehiculo`: `ESTADO_VEHICULO_UNSPECIFIED`, `ESTADO_VEHICULO_DISPONIBLE`, `ESTADO_VEHICULO_RESERVADO`, etc.
-     - `EstadoReserva`: `ESTADO_RESERVA_UNSPECIFIED`, `ESTADO_RESERVA_CONFIRMADA`, `ESTADO_RESERVA_CANCELADA`, etc.
-     - `EstadoVehiculoExterno`: `ESTADO_VEHICULO_EXTERNO_UNSPECIFIED`, `ESTADO_VEHICULO_EXTERNO_PENDIENTE`, etc.
-   - Cada enum incluye un valor neutro inicial `= 0` (`*_UNSPECIFIED`).
-
-2. **Nombres de campos en `snake_case` (`FIELD_LOWER_SNAKE_CASE`):**
-   - Todos los identificadores de campos en los mensajes utilizan minúsculas y guiones bajos (`id_cliente`, `id_vehiculo`, `id_reserva`, `fecha_inicio`, `costo_diario`, `importe_total`).
-   - El compilador de Protobuf genera automáticamente los getters/setters en `camelCase` para Java (ej: `getIdCliente()`), mientras que los clientes dinámicos en Node.js pueden preservarlo o mapearlo de forma transparente.
-
-3. **Mensajes de Solicitud y Respuesta Exclusivos (`RPC_REQUEST_RESPONSE_UNIQUE`):**
-   - Cada método RPC dispone de su propio par de mensajes dedicados `[NombreMetodo]Request` y `[NombreMetodo]Response` (siguiendo las reglas `RPC_REQUEST_STANDARD_NAME` y `RPC_RESPONSE_STANDARD_NAME`).
-   - Esto evita el acoplamiento directo entre endpoints y permite evolucionar los parámetros de entrada o salida de una operación sin provocar efectos colaterales en otras.
-
-4. **Tipos de Datos Consistentes y Tipado Fuerte:**
-   - **Fechas calendario:** Se utiliza el tipo estándar `google.type.Date` (`year`, `month`, `day`) en `customer.proto` (para `fecha_nacimiento`) garantizando consistencia semántica entre operaciones de consulta y modificación.
-   - **Marcas temporales:** Se utiliza `google.protobuf.Timestamp` (`seconds`, `nanos`) en `vehicle.proto` y `rental.proto` para registrar instantes exactos en UTC.
-
-5. **Documentación Exhaustiva:**
-   - Todos los servicios, métodos RPC, mensajes, campos y enumeraciones contienen comentarios en línea que detallan su propósito, obligatoriedad y reglas de negocio aplicadas.
-
----
-
-## 📂 Catálogo de Servicios y Contratos
-
-| Archivo Proto | Package Protobuf | Package Java Generado | Servicio gRPC | Métodos RPC | Descripción de Responsabilidad |
-| :--- | :--- | :--- | :--- | :---: | :--- |
-| [`customer.proto`](customer.proto) | `rentar.customer` | `com.rentar.customer.grpc` | `CustomerService` | 11 | Gestión de clientes, verificación de unicidad (DNI/email), perfil autenticado y blacklist de tokens JWT revocados. |
-| [`vehicle.proto`](vehicle.proto) | `rentar.vehicle` | `com.rentar.vehicle.grpc` | `VehicleService` | 11 | Catálogo general de vehículos, disponibilidad, filtros de búsqueda, gestión de estados y registro de vehículos externos. |
-| [`rental.proto`](rental.proto) | `rentar.rental` | `com.rentar.rental.grpc` | `RentalService` | 6 | Creación y cancelación de reservas, validación de solapamiento de fechas y consulta del historial consolidado de alquileres. |
-
-### Detalle de Métodos RPC por Servicio
-
-#### 👤 `CustomerService` (`customer.proto`)
-- `GetClientes(GetClientesRequest) -> GetClientesResponse`
-- `GetClienteById(GetClienteByIdRequest) -> GetClienteByIdResponse`
-- `GetMiPerfil(GetMiPerfilRequest) -> GetMiPerfilResponse`
-- `VerificarClienteExistente(VerificarClienteExistenteRequest) -> VerificarClienteExistenteResponse`
-- `VerificarClienteActivo(VerificarClienteActivoRequest) -> VerificarClienteActivoResponse`
-- `VerificarTokenBlacklist(VerificarTokenBlacklistRequest) -> VerificarTokenBlacklistResponse`
-- `Login(LoginRequest) -> LoginResponse`
-- `Logout(LogoutRequest) -> LogoutResponse`
-- `CrearCliente(CrearClienteRequest) -> CrearClienteResponse`
-- `ActualizarCliente(ActualizarClienteRequest) -> ActualizarClienteResponse`
-- `EliminarCliente(EliminarClienteRequest) -> EliminarClienteResponse`
-
-#### 🚗 `VehicleService` (`vehicle.proto`)
-- `CrearVehiculo(CrearVehiculoRequest) -> CrearVehiculoResponse`
-- `ActualizarVehiculo(ActualizarVehiculoRequest) -> ActualizarVehiculoResponse`
-- `ActualizarEstadoVehiculo(ActualizarEstadoVehiculoRequest) -> ActualizarEstadoVehiculoResponse`
-- `EliminarVehiculo(EliminarVehiculoRequest) -> EliminarVehiculoResponse`
-- `GetVehiculos(GetVehiculosRequest) -> GetVehiculosResponse`
-- `GetVehiculosActivos(GetVehiculosActivosRequest) -> GetVehiculosActivosResponse`
-- `GetVehiculoById(GetVehiculoByIdRequest) -> GetVehiculoByIdResponse`
-- `GetVehiculoByPatente(GetVehiculoByPatenteRequest) -> GetVehiculoByPatenteResponse`
-- `ConsultarDisponibilidad(ConsultarDisponibilidadRequest) -> ConsultarDisponibilidadResponse`
-- `RegistrarVehiculoExterno(RegistrarVehiculoExternoRequest) -> RegistrarVehiculoExternoResponse`
-- `GetVehiculosExternosByCliente(GetVehiculosExternosByClienteRequest) -> GetVehiculosExternosByClienteResponse`
-
-#### 📅 `RentalService` (`rental.proto`)
-- `CrearReserva(CrearReservaRequest) -> CrearReservaResponse`
-- `ConsultarReservas(ConsultarReservasRequest) -> ConsultarReservasResponse`
-- `GetReservaById(GetReservaByIdRequest) -> GetReservaByIdResponse`
-- `CancelarReserva(CancelarReservaRequest) -> CancelarReservaResponse`
-- `ConsultarHistorialAlquileres(ConsultarHistorialAlquileresRequest) -> ConsultarHistorialAlquileresResponse`
-- `VerificarSolapamientoVehiculo(VerificarSolapamientoVehiculoRequest) -> VerificarSolapamientoVehiculoResponse`
-
----
-
-## 🛠️ Compilación y Consumo
-
-### 1. Validación de Sintaxis y Descriptores
-Para comprobar que los contratos compilan limpiamente sin errores sintácticos ni dependencias circulares:
-```bash
-protoc -I. --descriptor_set_out=descriptor.pb customer.proto vehicle.proto rental.proto
+```text
+proto/
+├── customer.proto
+├── rental.proto
+├── vehicle.proto
+└── google/
+    └── type/
+        └── date.proto
 ```
 
-### 2. Microservicios Java (Generación con Maven Wrapper)
-Cada microservicio (`customer-service`, `vehicle-service`, `rental-service`) compila los `.proto` ubicados en esta carpeta raíz mediante el plugin `protobuf-maven-plugin`. Para regenerar los stubs y modelos Java:
+`google/type/date.proto` define el tipo `google.type.Date`, que usa `customer.proto` para representar fechas de calendario, como la fecha de nacimiento. Se encuentra versionado localmente para que `@grpc/proto-loader` en el API Gateway pueda resolverlo sin dependencias externas. En cambio, `google/protobuf/timestamp.proto` (usado en `rental.proto`) es parte de los *well-known types* de Protobuf y es provisto automáticamente por el compilador `protoc`, el plugin de Maven y `@grpc/proto-loader`.
+
+## Servicios y Contratos
+
+| Archivo | Package Protobuf | Package Java | Servicio | Responsabilidad |
+|---|---|---|---|---|
+| [`customer.proto`](customer.proto) | `rentar.customer` | `com.rentar.customer.grpc` | `CustomerService` | Clientes, autenticación, perfil y verificación de tokens revocados. |
+| [`vehicle.proto`](vehicle.proto) | `rentar.vehicle` | `com.rentar.vehicle.grpc` | `VehicleService` | Vehículos, disponibilidad y solicitudes de vehículos externos. |
+| [`rental.proto`](rental.proto) | `rentar.rental` | `com.rentar.rental.grpc` | `RentalService` | Reservas, validación de disponibilidad e historial de alquileres. |
+
+### `CustomerService`
+
+Definido en [`customer.proto`](customer.proto). Expone estos métodos:
+
+- `GetClientes`: Lista los clientes.
+- `GetClienteById`: Obtiene un cliente por su identificador.
+- `GetMiPerfil`: Obtiene el perfil asociado al usuario autenticado.
+- `VerificarClienteExistente`: Comprueba si existe un cliente por DNI.
+- `VerificarClienteActivo`: Comprueba si el cliente puede operar.
+- `VerificarTokenBlacklist`: Comprueba si se revocó un token.
+- `Login`: Autentica las credenciales y devuelve un JWT.
+- `Logout`: Revoca el JWT.
+- `CrearCliente`: Registra un cliente.
+- `ActualizarCliente`: Modifica los datos de un cliente.
+- `EliminarCliente`: Realiza la baja lógica de un cliente.
+
+### `VehicleService`
+
+Definido en [`vehicle.proto`](vehicle.proto). Expone estos métodos:
+
+- `CrearVehiculo` y `ActualizarVehiculo`: Registran y modifican vehículos.
+- `ActualizarEstadoVehiculo`: Cambia el estado operativo.
+- `EliminarVehiculo`: Realiza la baja lógica de un vehículo.
+- `GetVehiculos` y `GetVehiculosActivos`: Consultan la flota.
+- `GetVehiculoById` y `GetVehiculoByPatente`: Buscan un vehículo.
+- `ConsultarDisponibilidad`: Consulta vehículos disponibles para un período.
+- `RegistrarVehiculoExterno`: Registra una solicitud de incorporación.
+- `GetVehiculosExternosByCliente`: Lista solicitudes de un cliente.
+
+### `RentalService`
+
+Definido en [`rental.proto`](rental.proto). Expone estos métodos:
+
+- `CrearReserva`: Crea una reserva.
+- `ConsultarReservas`: Consulta reservas con filtros opcionales.
+- `GetReservaById`: Obtiene una reserva por su identificador.
+- `CancelarReserva`: Cancela una reserva.
+- `ConsultarHistorialAlquileres`: Consulta el historial de un cliente.
+- `VerificarSolapamientoVehiculo`: Comprueba si un período se superpone con otra reserva.
+
+## Convenciones de los Contratos
+
+- Los archivos usan `proto3`.
+- Los campos usan `snake_case`, por ejemplo `id_cliente` y `fecha_inicio`.
+- Cada enum comienza con un valor `*_UNSPECIFIED = 0`. Los demás valores llevan el nombre del enum como prefijo.
+- Cada método RPC usa sus propios mensajes de solicitud y respuesta.
+- `customer.proto` usa `google.type.Date` para fechas de calendario.
+- `vehicle.proto` y `rental.proto` usan `google.protobuf.Timestamp` para fechas y horas.
+- Los servicios, métodos, mensajes, campos y enums incluyen comentarios sobre su propósito.
+
+## Validar los Contratos con `protoc`
+
+Desde esta carpeta, compila los contratos y genera un descriptor:
+
 ```bash
-cd customer-service  # o vehicle-service / rental-service
+protoc -I . --include_imports --descriptor_set_out=descriptor.pb customer.proto vehicle.proto rental.proto
+```
+
+El comando requiere `protoc` instalado y accesible desde el `PATH`. El archivo `descriptor.pb` contiene las definiciones compiladas y sus dependencias importadas.
+
+## Generar Código Java
+
+Los módulos `customer-service`, `vehicle-service` y `rental-service` usan `protobuf-maven-plugin`. Cada módulo compila el contrato que le corresponde desde esta carpeta y excluye los otros contratos.
+
+Desde la raíz del repositorio, ejecuta el Maven Wrapper del módulo correspondiente:
+
+```bash
+# En Windows (PowerShell / CMD)
+cd customer-service
 .\mvnw.cmd clean compile
-```
-Los artefactos generados se depositan automáticamente en:
-`target/generated-sources/protobuf/java/` y `target/generated-sources/protobuf/grpc-java/`.
 
-### 3. API Gateway (Carga Dinámica en Node.js)
-El API Gateway carga los contratos dinámicamente en tiempo de ejecución utilizando `@grpc/proto-loader` y `@grpc/grpc-js`:
-```javascript
-const protoLoader = require('@grpc/proto-loader');
-const grpc = require('@grpc/grpc-js');
-
-const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
-  keepCase: true,
-  longs: String,
-  enums: String,
-  defaults: true,
-  oneofs: true
-});
+# En Linux / macOS
+cd customer-service
+./mvnw clean compile
 ```
 
----
+Para compilar los otros servicios, usa `vehicle-service` o `rental-service` en lugar de `customer-service`. Maven genera el código en la carpeta `target` de cada módulo.
 
-## 🔄 Versionado y Compatibilidad hacia Atrás
+## Cargar los Contratos en el API Gateway
 
-Para preservar la interoperabilidad y no romper clientes en producción:
-1. **Inmutabilidad de Tags:** Nunca alterar los números de campo (`tags`) asignados a un mensaje.
-2. **Inmutabilidad de Tipos:** No cambiar el tipo de datos de un campo ya existente.
-3. **Deprecación con `reserved`:** Nunca eliminar físicamente un campo en uso previo; si un campo queda obsoleto, se debe marcar su número o nombre con la palabra clave `reserved` para evitar reutilizaciones accidentales:
-   ```protobuf
-   message Customer {
-     reserved 9, 10;
-     reserved "campo_antiguo";
-   }
-   ```
-4. **Adición no destructiva:** Todo nuevo campo debe añadirse con un tag numérico no utilizado previamente.
+El Gateway usa `@grpc/proto-loader` y `@grpc/grpc-js` para cargar los archivos al iniciar. `gateway/clients/grpc.js` resuelve los archivos desde esta carpeta y configura el loader con estas opciones:
 
+- `keepCase: true`: Conserva los nombres de campos en `snake_case`.
+- `longs: String`: Representa los valores `int64` como cadenas.
+- `enums: String`: Representa los enums por su nombre.
+- `defaults: true`: Incluye valores predeterminados.
+- `oneofs: true`: Conserva la información de campos `oneof`.
+
+El archivo `google/type/date.proto` debe estar disponible en esta carpeta para resolver la importación de `customer.proto`.
+
+## Compatibilidad al Cambiar un Contrato
+
+Los números de campo forman parte del formato de los mensajes. Respeta estas reglas al modificar un contrato:
+
+1. No cambies el número ni el tipo de un campo existente.
+2. Asigna un número no utilizado a cada campo nuevo.
+3. Si eliminas un campo, reserva su número y su nombre con `reserved`.
+4. No reutilices números o nombres reservados.
+
+Por ejemplo:
+
+```protobuf
+message Customer {
+  reserved 9, 10;
+  reserved "campo_antiguo";
+}
+```

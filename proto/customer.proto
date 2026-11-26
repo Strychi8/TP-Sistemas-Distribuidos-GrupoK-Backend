@@ -7,78 +7,75 @@ option java_multiple_files = true;
 
 import "google/type/date.proto";
 
-// Entidad principal que representa a un cliente registrado en el sistema Rentar.
+// Datos de un cliente registrado.
 message Customer {
-  // Identificador único del cliente en la base de datos (clave primaria).
+  // Identificador del cliente.
   int64 id_cliente = 1;
 
-  // Nombre de pila del cliente. Obligatorio según reglas de negocio.
+  // Nombre del cliente.
   string nombre = 2;
 
-  // Apellido del cliente. Obligatorio según reglas de negocio.
+  // Apellido del cliente.
   string apellido = 3;
 
-  // Documento Nacional de Identidad (DNI) del cliente. Único en el sistema.
+  // Documento nacional de identidad.
   string dni = 4;
 
-  // Correo electrónico del cliente. Utilizado para login y notificaciones. Único.
+  // Correo electrónico.
   string email = 5;
 
-  // Estado de actividad del cliente. Si es false (inactivo), no puede alquilar ni operar.
+  // Indica si la cuenta está activa.
   bool activo = 6;
 
-  // Teléfono de contacto del cliente.
+  // Teléfono de contacto.
   string telefono = 7;
 
-  // Fecha de nacimiento del cliente representada mediante google.type.Date (año, mes, día).
-  // Se requiere que el cliente sea mayor de edad (18 años) para alquilar.
+  // Fecha de nacimiento.
   google.type.Date fecha_nacimiento = 8;
 }
 
-// ============================================================================
-// Mensajes de Solicitud y Respuesta para CustomerService (RPC_REQUEST_RESPONSE_UNIQUE)
-// ============================================================================
+// Mensajes de solicitud y respuesta de CustomerService.
 
-// Solicitud para listar todos los clientes registrados.
+// Solicitud para listar clientes.
 message GetClientesRequest {
 }
 
-// Respuesta con la lista de clientes registrados.
+// Lista de clientes.
 message GetClientesResponse {
-  // Colección de clientes encontrados.
+  // Clientes encontrados.
   repeated Customer customers = 1;
 }
 
-// Solicitud para obtener un cliente a partir de su identificador único.
+// Identificador del cliente que se consulta.
 message GetClienteByIdRequest {
-  // Identificador único del cliente buscado.
+  // Identificador del cliente.
   int64 id_cliente = 1;
 }
 
-// Respuesta que contiene los datos del cliente encontrado.
+// Resultado de la consulta por identificador.
 message GetClienteByIdResponse {
-  // Datos del cliente correspondiente al identificador solicitado.
+  // Datos del cliente.
   Customer customer = 1;
 }
 
-// Solicitud para consultar el perfil del usuario autenticado a través de su email.
+// Correo del usuario autenticado cuyo perfil se consulta.
 message GetMiPerfilRequest {
-  // Correo electrónico del usuario autenticado (extraído del token JWT).
+  // Correo electrónico del usuario.
   string email = 1;
 }
 
-// Respuesta con la información de perfil del cliente autenticado.
+// Perfil del cliente autenticado.
 message GetMiPerfilResponse {
   // Identificador del cliente.
   int64 id_cliente = 1;
 
-  // Identificador de usuario asociado en la tabla de autenticación.
+  // Identificador de usuario asociado.
   int64 id_usuario = 2;
 
-  // Correo electrónico registrado.
+  // Correo electrónico.
   string email = 3;
 
-  // Documento de identidad del cliente.
+  // Documento de identidad.
   string dni = 4;
 
   // Nombre del cliente.
@@ -90,189 +87,183 @@ message GetMiPerfilResponse {
   // Teléfono de contacto.
   string telefono = 7;
 
-  // Fecha de nacimiento representada como google.type.Date.
+  // Fecha de nacimiento.
   google.type.Date fecha_nacimiento = 8;
 
-  // Indica si la cuenta se encuentra activa.
+  // Indica si la cuenta está activa.
   bool activo = 9;
 }
 
-// Solicitud para verificar si un cliente ya existe a partir de su documento (DNI).
+// Documento que se consulta.
 message VerificarClienteExistenteRequest {
-  // Documento a consultar para verificar duplicidad o existencia previa.
+  // Documento nacional de identidad.
   string dni = 1;
 }
 
-// Respuesta a la verificación de existencia por DNI.
+// Resultado de la consulta por documento.
 message VerificarClienteExistenteResponse {
-  // Datos del cliente si existe en el sistema.
+  // Cliente encontrado, si existe.
   Customer customer = 1;
 }
 
-// Solicitud para verificar si un cliente se encuentra activo y habilitado para operar.
+// Identificador del cliente cuyo estado se consulta.
 message VerificarClienteActivoRequest {
-  // Identificador único del cliente a verificar.
+  // Identificador del cliente.
   int64 id_cliente = 1;
 }
 
-// Respuesta que confirma el estado activo del cliente solicitado.
+// Resultado de la consulta del estado del cliente.
 message VerificarClienteActivoResponse {
-  // Datos del cliente verificado. Lanza NOT_FOUND si no existe o FAILED_PRECONDITION si inactivo.
+  // Datos del cliente.
   Customer customer = 1;
 }
 
-// Solicitud para verificar si un token JWT se encuentra en la lista de revocación (blacklist).
+// Token que se consulta en la lista de revocación.
 message VerificarTokenBlacklistRequest {
-  // Token JWT en formato string a verificar contra la lista negra de revocados.
+  // Token JWT.
   string token = 1;
 }
 
-// Respuesta que indica si el token consultado fue revocado.
+// Resultado de la consulta del token.
 message VerificarTokenBlacklistResponse {
-  // true si el token fue revocado (ej. tras logout); false si permanece válido.
+  // Indica si el token fue revocado.
   bool revocado = 1;
 }
 
-// Solicitud de autenticación de credenciales de usuario.
+// Credenciales de acceso.
 message LoginRequest {
-  // Correo electrónico del usuario.
+  // Correo electrónico.
   string email = 1;
 
-  // Contraseña en texto plano a verificar contra el hash BCrypt almacenado.
+  // Contraseña ingresada.
   string password = 2;
 }
 
-// Respuesta de autenticación con el token de acceso generado.
+// Resultado de la autenticación.
 message LoginResponse {
-  // Token JWT firmado con HMAC-SHA256 para autorizar peticiones subsiguientes.
+  // Token JWT de acceso.
   string token = 1;
 }
 
-// Solicitud para cerrar sesión e invalidar un token activo.
+// Token que se revoca al cerrar sesión.
 message LogoutRequest {
-  // Token JWT que se desea revocar e incorporar a la blacklist.
+  // Token JWT.
   string token = 1;
 }
 
-// Respuesta al cierre de sesión.
+// Resultado del cierre de sesión.
 message LogoutResponse {
-  // true si el logout se procesó exitosamente.
+  // Indica si la operación se completó.
   bool success = 1;
 }
 
-// Solicitud para crear un nuevo cliente en el sistema.
+// Datos para crear un cliente.
 message CrearClienteRequest {
-  // Correo electrónico único para el nuevo cliente.
+  // Correo electrónico.
   string email = 1;
 
-  // Contraseña de acceso a la cuenta.
+  // Contraseña de acceso.
   string password = 2;
 
-  // Documento Nacional de Identidad único.
+  // Documento nacional de identidad.
   string dni = 3;
 
-  // Nombre de pila del cliente.
+  // Nombre.
   string nombre = 4;
 
-  // Apellido del cliente.
+  // Apellido.
   string apellido = 5;
 
-  // Teléfono de contacto.
+  // Teléfono.
   string telefono = 6;
 
-  // Fecha de nacimiento unificada como google.type.Date (debe ser mayor de 18 años).
+  // Fecha de nacimiento.
   google.type.Date fecha_nacimiento = 7;
 }
 
-// Respuesta con el cliente creado.
+// Resultado de crear el cliente.
 message CrearClienteResponse {
-  // Datos del cliente recién persistido en el sistema.
+  // Cliente creado.
   Customer customer = 1;
 }
 
-// Solicitud para actualizar los datos de un cliente existente.
+// Datos para actualizar un cliente.
 message ActualizarClienteRequest {
-  // Identificador único del cliente a modificar.
+  // Identificador del cliente.
   int64 id_cliente = 1;
 
-  // Correo electrónico actualizado.
+  // Correo electrónico.
   string email = 2;
 
-  // Contraseña opcional; si no se provee, se conserva la contraseña previa.
+  // Nueva contraseña. Si se omite, se conserva la actual.
   optional string password = 3;
 
-  // Documento de identidad actualizado.
+  // Documento de identidad.
   string dni = 4;
 
-  // Nombre actualizado.
+  // Nombre.
   string nombre = 5;
 
-  // Apellido actualizado.
+  // Apellido.
   string apellido = 6;
 
-  // Teléfono de contacto actualizado.
+  // Teléfono.
   string telefono = 7;
 
-  // Fecha de nacimiento unificada como google.type.Date.
+  // Fecha de nacimiento.
   google.type.Date fecha_nacimiento = 8;
 }
 
-// Respuesta con los datos del cliente tras la actualización.
+// Resultado de actualizar el cliente.
 message ActualizarClienteResponse {
-  // Datos actualizados del cliente.
+  // Cliente actualizado.
   Customer customer = 1;
 }
 
-// Solicitud para dar de baja lógica a un cliente.
+// Identificador del cliente que se da de baja.
 message EliminarClienteRequest {
-  // Identificador único del cliente a dar de baja.
+  // Identificador del cliente.
   int64 id_cliente = 1;
 }
 
-// Respuesta a la baja lógica de un cliente.
+// Resultado de la baja lógica.
 message EliminarClienteResponse {
-  // true si la baja lógica fue aplicada correctamente.
+  // Indica si la operación se completó.
   bool success = 1;
 }
 
-// ============================================================================
-// Definición del Servicio gRPC CustomerService
-// ============================================================================
-
-// Servicio gRPC de gestión de clientes, perfiles y autenticación.
-// Aplica las reglas de negocio de clientes: mayor de edad, unicidad de DNI y email,
-// validación de sesiones activas y blacklist de tokens revocados.
+// Operaciones gRPC de clientes, perfiles y autenticación.
 service CustomerService {
-  // Obtiene la lista completa de clientes registrados (Uso administrativo).
+  // Lista los clientes registrados.
   rpc GetClientes (GetClientesRequest) returns (GetClientesResponse);
 
-  // Obtiene un cliente específico por su identificador único.
+  // Consulta un cliente por su identificador.
   rpc GetClienteById (GetClienteByIdRequest) returns (GetClienteByIdResponse);
 
-  // Obtiene el perfil del cliente autenticado a partir de su correo electrónico.
+  // Consulta el perfil del usuario autenticado.
   rpc GetMiPerfil (GetMiPerfilRequest) returns (GetMiPerfilResponse);
 
-  // Verifica si ya existe un cliente con el documento nacional de identidad provisto.
+  // Comprueba si existe un cliente con el documento indicado.
   rpc VerificarClienteExistente (VerificarClienteExistenteRequest) returns (VerificarClienteExistenteResponse);
 
-  // Verifica que un cliente exista y se encuentre en estado activo.
+  // Comprueba si el cliente está activo.
   rpc VerificarClienteActivo (VerificarClienteActivoRequest) returns (VerificarClienteActivoResponse);
 
-  // Consulta si un token JWT fue revocado y almacenado en la blacklist.
+  // Comprueba si el token JWT fue revocado.
   rpc VerificarTokenBlacklist (VerificarTokenBlacklistRequest) returns (VerificarTokenBlacklistResponse);
 
-  // Autentica las credenciales de un usuario y emite un token JWT.
+  // Autentica al usuario y emite un token JWT.
   rpc Login (LoginRequest) returns (LoginResponse);
 
-  // Cierra la sesión activa revocando el token JWT correspondiente.
+  // Cierra la sesión y revoca el token JWT.
   rpc Logout (LogoutRequest) returns (LogoutResponse);
 
-  // Da de alta un nuevo cliente aplicando validaciones de negocio.
+  // Crea un cliente.
   rpc CrearCliente (CrearClienteRequest) returns (CrearClienteResponse);
 
-  // Actualiza los datos de un cliente existente.
+  // Actualiza un cliente.
   rpc ActualizarCliente (ActualizarClienteRequest) returns (ActualizarClienteResponse);
 
-  // Realiza la baja lógica de un cliente (cambia activo a false).
+  // Da de baja lógicamente un cliente.
   rpc EliminarCliente (EliminarClienteRequest) returns (EliminarClienteResponse);
 }
