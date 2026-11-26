@@ -9,6 +9,6 @@ import java.util.Optional;
 @Repository
 public interface SolicitudMantenimientoRepository extends JpaRepository<SolicitudMantenimiento, Long> {
 
-    // Método utilitario para consultar por el ID de la reserva
+    /** Busca la solicitud asociada al identificador de una reserva. */
     Optional<SolicitudMantenimiento> findByReservaId(Long reservaId);
 }

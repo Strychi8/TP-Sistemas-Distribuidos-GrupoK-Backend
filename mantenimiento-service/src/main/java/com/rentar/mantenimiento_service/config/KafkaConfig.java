@@ -21,19 +21,25 @@ import tools.jackson.databind.json.JsonMapper;
 import java.util.HashMap;
 import java.util.Map;
 
+/** Configura la conexión Kafka y los formatos de mensajes del servicio. */
 @Configuration
 @EnableKafka
 public class KafkaConfig {
 
+    /** Topic que recibe los eventos de reserva confirmada. */
     public static final String TOPIC_RESERVA_CONFIRMADA = "reserva.confirmada";
+    /** Topic donde se publican los resultados del mantenimiento. */
     public static final String TOPIC_MANTENIMIENTO_RESULTADO = "mantenimiento.resultado";
 
+    /** Dirección del broker Kafka. */
     @Value("${spring.kafka.bootstrap-servers:localhost:29092}")
     private String bootstrapServers;
 
+    /** Grupo al que se suscriben los consumidores del servicio. */
     @Value("${spring.kafka.consumer.group-id:mantenimiento-service-group}")
     private String groupId;
 
+    /** Declara el topic de reservas confirmadas. */
     @Bean
     public NewTopic topicReservaConfirmada() {
         return TopicBuilder.name(TOPIC_RESERVA_CONFIRMADA)
@@ -42,6 +48,7 @@ public class KafkaConfig {
                 .build();
     }
 
+    /** Declara el topic de resultados de mantenimiento. */
     @Bean
     public NewTopic topicMantenimientoResultado() {
         return TopicBuilder.name(TOPIC_MANTENIMIENTO_RESULTADO)
@@ -50,9 +57,7 @@ public class KafkaConfig {
                 .build();
     }
 
-    // ==========================================
-    // Productor unificado (JacksonJsonSerializer)
-    // ==========================================
+    /** Configura la serialización de claves de texto y valores JSON. */
     @Bean
     public ProducerFactory<String, Object> producerFactory(JsonMapper jsonMapper) {
         Map<String, Object> props = new HashMap<>();
@@ -62,19 +67,19 @@ public class KafkaConfig {
         return new DefaultKafkaProducerFactory<>(props, new StringSerializer(), valueSerializer);
     }
 
+    /** Expone el productor que publica mensajes en Kafka. */
     @Bean
     public KafkaTemplate<String, Object> kafkaTemplate(ProducerFactory<String, Object> producerFactory) {
         return new KafkaTemplate<>(producerFactory);
     }
 
-    // ==========================================
-    // Consumidor unificado (StringJacksonJsonMessageConverter)
-    // ==========================================
+    /** Convierte los mensajes JSON recibidos a objetos Java. */
     @Bean
     public RecordMessageConverter recordMessageConverter(JsonMapper jsonMapper) {
         return new StringJacksonJsonMessageConverter(jsonMapper);
     }
 
+    /** Configura los listeners Kafka con el grupo y los conversores del servicio. */
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, Object> kafkaListenerContainerFactory(
             RecordMessageConverter recordMessageConverter) {

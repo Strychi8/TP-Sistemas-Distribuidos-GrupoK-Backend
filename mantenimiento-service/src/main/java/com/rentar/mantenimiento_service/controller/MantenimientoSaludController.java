@@ -7,10 +7,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
+/** Expone el endpoint de salud usado para comprobar el servicio. */
 @RestController
 @RequestMapping("/api/mantenimientos")
 public class MantenimientoSaludController {
 
+    /** Devuelve el estado de disponibilidad del servicio. */
     @GetMapping("/salud")
     public ResponseEntity<Map<String, String>> health() {
         return ResponseEntity.ok(Map.of(

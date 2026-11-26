@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+/** Publica en Kafka los resultados guardados de mantenimiento. */
 @Component
 @AllArgsConstructor
 @Slf4j
@@ -18,8 +19,8 @@ public class MantenimientoResultadoProducer {
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
     /**
-     * GARANTÍA DE PUBLICACIÓN (Transactional Outbox Pattern):
-     * Este método SOLO se ejecuta DESPUÉS de que la transacción en MySQL haya hecho COMMIT exitoso.
+     * Publica el resultado solo después del commit de la transacción que lo guardó.
+     * El evento interno de Spring no es un registro persistente de outbox.
      */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void publicarResultadoEnKafka(MantenimientoCompletadoInternalEvent internalEvent) {

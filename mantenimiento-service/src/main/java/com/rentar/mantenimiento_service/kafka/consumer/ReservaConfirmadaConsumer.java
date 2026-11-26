@@ -10,6 +10,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
+/** Consume reservas confirmadas e inicia su solicitud de mantenimiento. */
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -18,6 +19,7 @@ public class ReservaConfirmadaConsumer {
     private final MantenimientoService mantenimientoService;
     private final MantenimientoSimuladorService simuladorService;
 
+    /** Registra el mantenimiento una sola vez y luego inicia la simulación asíncrona. */
     @KafkaListener(topics = KafkaConfig.TOPIC_RESERVA_CONFIRMADA)
     public void consumirReservaConfirmada(ReservaConfirmadaEvent event) {
         if (event == null || event.getReservaId() == null || event.getVehiculoId() == null) {
@@ -32,6 +34,7 @@ public class ReservaConfirmadaConsumer {
             Long solicitudId = mantenimientoService.crearSolicitudMantenimiento(event);
             simuladorService.simularYFinalizarMantenimiento(solicitudId, event.getVehiculoId());
         } catch (DataIntegrityViolationException e) {
+            // La restricción única de reservaId detecta eventos repetidos.
             log.warn("[KAFKA CONSUMER] Solicitud duplicada (idempotencia) ignorada para reservaId: {}",
                     event.getReservaId());
         } catch (Exception e) {

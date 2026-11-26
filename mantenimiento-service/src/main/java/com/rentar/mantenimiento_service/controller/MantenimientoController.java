@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.Map;
 
+/** Expone consultas para el estado y las solicitudes de mantenimiento. */
 @RestController
 @RequestMapping("/api/mantenimiento")
 @RequiredArgsConstructor
@@ -19,6 +20,7 @@ public class MantenimientoController {
 
     private final SolicitudMantenimientoRepository repository;
 
+    /** Devuelve el estado de disponibilidad del servicio. */
     @GetMapping("/salud")
     public ResponseEntity<Map<String, String>> health() {
         return ResponseEntity.ok(Map.of(
@@ -28,11 +30,13 @@ public class MantenimientoController {
         ));
     }
 
+    /** Lista todas las solicitudes de mantenimiento. */
     @GetMapping("/solicitudes")
     public ResponseEntity<List<SolicitudMantenimiento>> listarSolicitudes() {
         return ResponseEntity.ok(repository.findAll());
     }
 
+    /** Busca la solicitud de mantenimiento asociada a una reserva. */
     @GetMapping("/solicitudes/reserva/{reservaId}")
     public ResponseEntity<SolicitudMantenimiento> obtenerPorReserva(@PathVariable Long reservaId) {
         return repository.findByReservaId(reservaId)

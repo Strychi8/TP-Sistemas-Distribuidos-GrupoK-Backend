@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
+/** Registra las solicitudes de mantenimiento y guarda sus resultados. */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -23,9 +24,8 @@ public class MantenimientoService {
     private final ApplicationEventPublisher eventPublisher;
 
     /**
-     * FASE 1: Registro Inicial
-     * Se ejecuta dentro de una transacción corta. Si reservaId ya existe,
-     * MySQL lanzará DataIntegrityViolationException y la transacción se revertirá.
+     * Crea la solicitud en una transacción corta.
+     * La restricción única de reservaId impide registrar duplicados.
      */
     @Transactional
     public Long crearSolicitudMantenimiento(ReservaConfirmadaEvent event) {
@@ -46,7 +46,8 @@ public class MantenimientoService {
     }
 
     /**
-     * FASE 3: Transacción de Cierre y Emisión del Evento Local.
+     * Guarda el resultado y publica un evento interno dentro de la transacción.
+     * El productor Kafka procesa ese evento después del commit.
      */
     @Transactional
     public void completarMantenimiento(Long solicitudId, EstadoMantenimiento resultado) {
@@ -61,11 +62,11 @@ public class MantenimientoService {
         log.info("[MANTENIMIENTO] Solicitud ID={} actualizada a {}. Emitiendo evento interno para Kafka.",
                 solicitudId, resultado);
 
-        // Emitimos el evento interno en la memoria de Spring (no a kafka directamente)
+        // Publica un evento interno de Spring; el listener lo enviará a Kafka tras el commit.
         eventPublisher.publishEvent(new MantenimientoCompletadoInternalEvent(
                 solicitud.getReservaId(),
                 solicitud.getVehiculoId(),
-                resultado.name() // Se pasa como String "REALIZADO"
+                resultado.name()
         ));
     }
 

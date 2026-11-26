@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
+/** Ejecuta la simulación preventiva fuera del flujo que recibe la reserva. */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -18,14 +19,13 @@ public class MantenimientoSimuladorService {
     private final MantenimientoService service;
     private final SolicitudMantenimientoRepository repository;
 
-    /**
-     * FASE 2: Simulación no bloqueante fuera de la transacción.
-     */
+    /** Simula el mantenimiento y obtiene el vehículo desde la solicitud guardada. */
     @Async
     public void simularYFinalizarMantenimiento(Long solicitudId) {
         simularYFinalizarMantenimiento(solicitudId, null);
     }
 
+    /** Simula el mantenimiento y usa el ID de vehículo recibido si está disponible. */
     @Async
     public void simularYFinalizarMantenimiento(Long solicitudId, Long vehiculoIdParam) {
         if (solicitudId == null) {
@@ -36,19 +36,17 @@ public class MantenimientoSimuladorService {
         log.info("[SIMULADOR] Iniciando proceso de mantenimiento simulado para solicitud ID={}, vehiculoId={}",
                 solicitudId, vehiculoIdParam);
         try {
-            // Simular el proceso (2 a 3 segundos de trabajo fuera de la BD)
+            // Simula una inspección de 2,5 segundos sin mantener abierta una transacción.
             Thread.sleep(2500);
 
             Long vehiculoId = vehiculoIdParam;
             if (vehiculoId == null) {
-                // Consultar la solicitud para conocer el vehículo involucrado si no vino por parámetro
+                // Obtiene el vehículo desde la solicitud si no recibió su ID.
                 Optional<SolicitudMantenimiento> solicitudOpt = repository.findById(solicitudId);
                 vehiculoId = solicitudOpt.map(SolicitudMantenimiento::getVehiculoId).orElse(null);
             }
 
-            // REGLA DE SIMULACIÓN PARA PRUEBAS:
-            // El vehículo ID=3 (Volkswagen Gol Trend) falla la inspección preventiva (NO_REALIZADO)
-            // simulando desperfectos mecánicos o no superación de checklist técnico.
+            // Regla de prueba: el vehículo con ID 3 obtiene el resultado NO_REALIZADO.
             EstadoMantenimiento resultado;
             if (vehiculoId != null && vehiculoId == 3L) {
                 resultado = EstadoMantenimiento.NO_REALIZADO;
@@ -60,7 +58,7 @@ public class MantenimientoSimuladorService {
                         solicitudId, vehiculoId, resultado);
             }
 
-            // FASE 3: Guardar el resultado final en una NUEVA transacción
+            // Guarda el resultado en una nueva transacción.
             service.completarMantenimiento(solicitudId, resultado);
 
         } catch (InterruptedException e) {
