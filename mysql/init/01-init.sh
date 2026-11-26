@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Inicializacion de MySQL para Rentar (Hito 2).
-# Se ejecuta SOLO la primera vez que se crea el volumen (datadir vacio).
-# Las credenciales NO estan hardcodeadas: se leen de variables de entorno
-# definidas en .env y pasadas al contenedor mysql-db por docker-compose.yml.
+# Inicializa las bases de datos y los usuarios de los servicios de Rentar.
+# MySQL ejecuta este script solo cuando el directorio de datos está vacío.
+# Lee los nombres de bases de datos y las credenciales de variables de entorno
+# que Docker Compose pasa al contenedor.
 set -e
 
 mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" <<EOSQL

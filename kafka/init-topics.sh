@@ -1,20 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Usa las direcciones configuradas o los valores predeterminados.
 BOOTSTRAP_SERVER="${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}"
 KAFKA_TOPICS_BIN="${KAFKA_TOPICS_BIN:-/opt/kafka/bin/kafka-topics.sh}"
 
-# Fallback si no está en la ruta absoluta fija pero sí en el PATH
+# Busca la herramienta en PATH si no está en la ruta configurada.
 if [ ! -x "${KAFKA_TOPICS_BIN}" ]; then
   KAFKA_TOPICS_BIN="$(command -v kafka-topics.sh || echo "")"
 fi
 
+# Falla si kafka-topics.sh no está disponible.
 if [ -z "${KAFKA_TOPICS_BIN}" ]; then
   echo "Error: kafka-topics.sh no encontrado."
   exit 1
 fi
 
 echo "Waiting for Kafka broker at ${BOOTSTRAP_SERVER}..."
+# Espera hasta 25 intentos, con tres segundos entre cada uno.
 MAX_ATTEMPTS=25
 COUNT=0
 until "${KAFKA_TOPICS_BIN}" --bootstrap-server "${BOOTSTRAP_SERVER}" --list > /dev/null 2>&1; do
@@ -27,6 +30,7 @@ until "${KAFKA_TOPICS_BIN}" --bootstrap-server "${BOOTSTRAP_SERVER}" --list > /d
   sleep 3
 done
 
+# Topics que usan los servicios de verificación y mantenimiento.
 TOPICS=(
   "vehiculos.verificacion.solicitada"
   "vehiculos.verificacion.resultado"
@@ -38,6 +42,7 @@ TOPICS=(
   "mantenimiento.resultado"
 )
 
+# Crea cada topic si todavía no existe.
 for topic in "${TOPICS[@]}"; do
   echo "Creating topic if missing: ${topic}"
   CREATED=false
