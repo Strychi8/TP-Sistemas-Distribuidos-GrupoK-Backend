@@ -5,14 +5,19 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-// Evento publicado al topico 'vehiculos.externos.validacion.patente'
-// Resultado de validar que la patente externa no este denunciada como robada: 'VALIDADO' o 'RECHAZADO'
+/**
+ * Resultado de validar la patente de un vehículo externo.
+ * Se publica en el topic vehiculos.externos.validacion.patente.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class ValidacionPatenteEvent {
+    /** Identificador de la solicitud de incorporación del vehículo. */
     private Long vehiculoExternoId;
+    /** Patente consultada en el registro policial simulado. */
     private String patente;
-    private String resultado; // "VALIDADO" o "RECHAZADO"
+    /** Resultado de la validación: VALIDADO o RECHAZADO. */
+    private String resultado;
 }

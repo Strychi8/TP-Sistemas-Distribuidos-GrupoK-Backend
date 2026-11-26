@@ -16,22 +16,19 @@ public class VerificacionKafkaProducer {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
-    // Publica el resultado del chequeo policial de un vehiculo recien registrado
-    // Topico: vehiculos.verificacion.resultado
+    /** Publica el resultado policial asociado al identificador del vehículo. */
     public void publicarResultadoVerificacion(VerificacionResultadoEvent event) {
         log.info("[KAFKA PRODUCER] Publicando en '{}': {}", KafkaConfig.TOPIC_VERIFICACION_RESULTADO, event);
         kafkaTemplate.send(KafkaConfig.TOPIC_VERIFICACION_RESULTADO, String.valueOf(event.getVehiculoId()), event);
     }
 
-    // Publica el resultado de la validacion de patente de un vehiculo externo
-    // Topico: vehiculos.externos.validacion.patente
+    /** Publica el resultado de la validación de patente de un vehículo externo. */
     public void publicarValidacionPatente(ValidacionPatenteEvent event) {
         log.info("[KAFKA PRODUCER] Publicando en '{}': {}", KafkaConfig.TOPIC_EXTERNOS_VALIDACION_PATENTE, event);
         kafkaTemplate.send(KafkaConfig.TOPIC_EXTERNOS_VALIDACION_PATENTE, String.valueOf(event.getVehiculoExternoId()), event);
     }
 
-    // Publica el resultado de la validacion de titularidad de un vehiculo externo
-    // Topico: vehiculos.externos.validacion.titularidad
+    /** Publica el resultado de la validación de titularidad de un vehículo externo. */
     public void publicarValidacionTitularidad(ValidacionTitularidadEvent event) {
         log.info("[KAFKA PRODUCER] Publicando en '{}': {}", KafkaConfig.TOPIC_EXTERNOS_VALIDACION_TITULARIDAD, event);
         kafkaTemplate.send(KafkaConfig.TOPIC_EXTERNOS_VALIDACION_TITULARIDAD, String.valueOf(event.getVehiculoExternoId()), event);

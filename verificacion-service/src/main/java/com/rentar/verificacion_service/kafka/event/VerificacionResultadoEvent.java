@@ -5,14 +5,19 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-// Evento publicado al topico 'vehiculos.verificacion.resultado'
-// Informa el resultado del chequeo policial: 'VALIDADO' o 'ROBADO'
+/**
+ * Resultado de consultar una patente en el registro policial simulado.
+ * Se publica en el topic vehiculos.verificacion.resultado.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class VerificacionResultadoEvent {
+    /** Identificador del vehículo de la flota. */
     private Long vehiculoId;
+    /** Patente consultada. */
     private String patente;
-    private String resultado; // "VALIDADO" o "ROBADO"
+    /** Resultado de la consulta: VALIDADO o ROBADO. */
+    private String resultado;
 }

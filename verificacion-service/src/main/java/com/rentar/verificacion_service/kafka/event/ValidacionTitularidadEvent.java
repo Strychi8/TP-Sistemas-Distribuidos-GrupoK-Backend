@@ -5,16 +5,29 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-// Evento publicado al topico 'vehiculos.externos.validacion.titularidad'
-// Resultado de validar que el cliente solicitante sea el titular del vehiculo: 'VALIDADO' o 'RECHAZADO'
+/**
+ * Resultado de comparar al cliente solicitante con el registro de titularidad.
+ * Se publica en el topic vehiculos.externos.validacion.titularidad.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class ValidacionTitularidadEvent {
+    /** Identificador de la solicitud de incorporación del vehículo. */
     private Long vehiculoExternoId;
+    /** Identificador del cliente que presentó la solicitud. */
     private Long clienteId;
+    /** Documento usado para comprobar la titularidad. */
     private String documento;
+    /** Nombre del cliente. */
+    private String nombre;
+    /** Apellido del cliente. */
+    private String apellido;
+    /** Email del cliente. */
+    private String email;
+    /** Patente consultada en el registro de titularidad. */
     private String patente;
-    private String resultado; // "VALIDADO" o "RECHAZADO"
+    /** Resultado de la validación: VALIDADO o RECHAZADO. */
+    private String resultado;
 }

@@ -20,6 +20,7 @@ public class VerificacionController {
     private final IRegistroPolicialService registroPolicialService;
     private final IRegistroTitularidadService registroTitularidadService;
 
+    /** Devuelve el estado de disponibilidad del microservicio. */
     @GetMapping("/salud")
     public ResponseEntity<Map<String, String>> health() {
         return ResponseEntity.ok(Map.of(
@@ -29,11 +30,13 @@ public class VerificacionController {
         ));
     }
 
+    /** Lista las patentes del registro policial simulado. */
     @GetMapping("/patentes-robadas")
     public ResponseEntity<List<PatenteRobada>> listarPatentesRobadas() {
         return ResponseEntity.ok(registroPolicialService.listarPatentesRobadas());
     }
 
+    /** Agrega una patente al registro policial simulado. */
     @PostMapping("/patentes-robadas")
     public ResponseEntity<PatenteRobada> registrarPatenteRobada(@RequestBody Map<String, String> body) {
         String patente = body.get("patente");
@@ -45,6 +48,7 @@ public class VerificacionController {
                 .body(registroPolicialService.registrarPatenteRobada(patente, motivo));
     }
 
+    /** Consulta si una patente aparece en el registro policial simulado. */
     @GetMapping("/patentes-robadas/verificar/{patente}")
     public ResponseEntity<Map<String, Object>> verificarPatente(@PathVariable String patente) {
         boolean esRobado = registroPolicialService.esRobado(patente);
@@ -55,11 +59,13 @@ public class VerificacionController {
         ));
     }
 
+    /** Lista las entradas del registro simulado de titularidades. */
     @GetMapping("/titularidades")
     public ResponseEntity<List<TitularidadVehiculo>> listarTitularidades() {
         return ResponseEntity.ok(registroTitularidadService.listarTitularidades());
     }
 
+    /** Agrega una relación de titularidad al registro simulado. */
     @PostMapping("/titularidades")
     public ResponseEntity<TitularidadVehiculo> registrarTitularidad(@RequestBody Map<String, Object> body) {
         Long clienteId = body.get("clienteId") != null ? Long.valueOf(body.get("clienteId").toString()) : null;

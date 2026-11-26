@@ -5,15 +5,21 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-// Evento consumido desde el topico 'vehiculos.externos.registrados'
-// Disparado cuando un cliente registra un vehiculo de su propiedad
+/**
+ * Evento publicado cuando un cliente registra un vehículo externo.
+ * El consumidor usa estos datos para validar la patente y la titularidad.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class VehiculoExternoRegistradoEvent {
+    /** Identificador de la solicitud de incorporación. */
     private Long vehiculoExternoId;
+    /** Identificador del cliente que presentó la solicitud. */
     private Long clienteId;
+    /** Documento asociado al cliente para validar la titularidad. */
     private String documento;
+    /** Patente que se consulta en los registros simulados. */
     private String patente;
 }

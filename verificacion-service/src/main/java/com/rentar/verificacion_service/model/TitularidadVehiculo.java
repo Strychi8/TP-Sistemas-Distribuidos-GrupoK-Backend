@@ -6,8 +6,10 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-// Entidad que simula el registro externo de titularidades vehiculares (ej: DNRPA)
-// Permite verificar si un cliente es el titular registral del vehiculo que desea incorporar
+/**
+ * Representa una entrada del registro simulado de titularidad vehicular.
+ * El servicio compara estos datos con el cliente que postula un vehículo.
+ */
 @Entity
 @Table(name = "titularidades_vehiculos")
 @Data
@@ -16,19 +18,24 @@ import lombok.NoArgsConstructor;
 @Builder
 public class TitularidadVehiculo {
 
+    /** Identificador de la entrada del registro. */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /** Identificador del cliente asociado al titular. */
     @Column(name = "cliente_id")
     private Long clienteId;
 
+    /** Documento de identidad registrado para el titular. */
     @Column(length = 20)
     private String documento;
 
+    /** Patente del vehículo registrado. */
     @Column(nullable = false, length = 20)
     private String patente;
 
+    /** Nombre del titular en el registro simulado. */
     @Column(name = "nombre_titular", length = 100)
     private String nombreTitular;
 }

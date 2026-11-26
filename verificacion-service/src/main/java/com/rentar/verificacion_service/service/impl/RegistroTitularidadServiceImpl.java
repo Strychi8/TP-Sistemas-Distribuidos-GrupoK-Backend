@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
+/** Consulta y administra el registro simulado de titularidades vehiculares. */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -20,11 +21,11 @@ public class RegistroTitularidadServiceImpl implements IRegistroTitularidadServi
 
     private final ITitularidadVehiculoRepository titularidadRepository;
 
-    // Respaldo en memoria de titularidades simuladas, indexadas por patente normalizada.
+    // Guarda una copia de las titularidades, indexada por patente normalizada.
     private final Map<String, TitularidadVehiculo> titularidadesMemoria = new ConcurrentHashMap<>();
 
     {
-        // Titularidades de prueba para vehículos externos.
+        // Carga relaciones de prueba entre clientes, documentos y patentes.
         agregarTitularidadSimuladaEnMemoria(89L, "30123456", "DEF456", "Ana Martinez");
         agregarTitularidadSimuladaEnMemoria(1L, "40111222", "EXT100", "Juan Perez");
         agregarTitularidadSimuladaEnMemoria(2L, "41222333", "EXT200", "Maria Gomez");
@@ -32,6 +33,7 @@ public class RegistroTitularidadServiceImpl implements IRegistroTitularidadServi
         agregarTitularidadSimuladaEnMemoria(4L, "43444555", "EXT400", "Ana Martinez");
     }
 
+    /** Normaliza la patente y agrega la titularidad al registro en memoria. */
     private void agregarTitularidadSimuladaEnMemoria(
             Long clienteId,
             String documento,
@@ -46,6 +48,7 @@ public class RegistroTitularidadServiceImpl implements IRegistroTitularidadServi
                 .build());
     }
 
+    /** Compara los datos recibidos con el registro de la patente. */
     @Override
     @Transactional(readOnly = true)
     public ResultadoTitularidad verificarTitularidad(Long clienteId, String documento, String patente) {
@@ -57,7 +60,7 @@ public class RegistroTitularidadServiceImpl implements IRegistroTitularidadServi
         log.info("[REGISTRO TITULARIDAD] Verificando titularidad para patente={}, clienteId={}, documento={}",
                 cleanPatente, clienteId, documento);
 
-        // 1. Consultar en base de datos si está disponible
+        // Prioriza la base de datos cuando contiene un registro para la patente.
         try {
             Optional<TitularidadVehiculo> titularidadDb = titularidadRepository.findByPatenteIgnoreCase(cleanPatente);
             if (titularidadDb.isPresent()) {
@@ -70,7 +73,7 @@ public class RegistroTitularidadServiceImpl implements IRegistroTitularidadServi
             log.error("[REGISTRO TITULARIDAD] Error consultando BD. Usando memoria: {}", e.getMessage());
         }
 
-        // 2. Consultar en fallback de memoria
+        // Usa la copia en memoria si no hay registro o falla la consulta a la base.
         TitularidadVehiculo titularidadMem = titularidadesMemoria.get(cleanPatente);
         if (titularidadMem != null) {
             boolean coincide = coincideTitular(titularidadMem, clienteId, documento);
@@ -82,8 +85,9 @@ public class RegistroTitularidadServiceImpl implements IRegistroTitularidadServi
         return new ResultadoTitularidad(false, documento, null);
     }
 
+    /** Acepta la coincidencia del identificador del cliente o del documento. */
     private boolean coincideTitular(TitularidadVehiculo reg, Long clienteId, String documento) {
-        // Coincide si coincide el clienteId O el documento
+        // El registro es válido si coincide cualquiera de los dos identificadores.
         if (clienteId != null && reg.getClienteId() != null && clienteId.equals(reg.getClienteId())) {
             return true;
         }
@@ -94,6 +98,7 @@ public class RegistroTitularidadServiceImpl implements IRegistroTitularidadServi
         return false;
     }
 
+    /** Actualiza la copia en memoria y persiste la titularidad cuando es posible. */
     @Override
     @Transactional
     public TitularidadVehiculo registrarTitularidad(Long clienteId, String documento, String patente, String titular) {
@@ -115,6 +120,7 @@ public class RegistroTitularidadServiceImpl implements IRegistroTitularidadServi
         }
     }
 
+    /** Devuelve los registros persistidos o la copia en memoria si la base no tiene registros. */
     @Override
     @Transactional(readOnly = true)
     public List<TitularidadVehiculo> listarTitularidades() {
@@ -129,6 +135,7 @@ public class RegistroTitularidadServiceImpl implements IRegistroTitularidadServi
         return List.copyOf(titularidadesMemoria.values());
     }
 
+    /** Quita espacios y convierte la patente a mayúsculas. */
     private String normalizarPatente(String patente) {
         return patente.trim().replaceAll("\\s+", "").toUpperCase();
     }

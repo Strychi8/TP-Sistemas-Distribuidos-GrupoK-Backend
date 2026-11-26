@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+/** Consulta y administra el registro policial simulado de patentes denunciadas. */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -20,18 +21,19 @@ public class RegistroPolicialServiceImpl implements IRegistroPolicialService {
 
     private final IPatenteRobadaRepository patenteRobadaRepository;
 
-    // Respaldo en memoria de patentes denunciadas como robadas; se consulta antes que la base de datos.
+    // Conserva una copia en memoria para consultar patentes si falla la base de datos.
     private final Set<String> patentesRobadasEnMemoria = ConcurrentHashMap.newKeySet();
 
     {
-        // Patentes de prueba que simulan denuncias por robo o pedidos de secuestro.
+        // Carga patentes de prueba que simulan denuncias o pedidos de secuestro.
         patentesRobadasEnMemoria.add("AA111BB");
         patentesRobadasEnMemoria.add("ZZ999ZZ");
         patentesRobadasEnMemoria.add("ROB123");
         patentesRobadasEnMemoria.add("STO123");
-        patentesRobadasEnMemoria.add("EXT200"); // Vehículo de Maria Gomez usado para probar el rechazo.
+        patentesRobadasEnMemoria.add("EXT200"); // Patente de prueba para validar el rechazo.
     }
 
+    /** Comprueba primero la lista en memoria y luego el registro de la base de datos. */
     @Override
     @Transactional(readOnly = true)
     public boolean esRobado(String patente) {
@@ -40,13 +42,13 @@ public class RegistroPolicialServiceImpl implements IRegistroPolicialService {
         }
         String cleanPatente = normalizarPatente(patente);
 
-        // 1. Verificar en memoria
+        // Revisa primero la copia en memoria.
         if (patentesRobadasEnMemoria.contains(cleanPatente)) {
             log.warn("[REGISTRO POLICIAL] Patente {} identificada como ROBADA (memoria).", cleanPatente);
             return true;
         }
 
-        // 2. Verificar en base de datos
+        // Consulta la base de datos si no encontró la patente en memoria.
         try {
             boolean existeEnDb = patenteRobadaRepository.existsByPatenteIgnoreCase(cleanPatente);
             if (existeEnDb) {
@@ -62,6 +64,7 @@ public class RegistroPolicialServiceImpl implements IRegistroPolicialService {
         return false;
     }
 
+    /** Registra la patente en memoria y en la base de datos cuando está disponible. */
     @Override
     @Transactional
     public PatenteRobada registrarPatenteRobada(String patente, String motivo) {
@@ -83,6 +86,7 @@ public class RegistroPolicialServiceImpl implements IRegistroPolicialService {
         }
     }
 
+    /** Lista los registros de la base de datos o usa la copia en memoria como respaldo. */
     @Override
     @Transactional(readOnly = true)
     public List<PatenteRobada> listarPatentesRobadas() {
@@ -100,6 +104,7 @@ public class RegistroPolicialServiceImpl implements IRegistroPolicialService {
                 .toList();
     }
 
+    /** Quita espacios y convierte la patente a mayúsculas. */
     private String normalizarPatente(String patente) {
         return patente.trim().replaceAll("\\s+", "").toUpperCase();
     }

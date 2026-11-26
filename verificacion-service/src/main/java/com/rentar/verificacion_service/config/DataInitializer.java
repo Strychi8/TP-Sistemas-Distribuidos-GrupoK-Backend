@@ -20,6 +20,7 @@ public class DataInitializer implements CommandLineRunner {
     private final IPatenteRobadaRepository patenteRobadaRepository;
     private final ITitularidadVehiculoRepository titularidadRepository;
 
+    /** Carga los datos de prueba y actualiza la patente heredada, si existe. */
     @Override
     public void run(String... args) {
         inicializarPatentesRobadas();
@@ -27,6 +28,7 @@ public class DataInitializer implements CommandLineRunner {
         inicializarTitularidades();
     }
 
+    /** Inserta patentes simuladas solo si la tabla está vacía. */
     private void inicializarPatentesRobadas() {
         try {
             if (patenteRobadaRepository.count() == 0) {
@@ -65,6 +67,7 @@ public class DataInitializer implements CommandLineRunner {
         }
     }
 
+    /** Cambia la patente de prueba antigua por la vigente o elimina el duplicado. */
     private void migrarPatenteRobadaInvalida() {
         try {
             patenteRobadaRepository.findByPatenteIgnoreCase("STOLEN1")
@@ -82,6 +85,7 @@ public class DataInitializer implements CommandLineRunner {
         }
     }
 
+    /** Inserta relaciones simuladas entre clientes, documentos y patentes. */
     private void inicializarTitularidades() {
         try {
             if (titularidadRepository.count() == 0) {

@@ -5,13 +5,17 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-// Evento consumido desde el topico 'vehiculos.verificacion.solicitada'
-// Disparado al dar de alta un vehiculo en la flota
+/**
+ * Solicitud de verificación policial para un vehículo recién registrado.
+ * Se consume desde el topic vehiculos.verificacion.solicitada.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class VerificacionVehiculoEvent {
+    /** Identificador del vehículo de la flota. */
     private Long vehiculoId;
+    /** Patente que se consultará en el registro policial simulado. */
     private String patente;
 }

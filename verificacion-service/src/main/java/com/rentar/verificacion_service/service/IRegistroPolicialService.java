@@ -4,11 +4,14 @@ import com.rentar.verificacion_service.model.PatenteRobada;
 
 import java.util.List;
 
+/** Define las operaciones del registro policial simulado de patentes. */
 public interface IRegistroPolicialService {
-    // Verifica si una patente se encuentra registrada como robada
+    /** Comprueba si la patente figura como robada. */
     boolean esRobado(String patente);
-    // Registra una nueva patente en el registro policial simulado
+
+    /** Registra una patente denunciada y el motivo asociado. */
     PatenteRobada registrarPatenteRobada(String patente, String motivo);
-    // Retorna todas las patentes robadas registradas
+
+    /** Lista las patentes registradas como robadas. */
     List<PatenteRobada> listarPatentesRobadas();
 }

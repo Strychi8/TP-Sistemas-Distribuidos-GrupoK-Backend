@@ -4,12 +4,17 @@ import com.rentar.verificacion_service.model.TitularidadVehiculo;
 
 import java.util.List;
 
+/** Define las operaciones del registro simulado de titularidad vehicular. */
 public interface IRegistroTitularidadService {
+    /** Resultado de comparar la solicitud con los datos del registro. */
     record ResultadoTitularidad(boolean valido, String documento, String nombreTitular) {}
-    // Valida si un cliente (por clienteId y/o documento) es el titular registral de la patente indicada
+   
+    /** Comprueba si el cliente o su documento coincide con el titular de la patente. */
     ResultadoTitularidad verificarTitularidad(Long clienteId, String documento, String patente);
-    // Registra o actualiza una titularidad simulada
+
+    /** Registra una titularidad simulada para una patente. */
     TitularidadVehiculo registrarTitularidad(Long clienteId, String documento, String patente, String titular);
-    // Lista todas las titularidades registradas
+
+    /** Lista las titularidades disponibles en el registro. */
     List<TitularidadVehiculo> listarTitularidades();
 }
