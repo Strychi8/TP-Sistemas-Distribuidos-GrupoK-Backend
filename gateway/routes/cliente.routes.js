@@ -2,7 +2,7 @@ import express from 'express';
 import { customerClient } from '../clients/grpc.js';
 import { authMiddleware } from '../middleware/auth.middleware.js';
 import { createGrpcMetadata } from '../utils/grpcMetadata.js';
-import { toClientListRest, toClientRest } from '../utils/clientMapper.js';
+import { toClientListRest, toClientRest, toGoogleDate } from '../utils/clientMapper.js';
 
 const router = express.Router();
 
@@ -12,26 +12,49 @@ router.use(authMiddleware);
 // Crear cliente (Alta)
 router.post('/', (req, res, next) => {
   const meta = createGrpcMetadata(req);
-  customerClient.CrearCliente(req.body, meta, (err, response) => {
+  const rawDate = req.body.fechaNacimiento || req.body.fecha_nacimiento;
+  const googleDate = toGoogleDate(rawDate);
+
+  const payload = {
+    ...req.body,
+    fecha_nacimiento: googleDate,
+    fechaNacimiento: googleDate
+  };
+
+  customerClient.CrearCliente(payload, meta, (err, response) => {
     if (err) return next(err);
-    res.status(201).json(response);
+    const cliente = response?.customer || response;
+    res.status(201).json(toClientRest(cliente));
   });
 });
 
 // Modificar cliente
 router.put('/:id', (req, res, next) => {
   const meta = createGrpcMetadata(req);
-  const data = { ...req.body, idCliente: req.params.id };
-  customerClient.ActualizarCliente(data, meta, (err, response) => {
+  const idCliente = req.params.id;
+  const rawDate = req.body.fechaNacimiento || req.body.fecha_nacimiento;
+  const googleDate = toGoogleDate(rawDate);
+
+  const payload = {
+    ...req.body,
+    id_cliente: idCliente,
+    idCliente: idCliente,
+    fecha_nacimiento: googleDate,
+    fechaNacimiento: googleDate
+  };
+
+  customerClient.ActualizarCliente(payload, meta, (err, response) => {
     if (err) return next(err);
-    res.json(response);
+    const cliente = response?.customer || response;
+    res.json(toClientRest(cliente));
   });
 });
 
 // Baja lógica (Eliminar cliente)
 router.delete('/:id', (req, res, next) => {
   const meta = createGrpcMetadata(req);
-  customerClient.EliminarCliente({ idCliente: req.params.id }, meta, (err, response) => {
+  const idCliente = req.params.id;
+  customerClient.EliminarCliente({ id_cliente: idCliente, idCliente }, meta, (err, response) => {
     if (err) return next(err);
     res.json({ message: 'Cliente eliminado correctamente', ...response });
   });
@@ -61,9 +84,11 @@ router.get('/me/perfil', perfilHandler);
 // Consulta cliente específico
 router.get('/:id', (req, res, next) => {
   const meta = createGrpcMetadata(req);
-  customerClient.GetClienteById({ idCliente: req.params.id }, meta, (err, response) => {
+  const idCliente = req.params.id;
+  customerClient.GetClienteById({ id_cliente: idCliente, idCliente }, meta, (err, response) => {
     if (err) return next(err);
-    res.json(toClientRest(response));
+    const cliente = response?.customer || response;
+    res.json(toClientRest(cliente));
   });
 });
 

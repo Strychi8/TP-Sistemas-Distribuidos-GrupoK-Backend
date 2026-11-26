@@ -25,6 +25,7 @@ import org.springframework.data.jpa.domain.Specification;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 
 @Slf4j
@@ -97,7 +98,7 @@ public class ReservaServiceImpl implements IReservaService {
         if (inicio == null || fin == null) {
             throw new BadRequestException("Las fechas de inicio y fin son obligatorias");
         }
-        if (!inicio.isAfter(LocalDateTime.now())) {
+        if (!inicio.isAfter(LocalDateTime.now(ZoneOffset.UTC))) {
             throw new BadRequestException("La fecha de inicio debe ser futura");
         }
         if (!fin.isAfter(inicio)) {
@@ -118,7 +119,7 @@ public class ReservaServiceImpl implements IReservaService {
                     "No se puede cancelar una reserva cancelada o finalizada");
         }
 
-        if (!LocalDateTime.now().isBefore(reserva.getFechaInicio())) {
+        if (!LocalDateTime.now(ZoneOffset.UTC).isBefore(reserva.getFechaInicio())) {
             throw new BusinessException(
                     "No se puede cancelar una reserva cuyo período ya comenzó");
         }
@@ -144,7 +145,7 @@ public class ReservaServiceImpl implements IReservaService {
                         idCliente,
                         List.of(EstadoReserva.FINALIZADA, EstadoReserva.CANCELADA))
                 .stream()
-                .map(this::aGraphQLDTO)
+                .map(this::mapToGraphQLDTO)
                 .toList();
     }
 
@@ -179,7 +180,7 @@ public class ReservaServiceImpl implements IReservaService {
         }
 
         return reservaRepository.findAll(spec).stream()
-                .map(this::aGraphQLDTO)
+                .map(this::mapToGraphQLDTO)
                 .toList();
     }
 
@@ -197,7 +198,7 @@ public class ReservaServiceImpl implements IReservaService {
                 idVehiculo, fechaInicio, fechaFin, EstadoReserva.CONFIRMADA);
     }
 
-    private ReservaGraphQLDTO aGraphQLDTO(Reserva r) {
+    private ReservaGraphQLDTO mapToGraphQLDTO(Reserva r) {
         return ReservaGraphQLDTO.builder()
                 .idReserva(r.getIdReserva())
                 .idCliente(r.getIdCliente())

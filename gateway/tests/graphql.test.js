@@ -7,6 +7,7 @@ jest.unstable_mockModule('../clients/grpc.js', () => ({
     GetVehiculos: jest.fn(),
   },
   rentalClient: {
+    ConsultarReservas: jest.fn(),
     GetHistorialAlquileres: jest.fn(),
     GetReservas: jest.fn(),
   },
@@ -34,6 +35,9 @@ describe('GraphQL Endpoints', () => {
 
   describe('Query: vehiculos', () => {
     test('debe retornar lista de vehículos', async () => {
+      rentalClient.ConsultarReservas.mockImplementation((req, meta, cb) => {
+        cb(null, { reservations: [] });
+      });
       vehicleClient.GetVehiculos.mockImplementation((req, meta, cb) => {
         cb(null, {
           vehicles: [
@@ -136,9 +140,9 @@ describe('GraphQL Endpoints', () => {
 
   describe('Query: reservas', () => {
     test('debe retornar lista de reservas', async () => {
-      rentalClient.GetReservas.mockImplementation((req, meta, cb) => {
+      rentalClient.ConsultarReservas.mockImplementation((req, meta, cb) => {
         cb(null, {
-          reservas: [
+          reservations: [
             {
               idReserva: '100',
               cliente: {

@@ -24,7 +24,7 @@ public class MantenimientoResultadoConsumer {
 
     @KafkaListener(
             topics = "mantenimiento.resultado",
-            groupId = "rental-service",
+            groupId = "${spring.kafka.consumer.group-id:rental-service}",
             containerFactory = "mantenimientoResultadoKafkaListenerContainerFactory"
     )
     @Transactional

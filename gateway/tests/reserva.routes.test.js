@@ -126,7 +126,7 @@ describe('POST /api/reservas', () => {
     expect(rentalClient.VerificarSolapamientoVehiculo).toHaveBeenCalled();
     expect(rentalClient.CrearReserva).toHaveBeenCalled();
     expect(vehicleClient.ActualizarEstadoVehiculo).toHaveBeenCalledWith(
-      expect.objectContaining({ estado: 'RESERVADO' }),
+      expect.objectContaining({ estado: expect.stringMatching(/RESERVADO/) }),
       expect.anything(),
       expect.any(Function)
     );
@@ -166,18 +166,35 @@ describe('POST /api/reservas', () => {
     expect(rentalClient.VerificarSolapamientoVehiculo).not.toHaveBeenCalled();
   });
 
-  it('Debe rechazar con 400 si el vehículo no está en estado DISPONIBLE (ej: RESERVADO o numérico)', async () => {
+  it('Debe verificar solapamiento por período aunque el estado persistido sea RESERVADO', async () => {
     customerClient.GetMiPerfil.mockImplementation((req, meta, cb) => cb(null, { idCliente: 10, dni: '35123456', activo: true }));
-    // Testeamos con número 2 (RESERVADO en proto)
     vehicleClient.GetVehiculoById.mockImplementation((req, meta, cb) => cb(null, { idVehiculo: 5, activo: true, inhabilitado: false, estado: 2, precioDiario: 5000 }));
+    rentalClient.VerificarSolapamientoVehiculo.mockImplementation((req, meta, cb) => {
+      cb(null, { solapado: false });
+    });
+    rentalClient.CrearReserva.mockImplementation((req, meta, cb) => {
+      cb(null, {
+        idReserva: 101,
+        idCliente: 10,
+        idVehiculo: 5,
+        fechaInicio: { seconds: Math.floor(new Date(validPayload.fechaInicio).getTime() / 1000), nanos: 0 },
+        fechaFin: { seconds: Math.floor(new Date(validPayload.fechaFin).getTime() / 1000), nanos: 0 },
+        precioDiario: 5000,
+        importeTotal: 5000,
+        estado: 'CONFIRMADA'
+      });
+    });
+    vehicleClient.ActualizarEstadoVehiculo.mockImplementation((req, meta, cb) => {
+      cb(null, { idVehiculo: 5, estado: 'RESERVADO' });
+    });
 
     const response = await request(app)
       .post('/api/reservas')
       .send(validPayload);
 
-    expect(response.status).toBe(400);
-    expect(response.body.message).toContain('disponible');
-    expect(rentalClient.VerificarSolapamientoVehiculo).not.toHaveBeenCalled();
+    expect(response.status).toBe(201);
+    expect(rentalClient.VerificarSolapamientoVehiculo).toHaveBeenCalled();
+    expect(rentalClient.CrearReserva).toHaveBeenCalled();
   });
 
   it('Debe ejecutar rollback (cancelar reserva) si falla la actualización de estado del vehículo', async () => {

@@ -21,6 +21,7 @@ class PatenteValidatorTest {
     @DisplayName("Patentes formato tradicional (ABC123) y Mercosur (AB123CD) son válidas")
     void testPatentesValidas() {
         assertTrue(validator.isValid("ABC123", null), "Formato tradicional debe ser válido");
+        assertTrue(validator.isValid("STO123", null), "La patente simulada debe cumplir el formato tradicional");
         assertTrue(validator.isValid("AB123CD", null), "Formato Mercosur debe ser válido");
     }
 

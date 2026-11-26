@@ -20,16 +20,16 @@ public class RegistroPolicialServiceImpl implements IRegistroPolicialService {
 
     private final IPatenteRobadaRepository patenteRobadaRepository;
 
-    // Lista en memoria como fallback o cache inmediato
-    private final Set<String> patentesRobadasMemoria = ConcurrentHashMap.newKeySet();
+    // Respaldo en memoria de patentes denunciadas como robadas; se consulta antes que la base de datos.
+    private final Set<String> patentesRobadasEnMemoria = ConcurrentHashMap.newKeySet();
 
     {
-        // Patentes simuladas predefinidas (incluyendo vehículos robados y vehículos externos con pedido de secuestro)
-        patentesRobadasMemoria.add("AA111BB");
-        patentesRobadasMemoria.add("ZZ999ZZ");
-        patentesRobadasMemoria.add("ROB123");
-        patentesRobadasMemoria.add("STOLEN1");
-        patentesRobadasMemoria.add("EXT200"); // Vehículo particular de Maria Gomez marcado como robado para pruebas de rechazo
+        // Patentes de prueba que simulan denuncias por robo o pedidos de secuestro.
+        patentesRobadasEnMemoria.add("AA111BB");
+        patentesRobadasEnMemoria.add("ZZ999ZZ");
+        patentesRobadasEnMemoria.add("ROB123");
+        patentesRobadasEnMemoria.add("STO123");
+        patentesRobadasEnMemoria.add("EXT200"); // Vehículo de Maria Gomez usado para probar el rechazo.
     }
 
     @Override
@@ -41,7 +41,7 @@ public class RegistroPolicialServiceImpl implements IRegistroPolicialService {
         String cleanPatente = normalizarPatente(patente);
 
         // 1. Verificar en memoria
-        if (patentesRobadasMemoria.contains(cleanPatente)) {
+        if (patentesRobadasEnMemoria.contains(cleanPatente)) {
             log.warn("[REGISTRO POLICIAL] Patente {} identificada como ROBADA (memoria).", cleanPatente);
             return true;
         }
@@ -66,12 +66,12 @@ public class RegistroPolicialServiceImpl implements IRegistroPolicialService {
     @Transactional
     public PatenteRobada registrarPatenteRobada(String patente, String motivo) {
         String cleanPatente = normalizarPatente(patente);
-        patentesRobadasMemoria.add(cleanPatente);
+        patentesRobadasEnMemoria.add(cleanPatente);
 
         try {
             PatenteRobada entity = PatenteRobada.builder()
                     .patente(cleanPatente)
-                    .motivo(motivo != null ? motivo : "Denuncia por robo simulada")
+                    .motivo(motivo != null ? motivo : "Denuncia por robo")
                     .build();
             return patenteRobadaRepository.save(entity);
         } catch (Exception e) {
@@ -95,7 +95,7 @@ public class RegistroPolicialServiceImpl implements IRegistroPolicialService {
             log.error("[REGISTRO POLICIAL] Error listando patentes de BD: {}", e.getMessage());
         }
 
-        return patentesRobadasMemoria.stream()
+        return patentesRobadasEnMemoria.stream()
                 .map(p -> PatenteRobada.builder().patente(p).motivo("Simulado en memoria").build())
                 .toList();
     }

@@ -2,7 +2,30 @@
 set -euo pipefail
 
 BOOTSTRAP_SERVER="${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}"
-KAFKA_TOPICS_BIN="/opt/kafka/bin/kafka-topics.sh"
+KAFKA_TOPICS_BIN="${KAFKA_TOPICS_BIN:-/opt/kafka/bin/kafka-topics.sh}"
+
+# Fallback si no está en la ruta absoluta fija pero sí en el PATH
+if [ ! -x "${KAFKA_TOPICS_BIN}" ]; then
+  KAFKA_TOPICS_BIN="$(command -v kafka-topics.sh || echo "")"
+fi
+
+if [ -z "${KAFKA_TOPICS_BIN}" ]; then
+  echo "Error: kafka-topics.sh no encontrado."
+  exit 1
+fi
+
+echo "Waiting for Kafka broker at ${BOOTSTRAP_SERVER}..."
+MAX_ATTEMPTS=25
+COUNT=0
+until "${KAFKA_TOPICS_BIN}" --bootstrap-server "${BOOTSTRAP_SERVER}" --list > /dev/null 2>&1; do
+  COUNT=$((COUNT + 1))
+  if [ "${COUNT}" -ge "${MAX_ATTEMPTS}" ]; then
+    echo "Error: Kafka no respondio despues de $((MAX_ATTEMPTS * 3)) segundos."
+    exit 1
+  fi
+  echo "Kafka not fully ready yet, retrying in 3s (${COUNT}/${MAX_ATTEMPTS})..."
+  sleep 3
+done
 
 TOPICS=(
   "vehiculos.verificacion.solicitada"
@@ -17,13 +40,26 @@ TOPICS=(
 
 for topic in "${TOPICS[@]}"; do
   echo "Creating topic if missing: ${topic}"
-  "${KAFKA_TOPICS_BIN}" \
-    --bootstrap-server "${BOOTSTRAP_SERVER}" \
-    --create \
-    --if-not-exists \
-    --topic "${topic}" \
-    --partitions 1 \
-    --replication-factor 1
+  CREATED=false
+  for attempt in 1 2 3; do
+    if "${KAFKA_TOPICS_BIN}" \
+      --bootstrap-server "${BOOTSTRAP_SERVER}" \
+      --create \
+      --if-not-exists \
+      --topic "${topic}" \
+      --partitions 1 \
+      --replication-factor 1; then
+      CREATED=true
+      break
+    fi
+    echo "Warning: Error creating ${topic}. Retrying (attempt ${attempt}/3)..."
+    sleep 2
+  done
+
+  if [ "${CREATED}" = false ]; then
+    echo "Error critico: No se pudo crear el topic ${topic} tras 3 intentos."
+    exit 1
+  fi
 done
 
 echo "Available topics:"

@@ -1,6 +1,5 @@
 package com.rentar.vehicle_service.grpc;
 
-import com.google.protobuf.Empty;
 import com.rentar.vehicle.grpc.*;
 import com.rentar.vehicle_service.dto.request.FiltroDisponibilidadDTO;
 import com.rentar.vehicle_service.dto.request.VehiculoExternoRequestDTO;
@@ -14,7 +13,6 @@ import com.rentar.vehicle_service.service.IVehiculoExternoService;
 import com.rentar.vehicle_service.service.IVehiculoService;
 import io.grpc.stub.StreamObserver;
 import org.springframework.grpc.server.service.GrpcService;
-import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 
@@ -33,88 +31,118 @@ public class VehicleGrpcServiceImpl extends VehicleServiceGrpc.VehicleServiceImp
     }
 
     @Override
-    public void crearVehiculo(CrearVehiculoRequest request, StreamObserver<Vehicle> responseObserver){
+    public void crearVehiculo(CrearVehiculoRequest request, StreamObserver<CrearVehiculoResponse> responseObserver) {
         VehiculoRequestDTO dto = mapper.toRequestDTO(request);
         validator.validate(dto);
         VehiculoResponseDTO creado = vehiculoService.crearVehiculo(dto);
-        responseObserver.onNext(mapper.toProto(creado));
+        CrearVehiculoResponse response = CrearVehiculoResponse.newBuilder()
+                .setVehicle(mapper.toProto(creado))
+                .build();
+        responseObserver.onNext(response);
         responseObserver.onCompleted();
     }
 
     @Override
-    public void actualizarVehiculo(ActualizarVehiculoRequest request, StreamObserver<Vehicle> responseObserver){
+    public void actualizarVehiculo(ActualizarVehiculoRequest request, StreamObserver<ActualizarVehiculoResponse> responseObserver) {
         VehiculoUpdateRequestDTO dto = mapper.toUpdateDTO(request);
         validator.validate(dto);
         VehiculoResponseDTO actualizado = vehiculoService.actualizarVehiculo(request.getIdVehiculo(), dto);
-        responseObserver.onNext(mapper.toProto(actualizado));
+        ActualizarVehiculoResponse response = ActualizarVehiculoResponse.newBuilder()
+                .setVehicle(mapper.toProto(actualizado))
+                .build();
+        responseObserver.onNext(response);
         responseObserver.onCompleted();
     }
 
     @Override
-    public void actualizarEstadoVehiculo(ActualizarEstadoRequest request, StreamObserver<Vehicle> responseObserver){
+    public void actualizarEstadoVehiculo(ActualizarEstadoVehiculoRequest request, StreamObserver<ActualizarEstadoVehiculoResponse> responseObserver) {
         VehiculoResponseDTO actualizado = vehiculoService.actualizarEstado(
                 request.getIdVehiculo(),
                 mapper.toEstado(request.getEstado()));
-        responseObserver.onNext(mapper.toProto(actualizado));
+        ActualizarEstadoVehiculoResponse response = ActualizarEstadoVehiculoResponse.newBuilder()
+                .setVehicle(mapper.toProto(actualizado))
+                .build();
+        responseObserver.onNext(response);
         responseObserver.onCompleted();
     }
 
     @Override
-    public void eliminarVehiculo(EliminarVehiculoRequest request, StreamObserver<EliminarVehiculoResponse> responseObserver){
+    public void eliminarVehiculo(EliminarVehiculoRequest request, StreamObserver<EliminarVehiculoResponse> responseObserver) {
         vehiculoService.eliminarVehiculo(request.getIdVehiculo());
         responseObserver.onNext(EliminarVehiculoResponse.newBuilder().setSuccess(true).build());
         responseObserver.onCompleted();
     }
 
     @Override
-    public void getVehiculos(Empty request, StreamObserver<VehicleList> responseObserver) {
+    public void getVehiculos(GetVehiculosRequest request, StreamObserver<GetVehiculosResponse> responseObserver) {
         List<VehiculoResponseDTO> vehiculos = vehiculoService.listarVehiculos();
-        responseObserver.onNext(mapper.toProtoList(vehiculos));
+        GetVehiculosResponse response = GetVehiculosResponse.newBuilder()
+                .addAllVehicles(mapper.toProtoList(vehiculos))
+                .build();
+        responseObserver.onNext(response);
         responseObserver.onCompleted();
     }
 
     @Override
-    public void getVehiculosActivos(Empty request, StreamObserver<VehicleList> responseObserver) {
+    public void getVehiculosActivos(GetVehiculosActivosRequest request, StreamObserver<GetVehiculosActivosResponse> responseObserver) {
         List<VehiculoResponseDTO> vehiculos = vehiculoService.listarVehiculosActivos();
-        responseObserver.onNext(mapper.toProtoList(vehiculos));
+        GetVehiculosActivosResponse response = GetVehiculosActivosResponse.newBuilder()
+                .addAllVehicles(mapper.toProtoList(vehiculos))
+                .build();
+        responseObserver.onNext(response);
         responseObserver.onCompleted();
     }
 
     @Override
-    public void getVehiculoById(GetVehiculoByIdRequest request, StreamObserver<Vehicle> responseObserver) {
+    public void getVehiculoById(GetVehiculoByIdRequest request, StreamObserver<GetVehiculoByIdResponse> responseObserver) {
         VehiculoResponseDTO vehiculo = vehiculoService.obtenerVehiculoPorId(request.getIdVehiculo());
-        responseObserver.onNext(mapper.toProto(vehiculo));
+        GetVehiculoByIdResponse response = GetVehiculoByIdResponse.newBuilder()
+                .setVehicle(mapper.toProto(vehiculo))
+                .build();
+        responseObserver.onNext(response);
         responseObserver.onCompleted();
     }
 
     @Override
-    public void getVehiculoByPatente(GetVehiculoByPatenteRequest request, StreamObserver<Vehicle> responseObserver) {
+    public void getVehiculoByPatente(GetVehiculoByPatenteRequest request, StreamObserver<GetVehiculoByPatenteResponse> responseObserver) {
         VehiculoResponseDTO vehiculo = vehiculoService.obtenerVehiculoPorPatente(request.getPatente());
-        responseObserver.onNext(mapper.toProto(vehiculo));
+        GetVehiculoByPatenteResponse response = GetVehiculoByPatenteResponse.newBuilder()
+                .setVehicle(mapper.toProto(vehiculo))
+                .build();
+        responseObserver.onNext(response);
         responseObserver.onCompleted();
     }
 
     @Override
-    public void consultarDisponibilidad(FiltroDisponibilidad request, StreamObserver<VehicleList> responseObserver) {
+    public void consultarDisponibilidad(ConsultarDisponibilidadRequest request, StreamObserver<ConsultarDisponibilidadResponse> responseObserver) {
         FiltroDisponibilidadDTO filtro = mapper.toFiltroDTO(request);
         List<VehiculoResponseDTO> vehiculos = vehiculoService.consultarDisponibilidad(filtro);
-        responseObserver.onNext(mapper.toProtoList(vehiculos));
+        ConsultarDisponibilidadResponse response = ConsultarDisponibilidadResponse.newBuilder()
+                .addAllVehicles(mapper.toProtoList(vehiculos))
+                .build();
+        responseObserver.onNext(response);
         responseObserver.onCompleted();
     }
 
     @Override
-    public void registrarVehiculoExterno(RegistrarVehiculoExternoRequest request, StreamObserver<VehiculoExternoResponse> responseObserver) {
+    public void registrarVehiculoExterno(RegistrarVehiculoExternoRequest request, StreamObserver<RegistrarVehiculoExternoResponse> responseObserver) {
         VehiculoExternoRequestDTO dto = mapper.toRequestDTO(request);
         validator.validate(dto);
         VehiculoExternoResponseDTO creado = vehiculoExternoService.registrarVehiculoExterno(dto);
-        responseObserver.onNext(mapper.toProto(creado));
+        RegistrarVehiculoExternoResponse response = RegistrarVehiculoExternoResponse.newBuilder()
+                .setVehiculoExterno(mapper.toProto(creado))
+                .build();
+        responseObserver.onNext(response);
         responseObserver.onCompleted();
     }
 
     @Override
-    public void getVehiculosExternosByCliente(GetVehiculosExternosByClienteRequest request, StreamObserver<VehiculoExternoList> responseObserver) {
-        List<VehiculoExternoResponseDTO> externos = vehiculoExternoService.listarVehiculosExternosPorCliente(request.getClienteId());
-        responseObserver.onNext(mapper.toProtoListExternos(externos));
+    public void getVehiculosExternosByCliente(GetVehiculosExternosByClienteRequest request, StreamObserver<GetVehiculosExternosByClienteResponse> responseObserver) {
+        List<VehiculoExternoResponseDTO> externos = vehiculoExternoService.listarVehiculosExternosPorCliente(request.getIdCliente());
+        GetVehiculosExternosByClienteResponse response = GetVehiculosExternosByClienteResponse.newBuilder()
+                .addAllVehiculosExternos(mapper.toProtoListExternos(externos))
+                .build();
+        responseObserver.onNext(response);
         responseObserver.onCompleted();
     }
 }

@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class VehiculoGrpcMapper {
@@ -41,7 +42,7 @@ public class VehiculoGrpcMapper {
                 .build();
     }
 
-    public FiltroDisponibilidadDTO toFiltroDTO(FiltroDisponibilidad proto) {
+    public FiltroDisponibilidadDTO toFiltroDTO(ConsultarDisponibilidadRequest proto) {
         return FiltroDisponibilidadDTO.builder()
                 .tipoVehiculo(proto.hasTipoVehiculo() ? mapTipo(proto.getTipoVehiculo()) : null)
                 .marca(proto.hasMarca() ? proto.getMarca() : null)
@@ -69,42 +70,40 @@ public class VehiculoGrpcMapper {
                 .build();
     }
 
-    public VehicleList toProtoList(List<VehiculoResponseDTO> dtos) {
-        VehicleList.Builder builder = VehicleList.newBuilder();
-        dtos.forEach(dto -> builder.addVehicles(toProto(dto)));
-        return builder.build();
+    public List<Vehicle> toProtoList(List<VehiculoResponseDTO> dtos) {
+        return dtos.stream().map(this::toProto).collect(Collectors.toList());
     }
 
-    // ---------- Enums: mismos nombres, tipos Java distintos ----------
-    // Los valores del proto coinciden con el dominio, PERO el valor 0 (UNSPECIFIED)
-    // no tiene contraparte -> se mapea a null y luego se rechaza como INVALID_ARGUMENT.
+    // ---------- Enums: Mapeo de prefijos Buf Lint ----------
 
     public EstadoVehiculo toEstado(com.rentar.vehicle.grpc.EstadoVehiculo proto) {
         if (proto == null || proto == com.rentar.vehicle.grpc.EstadoVehiculo.ESTADO_VEHICULO_UNSPECIFIED) {
             return null;
         }
-        return EstadoVehiculo.valueOf(proto.name());
+        String name = proto.name().replace("ESTADO_VEHICULO_", "");
+        return EstadoVehiculo.valueOf(name);
     }
 
     private TipoVehiculo mapTipo(com.rentar.vehicle.grpc.TipoVehiculo proto) {
         if (proto == null || proto == com.rentar.vehicle.grpc.TipoVehiculo.TIPO_VEHICULO_UNSPECIFIED) {
             return null;
         }
-        return TipoVehiculo.valueOf(proto.name());
+        String name = proto.name().replace("TIPO_VEHICULO_", "");
+        return TipoVehiculo.valueOf(name);
     }
 
     private com.rentar.vehicle.grpc.TipoVehiculo mapTipoToProto(TipoVehiculo domain) {
         if (domain == null) {
             return com.rentar.vehicle.grpc.TipoVehiculo.TIPO_VEHICULO_UNSPECIFIED;
         }
-        return com.rentar.vehicle.grpc.TipoVehiculo.valueOf(domain.name());
+        return com.rentar.vehicle.grpc.TipoVehiculo.valueOf("TIPO_VEHICULO_" + domain.name());
     }
 
     private com.rentar.vehicle.grpc.EstadoVehiculo mapEstadoToProto(EstadoVehiculo domain) {
         if (domain == null) {
             return com.rentar.vehicle.grpc.EstadoVehiculo.ESTADO_VEHICULO_UNSPECIFIED;
         }
-        return com.rentar.vehicle.grpc.EstadoVehiculo.valueOf(domain.name());
+        return com.rentar.vehicle.grpc.EstadoVehiculo.valueOf("ESTADO_VEHICULO_" + domain.name());
     }
 
     public VehiculoExternoRequestDTO toRequestDTO(RegistrarVehiculoExternoRequest req) {
@@ -117,14 +116,14 @@ public class VehiculoGrpcMapper {
                 .tipoVehiculo(mapTipo(req.getTipoVehiculo()))
                 .precioDiario(BigDecimal.valueOf(req.getPrecioDiario()))
                 .documento(req.getDocumento())
-                .clienteId(req.getClienteId())
+                .clienteId(req.getIdCliente())
                 .build();
     }
 
-    public VehiculoExternoResponse toProto(VehiculoExternoResponseDTO dto) {
-        return VehiculoExternoResponse.newBuilder()
+    public VehiculoExterno toProto(VehiculoExternoResponseDTO dto) {
+        return VehiculoExterno.newBuilder()
                 .setIdVehiculoExterno(dto.getIdVehiculoExterno() != null ? dto.getIdVehiculoExterno() : 0L)
-                .setClienteId(dto.getClienteId() != null ? dto.getClienteId() : 0L)
+                .setIdCliente(dto.getClienteId() != null ? dto.getClienteId() : 0L)
                 .setPatente(dto.getPatente() == null ? "" : dto.getPatente())
                 .setMarca(dto.getMarca() == null ? "" : dto.getMarca())
                 .setModelo(dto.getModelo() == null ? "" : dto.getModelo())
@@ -134,14 +133,12 @@ public class VehiculoGrpcMapper {
                 .setEstado(dto.getEstado() == null ? "" : dto.getEstado())
                 .setValidacionPatente(dto.getValidacionPatente() == null ? "" : dto.getValidacionPatente())
                 .setValidacionTitularidad(dto.getValidacionTitularidad() == null ? "" : dto.getValidacionTitularidad())
-                .setVehiculoId(dto.getVehiculoId() != null ? dto.getVehiculoId() : 0L)
+                .setIdVehiculo(dto.getVehiculoId() != null ? dto.getVehiculoId() : 0L)
                 .setPrecioDiario(dto.getPrecioDiario() != null ? dto.getPrecioDiario().doubleValue() : 0.0)
                 .build();
     }
 
-    public VehiculoExternoList toProtoListExternos(List<VehiculoExternoResponseDTO> dtos) {
-        VehiculoExternoList.Builder builder = VehiculoExternoList.newBuilder();
-        dtos.forEach(dto -> builder.addVehiculosExternos(toProto(dto)));
-        return builder.build();
+    public List<VehiculoExterno> toProtoListExternos(List<VehiculoExternoResponseDTO> dtos) {
+        return dtos.stream().map(this::toProto).collect(Collectors.toList());
     }
 }

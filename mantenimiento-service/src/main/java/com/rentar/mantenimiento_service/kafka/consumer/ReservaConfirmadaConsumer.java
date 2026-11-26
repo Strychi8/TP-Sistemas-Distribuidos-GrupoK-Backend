@@ -30,7 +30,7 @@ public class ReservaConfirmadaConsumer {
 
         try {
             Long solicitudId = mantenimientoService.crearSolicitudMantenimiento(event);
-            simuladorService.simularYFinalizarMantenimiento(solicitudId);
+            simuladorService.simularYFinalizarMantenimiento(solicitudId, event.getVehiculoId());
         } catch (DataIntegrityViolationException e) {
             log.warn("[KAFKA CONSUMER] Solicitud duplicada (idempotencia) ignorada para reservaId: {}",
                     event.getReservaId());
